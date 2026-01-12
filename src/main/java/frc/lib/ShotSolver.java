@@ -77,6 +77,9 @@ public final class ShotSolver {
 
         ShotResult best = null;
         double bestCost = Double.POSITIVE_INFINITY;
+        
+        // Hysteresis threshold: new solution must be this much better to switch
+        final double HYSTERESIS_THRESHOLD = 0.05; // 5% improvement required
 
         for (double hood = minAngleRad; hood <= maxAngleRad; hood += Math.toRadians(0.25)) {
 
@@ -88,16 +91,21 @@ public final class ShotSolver {
 
             double cost = 0.0;
             
-            // Prefer lower, flatter trajectories (less affected by air resistance, faster)
-            cost += r.time * 1; // penalize long flight time (MAY NEED TUNING)
+            // Prioritize minimizing drastic changes from current state
+            // This keeps the shooter stable and reduces mechanical stress
+            double angleDelta = Math.abs(hood - currentAngleRad);
+            double velocityDelta = Math.abs(r.velocity - currentVelocity);
             
-            // Only penalize deviation from current state if we have a valid current state
-            if (currentVelocity > 1.0) { // if shooter is already spinning
-                cost += Math.abs(hood - currentAngleRad) * 2.0;
-                cost += Math.abs(r.velocity - currentVelocity) * 0.5;
-            }
+            // Heavy penalty for large changes
+            cost += angleDelta * 5.0;      // Penalize hood angle changes
+            cost += velocityDelta * 2.0;   // Penalize velocity changes
+            
+            // Small penalty for flight time (prefer faster shots when all else equal)
+            cost += r.time * 0.1;
 
-            if (cost < bestCost) {
+            // Apply hysteresis: require new solution to be significantly better
+            double costThreshold = bestCost * (1.0 - HYSTERESIS_THRESHOLD);
+            if (cost < costThreshold) {
                 bestCost = cost;
                 best = new ShotResult(yaw, hood, r.velocity, r.time);
             }

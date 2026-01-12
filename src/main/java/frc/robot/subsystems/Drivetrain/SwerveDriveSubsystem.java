@@ -7,7 +7,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.LocalADStarAK;
 import frc.robot.subsystems.Drivetrain.SwerveDriveConstants.DriveConstants;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -15,7 +14,6 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -25,7 +23,6 @@ import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import frc.robot.Constants;
 
 import java.util.Optional;
@@ -40,13 +37,9 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
-
-import frc.lib.ShotSolver;
-import frc.lib.ShotSolver.ShotResult;
 
 public class SwerveDriveSubsystem extends SubsystemBase {
     public AutoBuilder autoBuilder;
@@ -178,45 +171,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
             gyroRotation = gyroRotation.plus(new Rotation2d(delta.dtheta));
         }
         poseEstimator.update(gyroRotation, this.getModulePositions());
-
-        // AUTOSHOOT SIMULATION TESTING
-        // Use autoshoot solver
-
-        Pose2d robotPose = this.getPose();
-        ChassisSpeeds robotVelocity = this.getChassisSpeeds();
-        Pose2d targetPose = new Pose2d(4.638, 4.075, new Rotation2d()); // Example target pose (BLUE HUB)
-        double shooterHeight = 0.75; // meters
-        double targetHeight = 2.64; // meters
-        double currentHood = Units.degreesToRadians(30.0); // current hood angle
-        double currentVelocity = 0.0; // current shooter velocity in m/s
-
-        ShotSolver.ShotResult shotResult = ShotSolver.solve(
-                robotPose,
-                robotVelocity,
-                targetPose,
-                shooterHeight,
-                targetHeight,
-                Math.toRadians(15), // min hood
-                Math.toRadians(65), // max hood
-                currentHood,
-                currentVelocity,
-                20.0 // max shooter velocity
-        );
-        Pose2d aimPose = robotPose;
-        if (shotResult != null && shotResult.isValid()) {
-            double aimX = robotPose.getX() + Math.cos(shotResult.yawRad) * 1.0; // 1 meter in front of robot
-            double aimY = robotPose.getY() + Math.sin(shotResult.yawRad) * 1.0;
-            aimPose = new Pose2d(aimX, aimY, new Rotation2d(shotResult.yawRad));
-        }
-
-        Logger.recordOutput("Shooter/AimPose", aimPose);
-        Logger.recordOutput("Shooter/Hood Angle", shotResult != null ? Radians.of(shotResult.hoodRad) : Radians.of(0));
-        Logger.recordOutput("Shooter/Velocity", shotResult != null ? shotResult.velocity : 0);
-        Logger.recordOutput("Shooter/ShotResultValid", shotResult != null && shotResult.isValid());
-        Logger.recordOutput("Shooter/LandingPose",
-                ShotSolver.getLandingPose(
-                        new Pose3d(robotPose.getX(), robotPose.getY(), shooterHeight, new Rotation3d()), shooterHeight,
-                        shotResult));
     }
 
     /**
@@ -297,7 +251,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
      * @return ChassisSpeeds speeds
      */
     @AutoLogOutput(key = "SwerveChassisSpeeds/Measured")
-    private ChassisSpeeds getChassisSpeeds() {
+    public ChassisSpeeds getChassisSpeeds() {
         return kinematics.toChassisSpeeds(getModuleStates());
     }
 
