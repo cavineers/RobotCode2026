@@ -1,272 +1,195 @@
 package frc.robot.commands;
 
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.lib.ProjectilePhysics;
-import frc.lib.ShotSolver;
-import frc.lib.ShotSolver.ShotResult;
+import frc.lib.ShotSolverSimplified;
+import frc.robot.Constants.OIConstants;
+import frc.robot.subsystems.Drivetrain.SwerveDriveConstants;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
-import frc.robot.subsystems.Shooter.ShooterConstants;
 import frc.robot.subsystems.Shooter.ShooterSubsystem;
 import org.littletonrobotics.junction.Logger;
 
+import java.util.function.Supplier;
+
 /**
- * Command that continuously calculates shot parameters using the ShotSolver.
- * This command runs in the background to provide real-time shot calculations
- * for visualization and debugging purposes.
+ * Simplified command that calculates angle to target and RPM from distance lookup.
+ * Controls robot rotation to aim at target while allowing driver control of translation.
  */
 public class ContinuousShotCalculationCommand extends Command {
     private final SwerveDriveSubsystem drivetrain;
     private final ShooterSubsystem shooter;
+    private final Pose3d targetPose;
+    private final Supplier<Double> xSpdFunction;
+    private final Supplier<Double> ySpdFunction;
     
-    // Target configuration
-    private final Pose2d targetPose;
-    private final double shooterHeight;
-    private final double targetHeight;
-    private final double minHoodAngle;
-    private final double maxHoodAngle;
-    private final double initialHood;
-    private final double maxShooterVelocity;
-    
-    // State tracking for smooth transitions
-    private double lastCommandedHood;
-    private double lastCommandedVelocity;
-    private double lastYaw;
-    
-    // Smoothing constants (0.0 = no smoothing, 1.0 = instant change)
-    private static final double kHoodSmoothing = 0.15;     // Slow hood transitions
-    private static final double kVelocitySmoothing = 0.3;  // Moderate velocity transitions
-    private static final double kYawSmoothing = 0.4;       // Faster yaw transitions
-    
-    // Enable/disable physics simulation (can be disabled for performance)
-    private static final boolean kEnableProjectilePhysics = true;
+    // Tunable parameters
+    private boolean useVelocityCompensation = true;
+    private static final double kAimingSpeedMultiplier = 0.5; // Reduce speed to 50% while aiming for better control
+    private static final double kRotationP = 3.0; // Proportional gain for rotation
 
     /**
-     * Creates a new ContinuousShotCalculationCommand with default target (BLUE HUB).
-     * 
-     * @param drivetrain The swerve drive subsystem for robot pose and velocity
-     * @param shooter The shooter subsystem for current flywheel velocity
+     * Creates command with default BLUE HUB target.
+     * Target height is 72 inches (1.8288 meters) above ground.
      */
-    public ContinuousShotCalculationCommand(SwerveDriveSubsystem drivetrain, ShooterSubsystem shooter) {
-        this(
-            drivetrain,
-            shooter,
-            new Pose2d(4.638, 4.075, new Rotation2d()), // BLUE HUB target
-            0.56,  // shooter height (meters)
-            1.83,  // target height (meters)
-            Math.toRadians(15), // min hood angle
-            Math.toRadians(75), // max hood angle
-            Units.degreesToRadians(30.0), // current hood angle
-            20.0   // max shooter velocity (m/s)
-        );
+    public ContinuousShotCalculationCommand(
+            SwerveDriveSubsystem drivetrain, 
+            ShooterSubsystem shooter,
+            Supplier<Double> xSpdFunction,
+            Supplier<Double> ySpdFunction) {
+        this(drivetrain, shooter, new Pose3d(4.638, 4.075, 1.8288, new Rotation3d()), xSpdFunction, ySpdFunction);
     }
 
     /**
-     * Creates a new ContinuousShotCalculationCommand with custom parameters.
-     * 
-     * @param drivetrain The swerve drive subsystem
-     * @param shooter The shooter subsystem for current flywheel velocity
-     * @param targetPose The target pose to shoot at
-     * @param shooterHeight Height of shooter above ground (meters)
-     * @param targetHeight Height of target above ground (meters)
-     * @param minHoodAngle Minimum hood angle (radians)
-     * @param maxHoodAngle Maximum hood angle (radians)
-     * @param currentHood Current hood angle (radians)
-     * @param maxShooterVelocity Maximum shooter velocity (m/s)
+     * Creates command with custom target.
      */
     public ContinuousShotCalculationCommand(
-            SwerveDriveSubsystem drivetrain,
-            ShooterSubsystem shooter,
-            Pose2d targetPose,
-            double shooterHeight,
-            double targetHeight,
-            double minHoodAngle,
-            double maxHoodAngle,
-            double currentHood,
-            double maxShooterVelocity) {
+            SwerveDriveSubsystem drivetrain, 
+            ShooterSubsystem shooter, 
+            Pose3d targetPose,
+            Supplier<Double> xSpdFunction,
+            Supplier<Double> ySpdFunction) {
         this.drivetrain = drivetrain;
         this.shooter = shooter;
         this.targetPose = targetPose;
-        this.shooterHeight = shooterHeight;
-        this.targetHeight = targetHeight;
-        this.minHoodAngle = minHoodAngle;
-        this.maxHoodAngle = maxHoodAngle;
-        this.initialHood = currentHood;
-        this.maxShooterVelocity = maxShooterVelocity;
+        this.xSpdFunction = xSpdFunction;
+        this.ySpdFunction = ySpdFunction;
         
-        // Initialize state tracking
-        this.lastCommandedHood = currentHood;
-        this.lastCommandedVelocity = 0.0;
+        // Initialize SmartDashboard values
+        SmartDashboard.putBoolean("Shooter/UseVelocityCompensation", useVelocityCompensation);
         
-        // Only require shooter - drivetrain is read-only
-        addRequirements(shooter);
+        addRequirements(drivetrain, shooter);
     }
 
     @Override
     public void initialize() {
-        Logger.recordOutput("Shooter/ShotCalculationCommandRunning", true);
-        System.out.println("ContinuousShotCalculationCommand started");
-        
-        // Reset state tracking
-        lastCommandedHood = initialHood;
-        lastCommandedVelocity = 0.0;
-        lastYaw = 0.0;
+        Logger.recordOutput("Shooter/CommandRunning", true);
     }
 
     @Override
     public void execute() {
+        // Read tunable values from dashboard
+        useVelocityCompensation = SmartDashboard.getBoolean("Shooter/UseVelocityCompensation", useVelocityCompensation);
+        
+        // Get driver translation inputs
+        double xSpeed = -xSpdFunction.get();
+        double ySpeed = -ySpdFunction.get();
+        
+        // Apply deadband
+        xSpeed = Math.abs(xSpeed) > OIConstants.kDeadband ? xSpeed : 0.0;
+        ySpeed = Math.abs(ySpeed) > OIConstants.kDeadband ? ySpeed : 0.0;
+        
+        // Scale to max speed with aiming speed multiplier (NO rate limiting for constant velocity)
+        double maxSpeed = SwerveDriveConstants.DriveConstants.kTeleDriveMaxSpeedMetersPerSecond * kAimingSpeedMultiplier;
+        xSpeed = xSpeed * maxSpeed;
+        ySpeed = ySpeed * maxSpeed;
+        
         // Get current robot state
         Pose2d robotPose = drivetrain.getPose();
         ChassisSpeeds robotVelocity = drivetrain.getChassisSpeeds();
         
-        // Get current shooter velocity from the shooter subsystem
-        // Convert from RPM to m/s using the flywheel's tangential velocity
-        // Formula: v (m/s) = (RPM * 2π * radius) / 60
-        double currentShooterVelocityRPM = shooter.getVelocityRPM();
-        double currentVelocity = rpmToMetersPerSecond(currentShooterVelocityRPM);
-
-        // Calculate shot solution using last commanded state
-        ShotResult shotResult = ShotSolver.solve(
-            robotPose,
-            robotVelocity,
-            targetPose,
-            shooterHeight,
-            targetHeight,
-            minHoodAngle,
-            maxHoodAngle,
-            lastCommandedHood,
-            currentVelocity,
-            maxShooterVelocity
-        );
-
-        // Apply exponential smoothing to prevent oscillation between similar states
-        double smoothedYaw = lastYaw;
-        double smoothedHood = lastCommandedHood;
-        double smoothedVelocity = lastCommandedVelocity;
+        // Convert 3D target to 2D for horizontal distance/angle calculations
+        Pose2d targetPose2d = targetPose.toPose2d();
         
-        if (shotResult != null && shotResult.isValid()) {
-            // Exponential smoothing: new = alpha * target + (1 - alpha) * old
-            smoothedYaw = kYawSmoothing * shotResult.yawRad + (1.0 - kYawSmoothing) * lastYaw;
-            smoothedHood = kHoodSmoothing * shotResult.hoodRad + (1.0 - kHoodSmoothing) * lastCommandedHood;
-            smoothedVelocity = kVelocitySmoothing * shotResult.velocity + (1.0 - kVelocitySmoothing) * lastCommandedVelocity;
+        // Calculate distance and initial RPM (for flight time calculation)
+        double distance = ShotSolverSimplified.getDistanceToTarget(robotPose, targetPose2d);
+        double calculatedRPM = ShotSolverSimplified.getRPMForDistance(distance);
+        
+        // Calculate flight time based on distance and projectile velocity
+        // Convert RPM to linear velocity: v = (RPM * 2π * radius) / 60
+        double projectileVelocity = (calculatedRPM * 2.0 * Math.PI * 0.05) / 60.0; // Using 0.05m as placeholder radius
+        double flightTime = projectileVelocity > 0 ? distance / projectileVelocity : 0.5;
+        
+        // If using velocity compensation, recalculate for lead target
+        Pose2d effectiveTargetPose2d = targetPose2d;
+        if (useVelocityCompensation) {
+            effectiveTargetPose2d = ShotSolverSimplified.getLeadTargetPose(
+                robotVelocity, targetPose2d, flightTime);
             
-            // Update state tracking
-            lastYaw = smoothedYaw;
-            lastCommandedHood = smoothedHood;
-            lastCommandedVelocity = smoothedVelocity;
+            // Recalculate distance and RPM for the lead target
+            distance = ShotSolverSimplified.getDistanceToTarget(robotPose, effectiveTargetPose2d);
+            calculatedRPM = ShotSolverSimplified.getRPMForDistance(distance);
         }
+        
+        // Calculate angle to target
+        Rotation2d angleToTarget = ShotSolverSimplified.getAngleToTarget(robotPose, effectiveTargetPose2d);
 
-        // Calculate aim pose (1 meter in front of robot in aim direction)
-        Pose2d aimPose = robotPose;
-        if (shotResult != null && shotResult.isValid()) {
-            double aimX = robotPose.getX() + Math.cos(smoothedYaw) * 1.0;
-            double aimY = robotPose.getY() + Math.sin(smoothedYaw) * 1.0;
-            aimPose = new Pose2d(aimX, aimY, new Rotation2d(smoothedYaw));
-        }
-
-        // Command the shooter to the calculated velocity
-        if (shotResult != null && shotResult.isValid()) {
-            double targetRPM = metersPerSecondToRpm(smoothedVelocity);
-            shooter.setVelocity(targetRPM);
-        } else {
-            // No valid solution, stop the shooter
-            shooter.stop();
-            lastCommandedVelocity = 0.0;
-        }
-
-        // Log all shot calculation results
+        // Calculate rotation speed to aim at target (simple P controller)
+        double currentYaw = robotPose.getRotation().getRadians();
+        double targetYaw = angleToTarget.getRadians();
+        double yawError = targetYaw - currentYaw;
+        
+        // Normalize angle error to [-π, π]
+        while (yawError > Math.PI) yawError -= 2 * Math.PI;
+        while (yawError < -Math.PI) yawError += 2 * Math.PI;
+        
+        double rotationSpeed = kRotationP * yawError;
+        
+        // Clamp rotation speed to max
+        double maxRotationSpeed = SwerveDriveConstants.DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond;
+        rotationSpeed = Math.max(-maxRotationSpeed, Math.min(maxRotationSpeed, rotationSpeed));
+        
+        // Check if robot is flipped
+        boolean flipped = drivetrain.shouldFlipPose();
+        
+        // Convert to field relative chassis speeds and drive
+        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
+            xSpeed, 
+            ySpeed, 
+            rotationSpeed,
+            flipped ? robotPose.getRotation().plus(Rotation2d.fromRadians(Math.PI)) : robotPose.getRotation()
+        );
+        drivetrain.driveVelocity(speeds);
+        
+        // Command shooter with calculated RPM
+        shooter.setVelocity(calculatedRPM);
+        
+        // Calculate aim pose for visualization (1 meter in front of robot)
+        double aimX = robotPose.getX() + Math.cos(angleToTarget.getRadians()) * 1.0;
+        double aimY = robotPose.getY() + Math.sin(angleToTarget.getRadians()) * 1.0;
+        Pose2d aimPose = new Pose2d(aimX, aimY, angleToTarget);
+        
+        // Create 3D pose for visualization
+        Pose3d effectiveTarget = new Pose3d(
+            effectiveTargetPose2d.getX(), 
+            effectiveTargetPose2d.getY(), 
+            targetPose.getZ(), 
+            targetPose.getRotation()
+        );
+        
+        // Log results
+        Logger.recordOutput("Shooter/TargetPose", targetPose);
+        Logger.recordOutput("Shooter/EffectiveTargetPose", effectiveTarget);
         Logger.recordOutput("Shooter/AimPose", aimPose);
-        Logger.recordOutput("Shooter/HoodAngleDeg", shotResult != null ? Units.radiansToDegrees(smoothedHood) : 0.0);
-        Logger.recordOutput("Shooter/CalculatedVelocityMPS", shotResult != null ? shotResult.velocity : 0);
-        Logger.recordOutput("Shooter/CalculatedVelocityRPM", shotResult != null ? metersPerSecondToRpm(shotResult.velocity) : 0);
-        Logger.recordOutput("Shooter/CurrentVelocityMPS", currentVelocity);
-        Logger.recordOutput("Shooter/CurrentVelocityRPM", currentShooterVelocityRPM);
-        Logger.recordOutput("Shooter/ShotResultValid", shotResult != null && shotResult.isValid());
-        Logger.recordOutput("Shooter/LandingPose",
-            ShotSolver.getLandingPose(
-                new Pose3d(robotPose.getX(), robotPose.getY(), shooterHeight, new Rotation3d()),
-                shooterHeight,
-                shotResult
-            )
-        );
+        Logger.recordOutput("Shooter/AngleToTarget", angleToTarget.getDegrees());
+        Logger.recordOutput("Shooter/CurrentYaw", Math.toDegrees(currentYaw));
+        Logger.recordOutput("Shooter/YawError", Math.toDegrees(yawError));
+        Logger.recordOutput("Shooter/Distance", distance);
+        Logger.recordOutput("Shooter/CalculatedRPM", calculatedRPM);
+        Logger.recordOutput("Shooter/CurrentRPM", shooter.getVelocityRPM());
+        Logger.recordOutput("Shooter/FlightTime", flightTime);
+        Logger.recordOutput("Shooter/UseVelocityCompensation", useVelocityCompensation);
         
-        // Simulate and log accurate trajectory with air resistance (if enabled)
-        if (kEnableProjectilePhysics && shotResult != null && shotResult.isValid()) {
-            Pose3d shooterPose3d = new Pose3d(robotPose.getX(), robotPose.getY(), shooterHeight, new Rotation3d());
-            
-            // Create initial projectile state with robot velocity
-            ProjectilePhysics.ProjectileState initialState = ProjectilePhysics.createInitialStateWithRobotVelocity(
-                shooterPose3d,
-                robotVelocity.vxMetersPerSecond,
-                robotVelocity.vyMetersPerSecond,
-                smoothedYaw,
-                smoothedHood,
-                smoothedVelocity
-            );
-            
-            // Simulate full trajectory (0.02s time steps, 5s max time, 0m ground level)
-            ProjectilePhysics.ProjectileState[] trajectory = ProjectilePhysics.simulateTrajectory(
-                initialState,
-                0.1,   // 100ms time steps (reduced from 20ms for better performance)
-                5.0,   // 5 second max simulation
-                0.0    // ground level
-            );
-            
-            // Convert to Pose3d array for visualization
-            Pose3d[] trajectoryPoses = new Pose3d[trajectory.length];
-            for (int i = 0; i < trajectory.length; i++) {
-                trajectoryPoses[i] = trajectory[i].toPose3d();
-            }
-            
-            Logger.recordOutput("Shooter/SimulatedTrajectory", trajectoryPoses);
-            
-            // Log final landing position
-            if (trajectory.length > 0) {
-                ProjectilePhysics.ProjectileState landing = trajectory[trajectory.length - 1];
-                Logger.recordOutput("Shooter/SimulatedLandingPose", landing.toPose3d());
-                Logger.recordOutput("Shooter/FlightTime", landing.time);
-            }
-        }
+        // Write back to SmartDashboard
+        SmartDashboard.putBoolean("Shooter/UseVelocityCompensation", useVelocityCompensation);
+        SmartDashboard.putNumber("Shooter/FlightTime", flightTime);
+        SmartDashboard.putNumber("Shooter/CalculatedRPM", calculatedRPM);
     }
 
     @Override
     public boolean isFinished() {
-        return false; // Runs continuously
+        return false;
     }
 
     @Override
     public void end(boolean interrupted) {
-        Logger.recordOutput("Shooter/ShotCalculationCommandRunning", false);
-        System.out.println("ContinuousShotCalculationCommand ended. Interrupted: " + interrupted);
+        Logger.recordOutput("Shooter/CommandRunning", false);
         shooter.stop();
-    }
-
-    /**
-     * Converts flywheel RPM to projectile exit velocity in m/s.
-     * Assumes the projectile exits at the tangential velocity of the flywheel.
-     * 
-     * @param rpm Flywheel velocity in RPM
-     * @return Exit velocity in m/s
-     */
-    private double rpmToMetersPerSecond(double rpm) {
-        // v = (RPM * 2π * radius) / 60
-        return (rpm * 2.0 * Math.PI * ShooterConstants.kFlywheelRadiusMeters) / 60.0;
-    }
-
-    /**
-     * Converts projectile exit velocity in m/s to flywheel RPM.
-     * Inverse of rpmToMetersPerSecond.
-     * 
-     * @param metersPerSecond Exit velocity in m/s
-     * @return Flywheel velocity in RPM
-     */
-    private double metersPerSecondToRpm(double metersPerSecond) {
-        // RPM = (v * 60) / (2π * radius)
-        return (metersPerSecond * 60.0) / (2.0 * Math.PI * ShooterConstants.kFlywheelRadiusMeters);
+        drivetrain.driveVelocity(new ChassisSpeeds(0, 0, 0)); // Stop the robot
     }
 }
