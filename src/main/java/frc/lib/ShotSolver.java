@@ -2,12 +2,28 @@ package frc.lib;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public final class ShotSolver {
 
     private static final double G = 9.81;
+
+    // Empirical distance-to-RPM lookup table (populated with characterization data)
+    private static final InterpolatingDoubleTreeMap distanceToRPM = new InterpolatingDoubleTreeMap();
+
+    static {
+        // TODO: Populate with real characterization data
+        // Format: distanceToRPM.put(distanceMeters, motorRPM);
+        // Example placeholder values:
+        distanceToRPM.put(1.0, 1500.0);  // 1m -> 1500 RPM
+        distanceToRPM.put(2.0, 2000.0);  // 2m -> 2000 RPM
+        distanceToRPM.put(3.0, 2500.0);  // 3m -> 2500 RPM
+        distanceToRPM.put(4.0, 3000.0);  // 4m -> 3000 RPM
+        distanceToRPM.put(5.0, 3500.0);  // 5m -> 3500 RPM
+    }
 
     public static class ShotResult {
         public final double yawRad;
@@ -93,7 +109,7 @@ public final class ShotSolver {
     /**
      * @brief Compute the best feasible shot accounting for robot velocity.
      *
-     * <p>This overload adjusts for robot movement during time-of-flight by iteratively
+     * This overload adjusts for robot movement during time-of-flight by iteratively
      * solving for the lead position where the robot will be when the projectile arrives.
      *
      * @param robotPose       Current robot pose on field (meters)
@@ -241,7 +257,7 @@ public final class ShotSolver {
     /**
      * @brief Calculate the landing position of a shot (assuming no robot velocity).
      *
-     * <p>Computes where the projectile will land based on the shot parameters.
+     * Computes where the projectile will land based on the shot parameters.
      * Useful for visualization in AdvantageScope.
      *
      * @param robotPose     Current robot pose (meters)
@@ -271,5 +287,56 @@ public final class ShotSolver {
                 landingY,
                 landingZ,
                 new Rotation3d(0, 0, shot.yawRad)); // facing direction of shot
+    }
+
+    /**
+     * @brief Simple interpolation-based solver using empirical distance-to-RPM data.
+     *
+     * Uses a lookup table populated from characterization shots. Hood angle is
+     * assumed constant. This is a failsafe when the ballistic solver fails or for
+     * quick tuning during practice.
+     *
+     * @param robotPose  Current robot pose (meters)
+     * @param targetPose Target pose (meters)
+     * @param hoodRad    Fixed hood angle (rad)
+     *
+     * @return Motor RPM required for the shot, or 0 if distance is out of range
+     */
+    public static double solveInterpolated(Pose2d robotPose, Pose2d targetPose, double hoodRad) {
+        double dx = targetPose.getX() - robotPose.getX();
+        double dy = targetPose.getY() - robotPose.getY();
+        double distance = Math.hypot(dx, dy);
+
+        // Interpolate RPM from the lookup table
+        return distanceToRPM.get(distance);
+    }
+
+    /**
+     * @brief Calculate the angle the robot needs to face to aim at the target.
+     *
+     * Returns the field-relative angle (yaw) from robot to target center.
+     * Use this to align the robot before shooting.
+     *
+     * @param robotPose  Current robot pose (meters)
+     * @param targetPose Target pose (meters)
+     *
+     * @return Field-relative angle to target in radians
+     */
+    public static double getAngleToTarget(Pose2d robotPose, Pose2d targetPose) {
+        double dx = targetPose.getX() - robotPose.getX();
+        double dy = targetPose.getY() - robotPose.getY();
+        return Math.atan2(dy, dx);
+    }
+
+    /**
+     * @brief Calculate the angle the robot needs to face to aim at the target (Rotation2d).
+     *
+     * @param robotPose  Current robot pose (meters)
+     * @param targetPose Target pose (meters)
+     *
+     * @return Field-relative Rotation2d to target
+     */
+    public static Rotation2d getRotationToTarget(Pose2d robotPose, Pose2d targetPose) {
+        return new Rotation2d(getAngleToTarget(robotPose, targetPose));
     }
 }
