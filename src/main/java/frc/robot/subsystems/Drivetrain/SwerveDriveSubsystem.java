@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.LocalADStarAK;
 import frc.robot.subsystems.Drivetrain.SwerveDriveConstants.DriveConstants;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -181,24 +182,26 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         // AUTOSHOOT SIMULATION TESTING
         // Use autoshoot solver
 
-        Pose2d robotPose = this.getPose(); 
+        Pose2d robotPose = this.getPose();
+        ChassisSpeeds robotVelocity = this.getChassisSpeeds();
         Pose2d targetPose = new Pose2d(4.638, 4.075, new Rotation2d()); // Example target pose (BLUE HUB)
         double shooterHeight = 0.75; // meters
         double targetHeight = 2.64; // meters
         double currentHood = Units.degreesToRadians(30.0); // current hood angle
-        double currentVelocity = 15.0; // current shooter velocity in m/s
+        double currentVelocity = 0.0; // current shooter velocity in m/s
 
-    ShotSolver.ShotResult shotResult = ShotSolver.solve(
-        robotPose,
-        targetPose,
-        shooterHeight,
-        targetHeight,
-        Math.toRadians(15), // min hood
-        Math.toRadians(65), // max hood
-        currentHood,
-        currentVelocity,
-        20.0 // max shooter velocity
-    );
+        ShotSolver.ShotResult shotResult = ShotSolver.solve(
+                robotPose,
+                robotVelocity,
+                targetPose,
+                shooterHeight,
+                targetHeight,
+                Math.toRadians(15), // min hood
+                Math.toRadians(65), // max hood
+                currentHood,
+                currentVelocity,
+                20.0 // max shooter velocity
+        );
         Pose2d aimPose = robotPose;
         if (shotResult != null && shotResult.isValid()) {
             double aimX = robotPose.getX() + Math.cos(shotResult.yawRad) * 1.0; // 1 meter in front of robot
@@ -207,6 +210,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         }
 
         Logger.recordOutput("Shooter/AimPose", aimPose);
+        Logger.recordOutput("Shooter/Hood Angle", shotResult != null ? Radians.of(shotResult.hoodRad) : Radians.of(0));
+        Logger.recordOutput("Shooter/Velocity", shotResult != null ? shotResult.velocity : 0);
+        Logger.recordOutput("Shooter/ShotResultValid", shotResult != null && shotResult.isValid());
+        Logger.recordOutput("Shooter/LandingPose",
+                ShotSolver.getLandingPose(
+                        new Pose3d(robotPose.getX(), robotPose.getY(), shooterHeight, new Rotation3d()), shooterHeight,
+                        shotResult));
     }
 
     /**
