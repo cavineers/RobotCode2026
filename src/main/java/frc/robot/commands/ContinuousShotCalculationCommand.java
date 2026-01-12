@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.lib.ProjectilePhysics;
 import frc.lib.ShotSolver;
 import frc.lib.ShotSolver.ShotResult;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
@@ -38,9 +39,12 @@ public class ContinuousShotCalculationCommand extends Command {
     private double lastYaw;
     
     // Smoothing constants (0.0 = no smoothing, 1.0 = instant change)
-    private static final double HOOD_SMOOTHING = 0.15;     // Slow hood transitions
-    private static final double VELOCITY_SMOOTHING = 0.3;  // Moderate velocity transitions
-    private static final double YAW_SMOOTHING = 0.4;       // Faster yaw transitions
+    private static final double kHoodSmoothing = 0.15;     // Slow hood transitions
+    private static final double kVelocitySmoothing = 0.3;  // Moderate velocity transitions
+    private static final double kYawSmoothing = 0.4;       // Faster yaw transitions
+    
+    // Enable/disable physics simulation (can be disabled for performance)
+    private static final boolean kEnableProjectilePhysics = true;
 
     /**
      * Creates a new ContinuousShotCalculationCommand with default target (BLUE HUB).
@@ -53,10 +57,10 @@ public class ContinuousShotCalculationCommand extends Command {
             drivetrain,
             shooter,
             new Pose2d(4.638, 4.075, new Rotation2d()), // BLUE HUB target
-            0.75,  // shooter height (meters)
-            2.64,  // target height (meters)
+            0.56,  // shooter height (meters)
+            1.83,  // target height (meters)
             Math.toRadians(15), // min hood angle
-            Math.toRadians(65), // max hood angle
+            Math.toRadians(75), // max hood angle
             Units.degreesToRadians(30.0), // current hood angle
             20.0   // max shooter velocity (m/s)
         );
@@ -147,9 +151,9 @@ public class ContinuousShotCalculationCommand extends Command {
         
         if (shotResult != null && shotResult.isValid()) {
             // Exponential smoothing: new = alpha * target + (1 - alpha) * old
-            smoothedYaw = YAW_SMOOTHING * shotResult.yawRad + (1.0 - YAW_SMOOTHING) * lastYaw;
-            smoothedHood = HOOD_SMOOTHING * shotResult.hoodRad + (1.0 - HOOD_SMOOTHING) * lastCommandedHood;
-            smoothedVelocity = VELOCITY_SMOOTHING * shotResult.velocity + (1.0 - VELOCITY_SMOOTHING) * lastCommandedVelocity;
+            smoothedYaw = kYawSmoothing * shotResult.yawRad + (1.0 - kYawSmoothing) * lastYaw;
+            smoothedHood = kHoodSmoothing * shotResult.hoodRad + (1.0 - kHoodSmoothing) * lastCommandedHood;
+            smoothedVelocity = kVelocitySmoothing * shotResult.velocity + (1.0 - kVelocitySmoothing) * lastCommandedVelocity;
             
             // Update state tracking
             lastYaw = smoothedYaw;
@@ -177,7 +181,7 @@ public class ContinuousShotCalculationCommand extends Command {
 
         // Log all shot calculation results
         Logger.recordOutput("Shooter/AimPose", aimPose);
-        Logger.recordOutput("Shooter/HoodAngleDeg", shotResult != null ? Units.radiansToDegrees(shotResult.hoodRad) : 0.0);
+        Logger.recordOutput("Shooter/HoodAngleDeg", shotResult != null ? Units.radiansToDegrees(smoothedHood) : 0.0);
         Logger.recordOutput("Shooter/CalculatedVelocityMPS", shotResult != null ? shotResult.velocity : 0);
         Logger.recordOutput("Shooter/CalculatedVelocityRPM", shotResult != null ? metersPerSecondToRpm(shotResult.velocity) : 0);
         Logger.recordOutput("Shooter/CurrentVelocityMPS", currentVelocity);
@@ -190,6 +194,44 @@ public class ContinuousShotCalculationCommand extends Command {
                 shotResult
             )
         );
+        
+        // Simulate and log accurate trajectory with air resistance (if enabled)
+        if (kEnableProjectilePhysics && shotResult != null && shotResult.isValid()) {
+            Pose3d shooterPose3d = new Pose3d(robotPose.getX(), robotPose.getY(), shooterHeight, new Rotation3d());
+            
+            // Create initial projectile state with robot velocity
+            ProjectilePhysics.ProjectileState initialState = ProjectilePhysics.createInitialStateWithRobotVelocity(
+                shooterPose3d,
+                robotVelocity.vxMetersPerSecond,
+                robotVelocity.vyMetersPerSecond,
+                smoothedYaw,
+                smoothedHood,
+                smoothedVelocity
+            );
+            
+            // Simulate full trajectory (0.02s time steps, 5s max time, 0m ground level)
+            ProjectilePhysics.ProjectileState[] trajectory = ProjectilePhysics.simulateTrajectory(
+                initialState,
+                0.1,   // 100ms time steps (reduced from 20ms for better performance)
+                5.0,   // 5 second max simulation
+                0.0    // ground level
+            );
+            
+            // Convert to Pose3d array for visualization
+            Pose3d[] trajectoryPoses = new Pose3d[trajectory.length];
+            for (int i = 0; i < trajectory.length; i++) {
+                trajectoryPoses[i] = trajectory[i].toPose3d();
+            }
+            
+            Logger.recordOutput("Shooter/SimulatedTrajectory", trajectoryPoses);
+            
+            // Log final landing position
+            if (trajectory.length > 0) {
+                ProjectilePhysics.ProjectileState landing = trajectory[trajectory.length - 1];
+                Logger.recordOutput("Shooter/SimulatedLandingPose", landing.toPose3d());
+                Logger.recordOutput("Shooter/FlightTime", landing.time);
+            }
+        }
     }
 
     @Override

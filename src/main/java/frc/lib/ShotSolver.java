@@ -79,7 +79,7 @@ public final class ShotSolver {
         double bestCost = Double.POSITIVE_INFINITY;
         
         // Hysteresis threshold: new solution must be this much better to switch
-        final double HYSTERESIS_THRESHOLD = 0.05; // 5% improvement required
+        final double HYSTERESIS_THRESHOLD = 0.00; // 5% improvement required
 
         for (double hood = minAngleRad; hood <= maxAngleRad; hood += Math.toRadians(0.25)) {
 
@@ -99,6 +99,22 @@ public final class ShotSolver {
             // Heavy penalty for large changes
             cost += angleDelta * 5.0;      // Penalize hood angle changes
             cost += velocityDelta * 2.0;   // Penalize velocity changes
+            
+            // Prefer higher, more lofted trajectories (like basketball shots)
+            // Penalize low angles - reward high angles
+            double minLoftAngle = Math.toRadians(35); // Prefer angles above 35 degrees
+            if (hood < minLoftAngle) {
+                cost += (minLoftAngle - hood) * 10.0; // Heavy penalty for flat shots
+            }
+            
+            // Calculate and reward higher vertex (peak height)
+            // Vertex height = initial_z + (v_z^2) / (2*g)
+            double vz = r.velocity * Math.sin(hood);
+            double peakHeight = shooterHeight + (vz * vz) / (2.0 * G);
+            double desiredMinPeak = targetHeight + 1.0; // Want peak at least 1m above target
+            if (peakHeight < desiredMinPeak) {
+                cost += (desiredMinPeak - peakHeight) * 3.0; // Penalty for low vertex
+            }
             
             // Small penalty for flight time (prefer faster shots when all else equal)
             cost += r.time * 0.1;
@@ -242,7 +258,7 @@ public final class ShotSolver {
      */
     public static Pose3d getAimingPose(Pose3d robotPose, ShotSolver.ShotResult shot) {
 
-        double aimLength = 5.0; // how far to visualize (meters)
+        double aimLength = 0.0; // how far to visualize (meters)
 
         double dx = Math.cos(shot.hoodRad) * Math.cos(shot.yawRad);
         double dy = Math.cos(shot.hoodRad) * Math.sin(shot.yawRad);
