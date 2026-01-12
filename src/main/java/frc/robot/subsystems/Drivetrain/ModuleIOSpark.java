@@ -138,9 +138,9 @@ public class ModuleIOSpark implements ModuleIO {
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
                 .positionWrappingEnabled(true)
                 .positionWrappingInputRange(kTurnPIDMinInput, kTurnPIDMaxInput)
-                .pidf(
+                .pid(
                         kTurnKp, 0.0,
-                        kTurnKd, 0.0);
+                        kTurnKd);
         turnConfig.signals
                 .primaryEncoderPositionAlwaysOn(true)
                 .primaryEncoderVelocityAlwaysOn(true)
