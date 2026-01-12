@@ -14,6 +14,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -23,6 +24,7 @@ import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import frc.robot.Constants;
 
 import java.util.Optional;
@@ -42,14 +44,17 @@ import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
+import frc.lib.ShotSolver;
+import frc.lib.ShotSolver.ShotResult;
+
 public class SwerveDriveSubsystem extends SubsystemBase {
     public AutoBuilder autoBuilder;
 
     private SysIdRoutine sysId;
 
     // April Tag layout
-    public static AprilTagFieldLayout aprilTagLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark);
-
+    public static AprilTagFieldLayout aprilTagLayout = AprilTagFieldLayout
+            .loadField(AprilTagFields.k2025ReefscapeAndyMark);
 
     // Gyro Interface
     private final GyroIO gyroIO;
@@ -93,10 +98,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
 
         // Configure the System Identification routine
-        this.sysId = new SysIdRoutine(new SysIdRoutine.Config( null, null, null,
+        this.sysId = new SysIdRoutine(new SysIdRoutine.Config(null, null, null,
                 (state) -> Logger.recordOutput("Drivetrain/SysIdState", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
+                new SysIdRoutine.Mechanism(
+                        (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
 
         // Configure the AutoBuilder last
         AutoBuilder.configure(
@@ -108,7 +113,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 new PPHolonomicDriveController( // HolonomicPathFollowerConfig, this should likely live in your
                                                 // Constants class
                         new PIDConstants(DriveConstants.PathPlannerDriveP, 0.0, 0.0), // Translation PID constants
-                        new PIDConstants(DriveConstants.PathPlannerTurnP, 0.0, 0.0) // Rotation PID constants idk why the default is 5
+                        new PIDConstants(DriveConstants.PathPlannerTurnP, 0.0, 0.0) // Rotation PID constants idk why
+                                                                                    // the default is 5
                 ),
                 DriveConstants.robotConfig, // ROBOT CONFIGURATION
                 this::shouldFlipPose, // Method to determine if the path should be flipped
@@ -117,15 +123,14 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
         Pathfinding.setPathfinder(new LocalADStarAK());
         PathPlannerLogging.setLogActivePathCallback(
-            (activePath) -> {
-            Logger.recordOutput(
-                "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
-            });
-            PathPlannerLogging.setLogTargetPoseCallback(
-            (targetPose) -> {
-            Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
-            }
-        );
+                (activePath) -> {
+                    Logger.recordOutput(
+                            "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
+                });
+        PathPlannerLogging.setLogTargetPoseCallback(
+                (targetPose) -> {
+                    Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
+                });
 
     }
 
@@ -136,7 +141,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         Logger.processInputs("Drivetrain/Gyro", gyroInputs);
         gyroDisconnectedAlert.set(!gyroInputs.connected); // Update gyro alert
         Logger.recordOutput("Odometry/FlipPose", shouldFlipPose());
-
 
         // Run the periodics for each module
         for (Module module : modules) {
@@ -167,15 +171,43 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         // Update the current gyro rotation
         if (gyroInputs.connected) {
             gyroRotation = gyroInputs.yawPosition;
-        } 
-        else {
+        } else {
             // Use the delta from kinematics and mods
             Twist2d delta = kinematics.toTwist2d(moduleDeltas);
             gyroRotation = gyroRotation.plus(new Rotation2d(delta.dtheta));
         }
         poseEstimator.update(gyroRotation, this.getModulePositions());
-    }
 
+        // AUTOSHOOT SIMULATION TESTING
+        // Use autoshoot solver
+
+        Pose2d robotPose = this.getPose(); 
+        Pose2d targetPose = new Pose2d(4.638, 4.075, new Rotation2d()); // Example target pose (BLUE HUB)
+        double shooterHeight = 0.75; // meters
+        double targetHeight = 2.64; // meters
+        double currentHood = Units.degreesToRadians(30.0); // current hood angle
+        double currentVelocity = 15.0; // current shooter velocity in m/s
+
+    ShotSolver.ShotResult shotResult = ShotSolver.solve(
+        robotPose,
+        targetPose,
+        shooterHeight,
+        targetHeight,
+        Math.toRadians(15), // min hood
+        Math.toRadians(65), // max hood
+        currentHood,
+        currentVelocity,
+        20.0 // max shooter velocity
+    );
+        Pose2d aimPose = robotPose;
+        if (shotResult != null && shotResult.isValid()) {
+            double aimX = robotPose.getX() + Math.cos(shotResult.yawRad) * 1.0; // 1 meter in front of robot
+            double aimY = robotPose.getY() + Math.sin(shotResult.yawRad) * 1.0;
+            aimPose = new Pose2d(aimX, aimY, new Rotation2d(shotResult.yawRad));
+        }
+
+        Logger.recordOutput("Shooter/AimPose", aimPose);
+    }
 
     /**
      * Runs the drivetrain given a velocity
@@ -214,6 +246,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     /**
      * Supplier to determine if the path should be flipped
+     * 
      * @return flipped if Red
      */
     public Boolean shouldFlipPose() {
@@ -303,23 +336,24 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         return poseEstimator.getEstimatedPosition();
     }
 
-    /** 
+    /**
      * Accepts a vision measurement and updates the pose estimator.
-    */
+     */
     public void addVisionMeasurement(Pose2d poseMeters, double timestamp, Matrix<N3, N1> visionMeasurementStdDevs) {
         if (Constants.currentMode != Constants.Mode.REAL)
             return; // for some reason sim camera is being funky
-        
+
         Pose2d pose;
-        pose = new Pose2d(poseMeters.getX(), poseMeters.getY(), 
-            DriverStation.isEnabled() ? poseMeters.getRotation() : poseMeters.getRotation());
+        pose = new Pose2d(poseMeters.getX(), poseMeters.getY(),
+                DriverStation.isEnabled() ? poseMeters.getRotation() : poseMeters.getRotation());
         poseEstimator.addVisionMeasurement(
-            pose, timestamp, visionMeasurementStdDevs);
+                pose, timestamp, visionMeasurementStdDevs);
     }
 
-    public void zeroHeading(){
+    public void zeroHeading() {
         System.out.println("RESETTING HEADING");
-        this.poseEstimator.resetPosition(gyroRotation, previousModulePositions, new Pose2d(this.getPose().getX(), this.getPose().getY(), this.shouldFlipPose() ? new Rotation2d(Math.PI) : new Rotation2d()));
+        this.poseEstimator.resetPosition(gyroRotation, previousModulePositions, new Pose2d(this.getPose().getX(),
+                this.getPose().getY(), this.shouldFlipPose() ? new Rotation2d(Math.PI) : new Rotation2d()));
     }
 
     /**
@@ -352,5 +386,4 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         return run(() -> runCharacterization(0.0)).withTimeout(1.0).andThen(sysId.dynamic(direction));
     }
 
-    
 }
