@@ -10,8 +10,8 @@ import com.pathplanner.lib.config.RobotConfig;
 
 public class SwerveDriveConstants {
     public static final class ModuleConstants {
-        public static final double kDriveMotorGearRatio = 1 / 6.12; // calculated by wheel
-        public static final double kTurningMotorGearRatio = 1 / (12.8); // input to output
+        public static final double kDriveMotorGearRatio = 1 / 6.75; // calculated by wheel
+        public static final double kTurningMotorGearRatio = 1 / (150 / 7.0); // input to output
         public static final double kTurningDegreesToRad = Math.PI / 180;
         public static final double kDriveEncoderRot2Rad = kDriveMotorGearRatio * Math.PI * 2;
         public static final double kTurningEncoderRot2Rad = kTurningMotorGearRatio * 2 * Math.PI;
@@ -27,27 +27,27 @@ public class SwerveDriveConstants {
         public static final double kPhysicalMaxAngularSpeedRadiansPerSecond = Units.degreesToRadians(720);
         public static final double kWheelRadiusMeters = Units.inchesToMeters(1.942);
 
-        public static final int kFrontLeftTurningCanID = 3;
-        public static final int kFrontRightTurningCanID = 1;
-        public static final int kBackRightTurningCanID = 7;
-        public static final int kBackLeftTurningCanID = 5;
+        public static final int kFrontLeftTurningCanID = 8;
+        public static final int kFrontRightTurningCanID = 2;
+        public static final int kBackRightTurningCanID = 4;
+        public static final int kBackLeftTurningCanID = 6;
         
-        public static final int kFrontLeftDriveCanID = 4;
-        public static final int kFrontRightDriveCanID = 2;
-        public static final int kBackRightDriveCanID = 8;
-        public static final int kBackLeftDriveCanID = 6;
+        public static final int kFrontLeftDriveCanID = 7;
+        public static final int kFrontRightDriveCanID = 1;
+        public static final int kBackRightDriveCanID = 3;
+        public static final int kBackLeftDriveCanID = 5;
 
         public static final int kFrontLeftAbsoluteEncoderPort = 10;
-        public static final int kFrontRightAbsoluteEncoderPort = 9;
+        public static final int kFrontRightAbsoluteEncoderPort = 11;
         public static final int kBackRightAbsoluteEncoderPort = 12;
-        public static final int kBackLeftAbsoluteEncoderPort = 11;
+        public static final int kBackLeftAbsoluteEncoderPort = 9;
 
         public static final int kPigeonID = 13;
 
-        public static final boolean kFrontLeftTurningEncoderReversed = false;
-        public static final boolean kBackLeftTurningEncoderReversed = false;
-        public static final boolean kFrontRightTurningEncoderReversed = false;
-        public static final boolean kBackRightTurningEncoderReversed = false;
+        public static final boolean kFrontLeftTurningEncoderReversed = true;
+        public static final boolean kBackLeftTurningEncoderReversed = true;
+        public static final boolean kFrontRightTurningEncoderReversed = true;
+        public static final boolean kBackRightTurningEncoderReversed = true;
 
         public static final boolean kFrontLeftDriveEncoderReversed = false;
         public static final boolean kBackLeftDriveEncoderReversed = false;
@@ -66,9 +66,9 @@ public class SwerveDriveConstants {
         public static final double kBackRightAbsoluteEncoderOffset = 0;
 
         // Distance between right and left wheels
-        public static final double kTrackWidth = Units.inchesToMeters(23.62);
+        public static final double kTrackWidth = Units.inchesToMeters(24);
         // Distance between front and back wheels
-        public static final double kWheelBase = Units.inchesToMeters(22.36);
+        public static final double kWheelBase = Units.inchesToMeters(25);
         public static final double kDriveBaseRadius = Math.hypot(kTrackWidth / 2.0, kWheelBase / 2.0);
         public static final double kSideLength = Units.inchesToMeters(17.5); // 2.5 inches bumper: Represents full width
                                                                              // of the robot
@@ -98,16 +98,11 @@ public class SwerveDriveConstants {
         public static final double kDriveSimKv = 0.13394;
 
         // Turn motor configuration
-        public static final boolean kTurnInverted = false;
         public static final int kTurnMotorCurrentLimit = 40;
         public static final DCMotor kTurnGearbox = DCMotor.getNEO(1);
 
-        // Turn ABSOLUTE encoder configuration
-        public static final boolean kTurnEncoderInverted = true;
-        // Check the conversion factors
-
         // Turn PID configuration
-        public static final double kTurnKp = 1.25;
+        public static final double kTurnKp = 0.5;
         public static final double kTurnKd = 0.0;
         public static final double kTurnSimP = 9.0;
         public static final double kTurnSimD = 0.0;

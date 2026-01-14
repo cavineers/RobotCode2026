@@ -129,9 +129,11 @@ public class ModuleIOSpark implements ModuleIO {
                 .idleMode(IdleMode.kBrake)
                 .smartCurrentLimit(kTurnMotorCurrentLimit)
                 .voltageCompensation(12.0);
+        
         turnConfig.encoder
                 .positionConversionFactor(kTurningEncoderRot2Rad)
                 .velocityConversionFactor(kTurningEncoderRPM2RadPerSec)
+                .inverted(true) // check this
                 .uvwMeasurementPeriod(10)
                 .uvwAverageDepth(2);
         turnConfig.closedLoop
@@ -148,6 +150,7 @@ public class ModuleIOSpark implements ModuleIO {
                 .appliedOutputPeriodMs(20)
                 .busVoltagePeriodMs(20)
                 .outputCurrentPeriodMs(20);
+                
         tryUntilOk(
                 turnSpark,
                 5,
