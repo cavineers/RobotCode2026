@@ -102,21 +102,21 @@ public class RobotContainer {
 
     private void configureButtonBindings() {
         // Set the drivetrain default command (replaced by shooter command which controls both)
-        // drivetrain.setDefaultCommand(new SwerveCommand(
-        //         drivetrain,
-        //         primaryDriverController::getLeftY,
-        //         primaryDriverController::getLeftX,
-        //         primaryDriverController::getRightX)
-        //     );
+        drivetrain.setDefaultCommand(new SwerveCommand(
+                drivetrain,
+                primaryDriverController::getLeftY,
+                primaryDriverController::getLeftX,
+                primaryDriverController::getRightX)
+            );
         
         // Set the shooter default command to continuously calculate shots and aim
         // This command controls rotation (auto-aim) while driver controls translation (left stick)
-        shooter.setDefaultCommand(new ContinuousShotCalculationCommand(
-            drivetrain, 
-            shooter,
-            primaryDriverController::getLeftY,
-            primaryDriverController::getLeftX
-        ));
+        // shooter.setDefaultCommand(new ContinuousShotCalculationCommand(
+        //     drivetrain, 
+        //     shooter,
+        //     primaryDriverController::getLeftY,
+        //     primaryDriverController::getLeftX
+        // ));
     }
 
     public void configureNamedCommands() {
