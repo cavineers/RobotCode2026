@@ -128,12 +128,12 @@ public class ModuleIOSpark implements ModuleIO {
         turnConfig
                 .idleMode(IdleMode.kBrake)
                 .smartCurrentLimit(kTurnMotorCurrentLimit)
-                .voltageCompensation(12.0);
+                .voltageCompensation(12.0)
+                .inverted(true);
         
         turnConfig.encoder
                 .positionConversionFactor(kTurningEncoderRot2Rad)
                 .velocityConversionFactor(kTurningEncoderRPM2RadPerSec)
-                .inverted(true) // check this
                 .uvwMeasurementPeriod(10)
                 .uvwAverageDepth(2);
         turnConfig.closedLoop

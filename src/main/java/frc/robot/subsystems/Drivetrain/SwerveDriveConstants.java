@@ -10,7 +10,7 @@ import com.pathplanner.lib.config.RobotConfig;
 
 public class SwerveDriveConstants {
     public static final class ModuleConstants {
-        public static final double kDriveMotorGearRatio = 1 / 6.75; // calculated by wheel
+        public static final double kDriveMotorGearRatio = 1 / 6.75; // taken from vendor TODO: confirm
         public static final double kTurningMotorGearRatio = 1 / (150 / 7.0); // input to output
         public static final double kTurningDegreesToRad = Math.PI / 180;
         public static final double kDriveEncoderRot2Rad = kDriveMotorGearRatio * Math.PI * 2;
@@ -37,9 +37,9 @@ public class SwerveDriveConstants {
         public static final int kBackRightDriveCanID = 3;
         public static final int kBackLeftDriveCanID = 5;
 
-        public static final int kFrontLeftAbsoluteEncoderPort = 10;
+        public static final int kFrontLeftAbsoluteEncoderPort = 12;
         public static final int kFrontRightAbsoluteEncoderPort = 11;
-        public static final int kBackRightAbsoluteEncoderPort = 12;
+        public static final int kBackRightAbsoluteEncoderPort = 10;
         public static final int kBackLeftAbsoluteEncoderPort = 9;
 
         public static final int kPigeonID = 13;
