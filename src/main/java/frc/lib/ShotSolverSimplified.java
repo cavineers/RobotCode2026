@@ -66,6 +66,8 @@ public final class ShotSolverSimplified {
             double estimatedFlightTime) {
 
         // Calculate lead target position
+        // The projectile inherits the robot's velocity, so we need to aim at where
+        // the target will be relative to where we'll be after flight time
         double leadX = targetPose.getX() - robotVelocity.vxMetersPerSecond * estimatedFlightTime;
         double leadY = targetPose.getY() - robotVelocity.vyMetersPerSecond * estimatedFlightTime;
 
@@ -122,6 +124,7 @@ public final class ShotSolverSimplified {
             Pose2d targetPose,
             double estimatedFlightTime) {
 
+    
         double leadX = targetPose.getX() - robotVelocity.vxMetersPerSecond * estimatedFlightTime;
         double leadY = targetPose.getY() - robotVelocity.vyMetersPerSecond * estimatedFlightTime;
 

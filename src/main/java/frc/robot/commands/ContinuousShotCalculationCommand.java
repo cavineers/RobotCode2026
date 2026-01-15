@@ -30,7 +30,7 @@ public class ContinuousShotCalculationCommand extends Command {
     // Tunable parameters
     private boolean useVelocityCompensation = true;
     private static final double kAimingSpeedMultiplier = 0.5; // Reduce speed to 50% while aiming for better control
-    private static final double kRotationP = 3.0; // Proportional gain for rotation
+    private static final double kRotationP = 5.0; // Proportional gain for rotation
 
     /**
      * Creates command with default BLUE HUB target.
@@ -99,10 +99,14 @@ public class ContinuousShotCalculationCommand extends Command {
         double distance = ShotSolverSimplified.getDistanceToTarget(robotPose, targetPose2d);
         ShotSolverSimplified.ShotParameters shotParams = ShotSolverSimplified.getShotParameters(distance);
         
-        // Calculate flight time based on distance and projectile velocity
+        // Calculate flight time based on horizontal projectile velocity
         // Convert RPM to linear velocity: v = (RPM * 2π * radius) / 60
-        double projectileVelocity = (shotParams.rpm * 2.0 * Math.PI * 0.05) / 60.0; // Using 0.05m as placeholder radius
-        double flightTime = projectileVelocity > 0 ? distance / projectileVelocity : 0.5;
+        // TODO: Replace 0.05m with actual flywheel radius from characterization
+        double projectileVelocity = (shotParams.rpm * 2.0 * Math.PI * 0.05) / 60.0;
+        
+        // Account for launch angle - only horizontal component contributes to horizontal distance
+        double horizontalVelocity = projectileVelocity * Math.cos(Math.toRadians(shotParams.pitchDegrees));
+        double flightTime = horizontalVelocity > 0 ? distance / horizontalVelocity : 0.5;
         
         // If using velocity compensation, recalculate for lead target
         Pose2d effectiveTargetPose2d = targetPose2d;
@@ -113,6 +117,10 @@ public class ContinuousShotCalculationCommand extends Command {
             // Recalculate distance and shot parameters for the lead target
             distance = ShotSolverSimplified.getDistanceToTarget(robotPose, effectiveTargetPose2d);
             shotParams = ShotSolverSimplified.getShotParameters(distance);
+            
+            // Recalculate flight time for the new distance (iterative improvement)
+            horizontalVelocity = projectileVelocity * Math.cos(Math.toRadians(shotParams.pitchDegrees));
+            flightTime = horizontalVelocity > 0 ? distance / horizontalVelocity : 0.5;
         }
         
         // Calculate angle to target
@@ -173,6 +181,7 @@ public class ContinuousShotCalculationCommand extends Command {
         Logger.recordOutput("Shooter/CalculatedPitch", shotParams.pitchDegrees);
         Logger.recordOutput("Shooter/CurrentRPM", shooter.getVelocityRPM());
         Logger.recordOutput("Shooter/FlightTime", flightTime);
+        Logger.recordOutput("Shooter/HorizontalVelocity", horizontalVelocity);
         Logger.recordOutput("Shooter/UseVelocityCompensation", useVelocityCompensation);
         
         // Write back to SmartDashboard
