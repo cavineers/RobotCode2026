@@ -89,37 +89,31 @@ public class ContinuousShotCalculationCommand extends Command {
         ySpeed = ySpeed * maxSpeed;
         
         // Get current robot state
-        Pose2d robotPose = drivetrain.getPose();
+        Pose2d robotPose2d = drivetrain.getPose();
         ChassisSpeeds robotVelocity = drivetrain.getChassisSpeeds();
         
-        // Convert 3D target to 2D for horizontal distance/angle calculations
-        Pose2d targetPose2d = targetPose.toPose2d();
+        // Create 3D robot pose (assume shooter is at robot height, adjust if needed)
+        // TODO: Update robotPose Z to actual shooter height relative to ground
+        Pose3d robotPose = new Pose3d(robotPose2d.getX(), robotPose2d.getY(), 0.0, 
+                                       new Rotation3d(0, 0, robotPose2d.getRotation().getRadians()));
         
-        // Calculate distance and get shot parameters (RPM and pitch)
-        double distance = ShotSolverSimplified.getDistanceToTarget(robotPose, targetPose2d);
-        ShotSolverSimplified.ShotParameters shotParams = ShotSolverSimplified.getShotParameters(distance);
+        // Calculate complete shot solution using physics-based approach
+        ShotSolverSimplified.ShotSolution solution = ShotSolverSimplified.calculateShotSolution(
+            robotPose, 
+            robotVelocity, 
+            targetPose, 
+            useVelocityCompensation
+        );
         
-        // Calculate flight time based on distance and projectile velocity
-        // Convert RPM to linear velocity: v = (RPM * 2π * radius) / 60
-        double projectileVelocity = (shotParams.rpm * 2.0 * Math.PI * 0.05) / 60.0; // Using 0.05m as placeholder radius
-        double flightTime = projectileVelocity > 0 ? distance / projectileVelocity : 0.5;
-        
-        // If using velocity compensation, recalculate for lead target
-        Pose2d effectiveTargetPose2d = targetPose2d;
-        if (useVelocityCompensation) {
-            effectiveTargetPose2d = ShotSolverSimplified.getLeadTargetPose(
-                robotVelocity, targetPose2d, flightTime);
-            
-            // Recalculate distance and shot parameters for the lead target
-            distance = ShotSolverSimplified.getDistanceToTarget(robotPose, effectiveTargetPose2d);
-            shotParams = ShotSolverSimplified.getShotParameters(distance);
-        }
-        
-        // Calculate angle to target
-        Rotation2d angleToTarget = ShotSolverSimplified.getAngleToTarget(robotPose, effectiveTargetPose2d);
+        // Extract results from solution
+        ShotSolverSimplified.ShotParameters shotParams = solution.shotParams;
+        Pose2d effectiveTargetPose2d = solution.effectiveTarget;
+        double flightTime = solution.flightTime;
+        Rotation2d angleToTarget = solution.yawAngle;
+        boolean validSolution = solution.validSolution;
 
         // Calculate rotation speed to aim at target (simple P controller)
-        double currentYaw = robotPose.getRotation().getRadians();
+        double currentYaw = robotPose2d.getRotation().getRadians();
         double targetYaw = angleToTarget.getRadians();
         double yawError = targetYaw - currentYaw;
         
@@ -141,7 +135,7 @@ public class ContinuousShotCalculationCommand extends Command {
             xSpeed, 
             ySpeed, 
             rotationSpeed,
-            flipped ? robotPose.getRotation().plus(Rotation2d.fromRadians(Math.PI)) : robotPose.getRotation()
+            flipped ? robotPose2d.getRotation().plus(Rotation2d.fromRadians(Math.PI)) : robotPose2d.getRotation()
         );
         drivetrain.driveVelocity(speeds);
         
@@ -149,8 +143,8 @@ public class ContinuousShotCalculationCommand extends Command {
         shooter.setVelocity(shotParams.rpm);
         
         // Calculate aim pose for visualization (1 meter in front of robot)
-        double aimX = robotPose.getX() + Math.cos(angleToTarget.getRadians()) * 1.0;
-        double aimY = robotPose.getY() + Math.sin(angleToTarget.getRadians()) * 1.0;
+        double aimX = robotPose2d.getX() + Math.cos(angleToTarget.getRadians()) * 1.0;
+        double aimY = robotPose2d.getY() + Math.sin(angleToTarget.getRadians()) * 1.0;
         Pose2d aimPose = new Pose2d(aimX, aimY, angleToTarget);
         
         // Create 3D pose for visualization
@@ -160,6 +154,9 @@ public class ContinuousShotCalculationCommand extends Command {
             targetPose.getZ(), 
             targetPose.getRotation()
         );
+        
+        // Calculate distance for logging
+        double distance = ShotSolverSimplified.getDistanceToTarget(robotPose2d, effectiveTargetPose2d);
         
         // Log results
         Logger.recordOutput("Shooter/TargetPose", targetPose);
@@ -174,9 +171,11 @@ public class ContinuousShotCalculationCommand extends Command {
         Logger.recordOutput("Shooter/CurrentRPM", shooter.getVelocityRPM());
         Logger.recordOutput("Shooter/FlightTime", flightTime);
         Logger.recordOutput("Shooter/UseVelocityCompensation", useVelocityCompensation);
+        Logger.recordOutput("Shooter/ValidSolution", validSolution);
         
         // Write back to SmartDashboard
         SmartDashboard.putBoolean("Shooter/UseVelocityCompensation", useVelocityCompensation);
+        SmartDashboard.putBoolean("Shooter/ValidSolution", validSolution);
         SmartDashboard.putNumber("Shooter/FlightTime", flightTime);
         SmartDashboard.putNumber("Shooter/CalculatedRPM", shotParams.rpm);
         SmartDashboard.putNumber("Shooter/CalculatedPitch", shotParams.pitchDegrees);
