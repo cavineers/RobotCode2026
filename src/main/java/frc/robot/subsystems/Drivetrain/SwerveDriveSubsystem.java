@@ -246,13 +246,30 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Get the current chassis speeds of the robot
+     * Gets current robot-relative chassis speeds from module states.
      * 
-     * @return ChassisSpeeds speeds
+     * @return ChassisSpeeds speeds (robot-relative)
      */
     @AutoLogOutput(key = "SwerveChassisSpeeds/Measured")
     public ChassisSpeeds getChassisSpeeds() {
         return kinematics.toChassisSpeeds(getModuleStates());
+    }
+
+    /**
+     * Gets current field-relative chassis speeds.
+     * Use this for velocity compensation in shooting calculations.
+     * 
+     * @return ChassisSpeeds speeds (field-relative)
+     */
+    @AutoLogOutput(key = "SwerveChassisSpeeds/FieldRelative")
+    public ChassisSpeeds getFieldRelativeChassisSpeeds() {
+        ChassisSpeeds robotRelative = getChassisSpeeds();
+        return ChassisSpeeds.fromRobotRelativeSpeeds(
+            robotRelative.vxMetersPerSecond,
+            robotRelative.vyMetersPerSecond,
+            robotRelative.omegaRadiansPerSecond,
+            getPose().getRotation()
+        );
     }
 
     /**

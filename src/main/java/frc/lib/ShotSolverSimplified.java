@@ -65,13 +65,13 @@ public final class ShotSolverSimplified {
             Pose2d targetPose,
             double estimatedFlightTime) {
 
-        // Calculate lead target position
-        // The projectile inherits the robot's velocity, so we need to aim at where
-        // the target will be relative to where we'll be after flight time
+        // Calculate virtual target position
+        // The projectile inherits the robot's velocity, so we need to aim behind
+        // where the target appears to be (in the robot's reference frame)
         double leadX = targetPose.getX() - robotVelocity.vxMetersPerSecond * estimatedFlightTime;
         double leadY = targetPose.getY() - robotVelocity.vyMetersPerSecond * estimatedFlightTime;
 
-        // Calculate angle to lead target
+        // Calculate angle to virtual target
         double dx = leadX - robotPose.getX();
         double dy = leadY - robotPose.getY();
         return new Rotation2d(Math.atan2(dy, dx));
@@ -117,14 +117,15 @@ public final class ShotSolverSimplified {
      * @param targetPose          Original target position
      * @param estimatedFlightTime Estimated time for projectile to reach target
      *                            (seconds)
-     * @return Lead target position
+     * @return Virtual target position (aim point)
      */
     public static Pose2d getLeadTargetPose(
             ChassisSpeeds robotVelocity,
             Pose2d targetPose,
             double estimatedFlightTime) {
 
-    
+        // The projectile inherits the robot's velocity, so we need to aim behind
+        // where the target appears to be (in the robot's reference frame)
         double leadX = targetPose.getX() - robotVelocity.vxMetersPerSecond * estimatedFlightTime;
         double leadY = targetPose.getY() - robotVelocity.vyMetersPerSecond * estimatedFlightTime;
 

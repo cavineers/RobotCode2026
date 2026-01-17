@@ -21,6 +21,15 @@ import java.util.function.Supplier;
  * Controls robot rotation to aim at target while allowing driver control of translation.
  */
 public class ContinuousShotCalculationCommand extends Command {
+    
+    /**
+     * Shooting solution modes.
+     */
+    public enum ShootingMode {
+        SIMPLE_LOOKUP,              // Mode 0: Lookup table, no velocity compensation
+        LOOKUP_WITH_VELOCITY        // Mode 1: Lookup table with simple velocity compensation
+    }
+    
     private final SwerveDriveSubsystem drivetrain;
     private final ShooterSubsystem shooter;
     private final Pose3d targetPose;
@@ -28,9 +37,9 @@ public class ContinuousShotCalculationCommand extends Command {
     private final Supplier<Double> ySpdFunction;
     
     // Tunable parameters
-    private boolean useVelocityCompensation = true;
+    private ShootingMode shootingMode = ShootingMode.LOOKUP_WITH_VELOCITY;
     private static final double kAimingSpeedMultiplier = 0.5; // Reduce speed to 50% while aiming for better control
-    private static final double kRotationP = 5.0; // Proportional gain for rotation
+    private static final double kRotationP = 3.0; // Proportional gain for rotation
 
     /**
      * Creates command with default BLUE HUB target.
@@ -60,7 +69,8 @@ public class ContinuousShotCalculationCommand extends Command {
         this.ySpdFunction = ySpdFunction;
         
         // Initialize SmartDashboard values
-        SmartDashboard.putBoolean("Shooter/UseVelocityCompensation", useVelocityCompensation);
+        SmartDashboard.putNumber("Shooter/ShootingMode", shootingMode.ordinal());
+        SmartDashboard.putString("Shooter/ShootingModeName", shootingMode.name());
         
         addRequirements(drivetrain, shooter);
     }
@@ -72,8 +82,11 @@ public class ContinuousShotCalculationCommand extends Command {
 
     @Override
     public void execute() {
-        // Read tunable values from dashboard
-        useVelocityCompensation = SmartDashboard.getBoolean("Shooter/UseVelocityCompensation", useVelocityCompensation);
+        // Read shooting mode from dashboard (0=Simple, 1=Lookup+Velocity)
+        int modeIndex = (int) SmartDashboard.getNumber("Shooter/ShootingMode", shootingMode.ordinal());
+        if (modeIndex >= 0 && modeIndex < ShootingMode.values().length) {
+            shootingMode = ShootingMode.values()[modeIndex];
+        }
         
         // Get driver translation inputs
         double xSpeed = -xSpdFunction.get();
@@ -90,41 +103,66 @@ public class ContinuousShotCalculationCommand extends Command {
         
         // Get current robot state
         Pose2d robotPose = drivetrain.getPose();
-        ChassisSpeeds robotVelocity = drivetrain.getChassisSpeeds();
+        ChassisSpeeds robotVelocity = drivetrain.getFieldRelativeChassisSpeeds(); // MUST be field-relative!
         
         // Convert 3D target to 2D for horizontal distance/angle calculations
         Pose2d targetPose2d = targetPose.toPose2d();
         
-        // Calculate distance and get shot parameters (RPM and pitch)
-        double distance = ShotSolverSimplified.getDistanceToTarget(robotPose, targetPose2d);
-        ShotSolverSimplified.ShotParameters shotParams = ShotSolverSimplified.getShotParameters(distance);
+        // Calculate shooting solution based on selected mode
+        double distance;
+        double calculatedRPM;
+        double calculatedPitch;
+        double flightTime;
+        double horizontalVelocity;
+        Pose2d effectiveTargetPose2d;
+        Rotation2d angleToTarget;
         
-        // Calculate flight time based on horizontal projectile velocity
-        // Convert RPM to linear velocity: v = (RPM * 2π * radius) / 60
-        // TODO: Replace 0.05m with actual flywheel radius from characterization
-        double projectileVelocity = (shotParams.rpm * 2.0 * Math.PI * 0.05) / 60.0;
-        
-        // Account for launch angle - only horizontal component contributes to horizontal distance
-        double horizontalVelocity = projectileVelocity * Math.cos(Math.toRadians(shotParams.pitchDegrees));
-        double flightTime = horizontalVelocity > 0 ? distance / horizontalVelocity : 0.5;
-        
-        // If using velocity compensation, recalculate for lead target
-        Pose2d effectiveTargetPose2d = targetPose2d;
-        if (useVelocityCompensation) {
-            effectiveTargetPose2d = ShotSolverSimplified.getLeadTargetPose(
-                robotVelocity, targetPose2d, flightTime);
-            
-            // Recalculate distance and shot parameters for the lead target
-            distance = ShotSolverSimplified.getDistanceToTarget(robotPose, effectiveTargetPose2d);
-            shotParams = ShotSolverSimplified.getShotParameters(distance);
-            
-            // Recalculate flight time for the new distance (iterative improvement)
-            horizontalVelocity = projectileVelocity * Math.cos(Math.toRadians(shotParams.pitchDegrees));
-            flightTime = horizontalVelocity > 0 ? distance / horizontalVelocity : 0.5;
+        switch (shootingMode) {
+            case SIMPLE_LOOKUP:
+                // Mode 0: Simple lookup table, no velocity compensation
+                distance = ShotSolverSimplified.getDistanceToTarget(robotPose, targetPose2d);
+                ShotSolverSimplified.ShotParameters simpleParams = ShotSolverSimplified.getShotParameters(distance);
+                
+                calculatedRPM = simpleParams.rpm;
+                calculatedPitch = simpleParams.pitchDegrees;
+                effectiveTargetPose2d = targetPose2d;
+                angleToTarget = ShotSolverSimplified.getAngleToTarget(robotPose, targetPose2d);
+                
+                // Calculate flight time for logging only (not used for aiming)
+                double simpleVelocity = (simpleParams.rpm * 2.0 * Math.PI * 0.05) / 60.0;
+                horizontalVelocity = simpleVelocity * Math.cos(Math.toRadians(simpleParams.pitchDegrees));
+                flightTime = horizontalVelocity > 0 ? distance / horizontalVelocity : 0.5;
+                break;
+                
+            case LOOKUP_WITH_VELOCITY:
+            default:
+                // Mode 1: Lookup table with simple velocity compensation (original method)
+                distance = ShotSolverSimplified.getDistanceToTarget(robotPose, targetPose2d);
+                ShotSolverSimplified.ShotParameters velocityParams = ShotSolverSimplified.getShotParameters(distance);
+                
+                // Calculate flight time based on horizontal projectile velocity
+                double projectileVelocity = (velocityParams.rpm * 2.0 * Math.PI * 0.05) / 60.0;
+                horizontalVelocity = projectileVelocity * Math.cos(Math.toRadians(velocityParams.pitchDegrees));
+                flightTime = horizontalVelocity > 0 ? distance / horizontalVelocity : 0.5;
+                
+                // Calculate lead target position
+                effectiveTargetPose2d = ShotSolverSimplified.getLeadTargetPose(
+                    robotVelocity, targetPose2d, flightTime);
+                
+                // Recalculate distance and shot parameters for the lead target
+                distance = ShotSolverSimplified.getDistanceToTarget(robotPose, effectiveTargetPose2d);
+                velocityParams = ShotSolverSimplified.getShotParameters(distance);
+                
+                // Recalculate flight time for the new distance (iterative improvement)
+                projectileVelocity = (velocityParams.rpm * 2.0 * Math.PI * 0.05) / 60.0;
+                horizontalVelocity = projectileVelocity * Math.cos(Math.toRadians(velocityParams.pitchDegrees));
+                flightTime = horizontalVelocity > 0 ? distance / horizontalVelocity : 0.5;
+                
+                calculatedRPM = velocityParams.rpm;
+                calculatedPitch = velocityParams.pitchDegrees;
+                angleToTarget = ShotSolverSimplified.getAngleToTarget(robotPose, effectiveTargetPose2d);
+                break;
         }
-        
-        // Calculate angle to target
-        Rotation2d angleToTarget = ShotSolverSimplified.getAngleToTarget(robotPose, effectiveTargetPose2d);
 
         // Calculate rotation speed to aim at target (simple P controller)
         double currentYaw = robotPose.getRotation().getRadians();
@@ -154,7 +192,7 @@ public class ContinuousShotCalculationCommand extends Command {
         drivetrain.driveVelocity(speeds);
         
         // Command shooter with calculated RPM
-        shooter.setVelocity(shotParams.rpm);
+        shooter.setVelocity(calculatedRPM);
         
         // Calculate aim pose for visualization (1 meter in front of robot)
         double aimX = robotPose.getX() + Math.cos(angleToTarget.getRadians()) * 1.0;
@@ -177,18 +215,20 @@ public class ContinuousShotCalculationCommand extends Command {
         Logger.recordOutput("Shooter/CurrentYaw", Math.toDegrees(currentYaw));
         Logger.recordOutput("Shooter/YawError", Math.toDegrees(yawError));
         Logger.recordOutput("Shooter/Distance", distance);
-        Logger.recordOutput("Shooter/CalculatedRPM", shotParams.rpm);
-        Logger.recordOutput("Shooter/CalculatedPitch", shotParams.pitchDegrees);
+        Logger.recordOutput("Shooter/CalculatedRPM", calculatedRPM);
+        Logger.recordOutput("Shooter/CalculatedPitch", calculatedPitch);
         Logger.recordOutput("Shooter/CurrentRPM", shooter.getVelocityRPM());
         Logger.recordOutput("Shooter/FlightTime", flightTime);
         Logger.recordOutput("Shooter/HorizontalVelocity", horizontalVelocity);
-        Logger.recordOutput("Shooter/UseVelocityCompensation", useVelocityCompensation);
+        Logger.recordOutput("Shooter/ShootingMode", shootingMode.ordinal());
+        Logger.recordOutput("Shooter/ShootingModeName", shootingMode.name());
         
         // Write back to SmartDashboard
-        SmartDashboard.putBoolean("Shooter/UseVelocityCompensation", useVelocityCompensation);
+        SmartDashboard.putNumber("Shooter/ShootingMode", shootingMode.ordinal());
+        SmartDashboard.putString("Shooter/ShootingModeName", shootingMode.name());
         SmartDashboard.putNumber("Shooter/FlightTime", flightTime);
-        SmartDashboard.putNumber("Shooter/CalculatedRPM", shotParams.rpm);
-        SmartDashboard.putNumber("Shooter/CalculatedPitch", shotParams.pitchDegrees);
+        SmartDashboard.putNumber("Shooter/CalculatedRPM", calculatedRPM);
+        SmartDashboard.putNumber("Shooter/CalculatedPitch", calculatedPitch);
     }
 
     @Override
