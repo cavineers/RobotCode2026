@@ -39,7 +39,7 @@ public class ContinuousShotCalculationCommand extends Command {
     // Tunable parameters
     private ShootingMode shootingMode = ShootingMode.LOOKUP_WITH_VELOCITY;
     private static final double kAimingSpeedMultiplier = 0.5; // Reduce speed to 50% while aiming for better control
-    private static final double kRotationP = 3.0; // Proportional gain for rotation
+    private static final double kRotationP = 5.0; // Proportional gain for rotation
 
     /**
      * Creates command with default BLUE HUB target.
