@@ -1,9 +1,12 @@
 package frc.robot.subsystems.Turret;
 
-import static frc.robot.subsystems.Turret.TurretConstants.kTurretCanID;
+import static frc.robot.subsystems.Turret.TurretConstants.*;
 import static frc.lib.SparkUtil.*;
 
 import java.util.function.DoubleSupplier;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -11,6 +14,8 @@ import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkFlexConfig;
+
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DigitalInput;
 
 
@@ -19,12 +24,18 @@ public class TurretIOSpark implements TurretIO{
     private final SparkFlex motor = new SparkFlex(kTurretCanID, MotorType.kBrushless);
     private final RelativeEncoder encoder = motor.getEncoder();
 
+    private PIDController controller = new PIDController(kProportionalGainSpark, kIntegralTermSpark, kDerivativeTermSpark);
+
     private final DigitalInput turretLimitSwitch = new DigitalInput(TurretConstants.kTurretLimitSwitchID);
+
+    private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Turret/P", TurretConstants.kProportionalGainSpark);
+    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Turret/D", TurretConstants.kDerivativeTermSpark);
+
+    @AutoLogOutput
+    private double absSetpoint;
 
     private final SparkFlexConfig config;
 
-    
-    
     public TurretIOSpark() {
         config = new SparkFlexConfig();
         config
@@ -54,9 +65,11 @@ public class TurretIOSpark implements TurretIO{
                 new DoubleSupplier[] {motor::getAppliedOutput, motor::getBusVoltage},
                 (values) -> inputs.turretAppliedVoltage = values[0] * values[1]);
         ifOk(motor, motor::getOutputCurrent, (value) -> inputs.turretCurrentAmps = value);
-    }
 
-    
+        if(TurretConstants.kTuningMode){
+            this.updatePID();
+        }
+    }
 
     public boolean getSensor(DigitalInput sensor){
         return turretLimitSwitch.get();
@@ -67,14 +80,39 @@ public class TurretIOSpark implements TurretIO{
         motor.setVoltage(volts);
     }
     @Override
-    public void setTurretPosition(double positionRad) {
-      ;
+    public void updateTurretPosition(double setpoint) {
+      this.absSetpoint = this.clipSetpoint(setpoint);
+      this.controller.setSetpoint(absSetpoint);
     }
-    @Override
-    public void resetTurretPosition() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'resetTurretPosition'");
-    } 
+
+     public double clipSetpoint(double setpoint) {
+        // if(absSetpoint < TurretConstants.kMaxAngle) {
+        //     return TurretConstants.kMaxAngle;
+        // } else if(absSetpoint < TurretConstants.kMinAngle) {
+        //     return TurretConstants.kMinAngle;
+        // }
+        return setpoint;
+    }
+
+    private void updatePID() {
+        double currentP = this.controller.getP();
+        double currentD = this.controller.getD();
+
+        if (currentP != this.tuningP.get() || currentD != this.tuningD.get()){
+            this.controller.setPID(this.tuningP.get(), 0, this.tuningD.get());
+        }
+    }
+
+    
+    public void rotate(){
+        updateTurretPosition(kMinAngle);
+        setTurretVolts(12.0);
+    }
+
+    public void resetTurretPosition(){
+        updateTurretPosition(kMinAngle);
+        setTurretVolts(-12.0);
+    }
 }
 
 

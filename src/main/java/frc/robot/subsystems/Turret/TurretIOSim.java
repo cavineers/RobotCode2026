@@ -20,11 +20,11 @@ public class TurretIOSim implements TurretIO {
             DCMotor.getNEO(1));
 
 
-       private double appliedVolts = 0.0;
-       private static DIOSim turretLimitSwitchPressed  = new DIOSim(0); // Assuming digital input 0 is used for limit switch
+    private double appliedVolts = 0.0;
+    private static DIOSim turretLimitSwitchPressed  = new DIOSim(0); // Assuming digital input 0 is used for limit switch
 
     @AutoLogOutput(key="Turret/Setpoint")
-    private double turretSetPoint = 0.0;
+    private double turretSetpoint = 0.0;
 
     private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("Tuning/Dealgaefier/P", kProportionalTermSim);
     private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("Tuning/Dealgaefier/I", kDerivativeTermSim);
@@ -38,6 +38,10 @@ public class TurretIOSim implements TurretIO {
             turretController.setPID(tuningP.get(), 0.0, tuningD.get());
 
             double absoluteRotations = this.motor.getAngularPositionRotations() * kTurretGearRatio;
+
+            motor.setInputVoltage(turretController.calculate(absoluteRotations));
+
+            motor.update(0.2);
 
 
            turretLimitSwitchPressed.setValue(true);
@@ -63,10 +67,11 @@ public class TurretIOSim implements TurretIO {
         }
 
         @Override
-        public void setTurretPosition(double positionRad){
-            //TODO: Fix
+        public void updateTurretPosition(double positionRad){
+            this.turretSetpoint = positionRad;
+            turretController.setSetpoint(this.turretSetpoint);
         }
-
+            
         @Override
         public void resetTurretPosition(){
             motor.setAngle(0.0);

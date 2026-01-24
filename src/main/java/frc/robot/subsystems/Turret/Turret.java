@@ -1,10 +1,9 @@
 package frc.robot.subsystems.Turret;
 
-import static frc.robot.subsystems.Turret.TurretConstants.kTurretLimitSwitchID;
-
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 
@@ -22,12 +21,32 @@ public class Turret extends SubsystemBase{
         Logger.processInputs("Turret", inputs);
     }
 
+    public Command goToPresetCommand(double rotations) {
+         return Commands.run(() -> {
+            this.io.setClosedLoop(true);
+            io.updateTurretPosition(rotations);
+        }, this);
+       
+    }
 
-    public boolean getTurretLimitSwitch(DigitalInput turretLimitSwitch){
+    public boolean getTurretLimitSwitch(){
         return inputs.turretLimitSwitchPressed;
     }
-    
-    
 
+    public Command setTurretVoltsCommand(double volts){
+        return Commands.run(() -> io.setTurretVolts(volts), this).finallyDo(interrupted -> io.setTurretVolts(0));
+    }
+
+    public Command resetTurretPositionCommand(){
+        return Commands.run(() -> io.resetTurretPosition(), this).finallyDo(interrupted -> io.setTurretVolts(0));
+    }
+
+    public Command rotateCommand(){
+        return Commands.run(() -> io.rotate(), this).finallyDo(interrupted -> io.setTurretVolts(0.0));
+    }
+
+    public void setTurretVolts(double volts){
+        io.setTurretVolts(volts);
+    }
     
 }

@@ -4,8 +4,6 @@ import org.littletonrobotics.junction.AutoLog;
 
 public interface TurretIO {
 
-   
-
     @AutoLog
     public class TurretIOInputs {
         public double turretPositionRad = 0.0;
@@ -16,12 +14,22 @@ public interface TurretIO {
         public boolean turretLimitSwitchPressed = false;  
     }
 
-    public void updateInputs(TurretIOInputs inputs);
+    default void updateInputs(TurretIOInputs inputs){
+    }
 
-    public void setTurretPosition(double positionRad);
+    public default void updateTurretPosition(double positionRad){
+    }
 
-    public void resetTurretPosition();
+    public default void setClosedLoop(boolean isClosed){}
 
-    public void setTurretVolts(double volts);
+
+    public default void resetTurretPosition(){
+    }
+
+    public default void setTurretVolts(double volts){
+    }
+
+    public default void rotate(){
+    }
 
 } 

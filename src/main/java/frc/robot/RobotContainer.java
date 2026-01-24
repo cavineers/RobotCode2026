@@ -16,11 +16,19 @@ import frc.robot.subsystems.Drivetrain.ModuleIO;
 import frc.robot.subsystems.Drivetrain.ModuleIOSim;
 import frc.robot.subsystems.Drivetrain.ModuleIOSpark;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
+import frc.robot.subsystems.Turret.Turret;
+import frc.robot.subsystems.Turret.TurretConstants;
+import frc.robot.subsystems.Turret.TurretIO;
+import frc.robot.subsystems.Turret.TurretIOSim;
+import frc.robot.subsystems.Turret.TurretIOSpark;
+
 
 public class RobotContainer {
 
     // Subsystems
     public final SwerveDriveSubsystem drivetrain;
+
+    public final Turret turret;
 
 
     // Controllers
@@ -64,7 +72,7 @@ public class RobotContainer {
        
         configureButtonBindings();
         configureNamedCommands();
-
+    
         // // // Set up auto routines for SysIds
         autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
         // // Set up SysId routines
@@ -86,8 +94,8 @@ public class RobotContainer {
         // autoChooser.addOption(
         // "Drive SysId (Dynamic Reverse)",
         // drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-    }
-
+    
+    
     private void configureButtonBindings() {
         // Set the drivetrain default command
         drivetrain.setDefaultCommand(new SwerveCommand(
@@ -96,6 +104,13 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
+
+        primaryDriverController.povUp().onTrue(turret.setTurretVoltsCommand(1));
+        primaryDriverController.povUp().onFalse(turret.setTurretVoltsCommand(0));
+        primaryDriverController.povDown().onTrue(turret.setTurretVoltsCommand(-1));
+        primaryDriverController.povDown().onFalse(turret.setTurretVoltsCommand(0));
+
+        primaryDriverController.b().onTrue(turret.goToPresetCommand(TurretConstants.kMinAngle));
     }
 
     public void configureNamedCommands() {
@@ -104,5 +119,5 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return autoChooser.get();
-    }
+}
 }
