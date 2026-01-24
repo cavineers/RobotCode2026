@@ -22,14 +22,12 @@ import frc.robot.subsystems.Turret.TurretIO;
 import frc.robot.subsystems.Turret.TurretIOSim;
 import frc.robot.subsystems.Turret.TurretIOSpark;
 
-
 public class RobotContainer {
 
     // Subsystems
     public final SwerveDriveSubsystem drivetrain;
 
     public final Turret turret;
-
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
@@ -48,6 +46,10 @@ public class RobotContainer {
                         new ModuleIOSpark(1),
                         new ModuleIOSpark(2),
                         new ModuleIOSpark(3));
+
+                turret = new Turret(
+                        new TurretIOSpark());
+
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -57,22 +59,34 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
+
+                turret = new Turret(
+                        new TurretIOSim());
                 break;
             default:
                 // Replay
                 drivetrain = new SwerveDriveSubsystem(
-                        new GyroIO() {},
-                        new ModuleIO() {},
-                        new ModuleIO() {},
-                        new ModuleIO() {},
-                        new ModuleIO() {}
-                    );
+                        new GyroIO() {
+                        },
+                        new ModuleIO() {
+                        },
+                        new ModuleIO() {
+                        },
+                        new ModuleIO() {
+                        },
+                        new ModuleIO() {
+                        });
+                
+                turret = new Turret(
+                    new TurretIO() {
+                });
+                
                 break;
         }
-       
+
         configureButtonBindings();
         configureNamedCommands();
-    
+
         // // // Set up auto routines for SysIds
         autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
         // // Set up SysId routines
@@ -94,16 +108,16 @@ public class RobotContainer {
         // autoChooser.addOption(
         // "Drive SysId (Dynamic Reverse)",
         // drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-    
-    
+
+    }
+
     private void configureButtonBindings() {
         // Set the drivetrain default command
         drivetrain.setDefaultCommand(new SwerveCommand(
                 drivetrain,
                 primaryDriverController::getLeftY,
                 primaryDriverController::getLeftX,
-                primaryDriverController::getRightX)
-            );
+                primaryDriverController::getRightX));
 
         primaryDriverController.povUp().onTrue(turret.setTurretVoltsCommand(1));
         primaryDriverController.povUp().onFalse(turret.setTurretVoltsCommand(0));
@@ -119,5 +133,5 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return autoChooser.get();
-}
+    }
 }
