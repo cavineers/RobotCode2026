@@ -21,6 +21,7 @@ import frc.robot.subsystems.Shooter.ShooterIO;
 import frc.robot.subsystems.Shooter.ShooterIOKraken;
 import frc.robot.subsystems.Shooter.ShooterIOSim;
 import frc.robot.subsystems.Shooter.ShooterSubsystem;
+import frc.robot.commands.SystemIdCommands;
 
 public class RobotContainer {
 
@@ -80,24 +81,24 @@ public class RobotContainer {
         // // // Set up auto routines for SysIds
         autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
         // // Set up SysId routines
-        // autoChooser.addOption(
-        // "Drive Wheel Radius Characterization",
-        // SystemIdCommands.wheelRadiusCharacterization(drivetrain));
-        // autoChooser.addOption(
-        // "Drive Simple FF Characterization",
-        // SystemIdCommands.feedforwardCharacterization(drivetrain));
-        // autoChooser.addOption(
-        // "Drive SysId (Quasistatic Forward)",
-        // drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-        // autoChooser.addOption(
-        // "Drive SysId (Quasistatic Reverse)",
-        // drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-        // autoChooser.addOption(
-        // "Drive SysId (Dynamic Forward)",
-        // drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
-        // autoChooser.addOption(
-        // "Drive SysId (Dynamic Reverse)",
-        // drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+        autoChooser.addOption(
+        "Drive Wheel Radius Characterization",
+        SystemIdCommands.wheelRadiusCharacterization(drivetrain));
+        autoChooser.addOption(
+        "Drive Simple FF Characterization",
+        SystemIdCommands.feedforwardCharacterization(drivetrain));
+        autoChooser.addOption(
+        "Drive SysId (Quasistatic Forward)",
+        drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Drive SysId (Quasistatic Reverse)",
+        drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+        autoChooser.addOption(
+        "Drive SysId (Dynamic Forward)",
+        drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Drive SysId (Dynamic Reverse)",
+        drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
     }
 
     private void configureButtonBindings() {

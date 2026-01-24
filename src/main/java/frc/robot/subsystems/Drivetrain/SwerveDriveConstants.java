@@ -10,7 +10,7 @@ import com.pathplanner.lib.config.RobotConfig;
 
 public class SwerveDriveConstants {
     public static final class ModuleConstants {
-        public static final double kDriveMotorGearRatio = 1 / 6.75; // taken from vendor TODO: confirm
+        public static final double kDriveMotorGearRatio = 1 / 6.853; // taken from vendor TODO: confirm
         public static final double kTurningMotorGearRatio = 1 / (150 / 7.0); // input to output
         public static final double kTurningDegreesToRad = Math.PI / 180;
         public static final double kDriveEncoderRot2Rad = kDriveMotorGearRatio * Math.PI * 2;
@@ -23,9 +23,9 @@ public class SwerveDriveConstants {
 
         public static final double kOdometryFrequency = 100.0;
 
-        public static final double kPhysicalMaxSpeedMetersPerSecond = 3.63; 
+        public static final double kPhysicalMaxSpeedMetersPerSecond = 4.07; 
         public static final double kPhysicalMaxAngularSpeedRadiansPerSecond = Units.degreesToRadians(720);
-        public static final double kWheelRadiusMeters = Units.inchesToMeters(1.942);
+        public static final double kWheelRadiusMeters = Units.inchesToMeters(3.91) / 2.0;
 
         public static final int kFrontLeftTurningCanID = 8;
         public static final int kFrontRightTurningCanID = 2;
@@ -65,7 +65,7 @@ public class SwerveDriveConstants {
         public static final double kFrontRightAbsoluteEncoderOffset = 0;
         public static final double kBackRightAbsoluteEncoderOffset = 0;
 
-        // Distance between right and left wheels
+        // Distance between right and left wheefls
         public static final double kTrackWidth = Units.inchesToMeters(24);
         // Distance between front and back wheels
         public static final double kWheelBase = Units.inchesToMeters(25);
@@ -83,14 +83,14 @@ public class SwerveDriveConstants {
         public static final SwerveDriveKinematics kSwerveKinematics = new SwerveDriveKinematics(moduleTranslations);
 
         // Drive motor configuration
-        public static final int kDriveMotorCurrentLimit = 40;
+        public static final int kDriveMotorCurrentLimit = 30;
         public static final DCMotor kDriveGearbox = DCMotor.getNEO(1);
 
         // Drive PID configuration
         public static final double kDriveKp = 0.0;
         public static final double kDriveKd = 0.0;
-        public static final double kDriveKs = 0.16534;
-        public static final double kDriveKv = 0.13004;
+        public static final double kDriveKs = 0.10513;
+        public static final double kDriveKv = 0.14043;
         
         public static final double kDriveSimP = 1;
         public static final double kDriveSimD = 0.0;
