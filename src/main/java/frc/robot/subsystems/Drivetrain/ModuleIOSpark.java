@@ -20,6 +20,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
+import java.util.Queue;
 import java.util.function.DoubleSupplier;
 import com.ctre.phoenix6.hardware.CANcoder;
 
@@ -49,6 +50,11 @@ public class ModuleIOSpark implements ModuleIO {
     // Connection debouncers
     private final Debouncer driveConnectedDebounce = new Debouncer(0.5);
     private final Debouncer turnConnectedDebounce = new Debouncer(0.5);
+
+    // Odometry queues
+    private final Queue<Double> timestampQueue;
+    private final Queue<Double> drivePositionQueue;
+    private final Queue<Double> turnPositionQueue;
 
     public ModuleIOSpark(int module) {
         zeroRotation = switch (module) {
@@ -110,6 +116,7 @@ public class ModuleIOSpark implements ModuleIO {
                         kDriveKd);
         driveConfig.signals
                 .primaryEncoderPositionAlwaysOn(true)
+                .primaryEncoderPositionPeriodMs((int) (1000.0 / kOdometryFrequency))
                 .primaryEncoderVelocityAlwaysOn(true)
                 .primaryEncoderVelocityPeriodMs(20)
                 .appliedOutputPeriodMs(20)
@@ -130,7 +137,6 @@ public class ModuleIOSpark implements ModuleIO {
                 .smartCurrentLimit(kTurnMotorCurrentLimit)
                 .voltageCompensation(12.0)
                 .inverted(true);
-        
         turnConfig.encoder
                 .positionConversionFactor(kTurningEncoderRot2Rad)
                 .velocityConversionFactor(kTurningEncoderRPM2RadPerSec)
@@ -145,6 +151,7 @@ public class ModuleIOSpark implements ModuleIO {
                         kTurnKd);
         turnConfig.signals
                 .primaryEncoderPositionAlwaysOn(true)
+                .primaryEncoderPositionPeriodMs((int) (1000.0 / kOdometryFrequency))
                 .primaryEncoderVelocityAlwaysOn(true)
                 .primaryEncoderVelocityPeriodMs(20)
                 .appliedOutputPeriodMs(20)
@@ -161,6 +168,11 @@ public class ModuleIOSpark implements ModuleIO {
         tryUntilOk(turnSpark,
                 5,
                 () -> turnEncoder.setPosition(turnAbsoluteEncoder.getAbsolutePosition().getValueAsDouble() * 2 * Math.PI)); // Rotations of out to radians of input (AV*Out/InGearRatio*2pi)
+        
+        // Register odometry signals
+        timestampQueue = OdometryThreadSparkMax.getInstance().makeTimestampQueue();
+        drivePositionQueue = OdometryThreadSparkMax.getInstance().registerSignal(driveSpark, driveEncoder::getPosition);
+        turnPositionQueue = OdometryThreadSparkMax.getInstance().registerSignal(turnSpark, turnEncoder::getPosition);
     }
 
     @Override
@@ -189,6 +201,19 @@ public class ModuleIOSpark implements ModuleIO {
                 (values) -> inputs.turnAppliedVolts = values[0] * values[1]);
         ifOk(turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrentAmps = value);
         inputs.turnConnected = turnConnectedDebounce.calculate(!sparkStickyFault);
+        
+        // Update odometry inputs
+        inputs.odometryTimestamps =
+                timestampQueue.stream().mapToDouble((Double value) -> value).toArray();
+        inputs.odometryDrivePositionsRad =
+                drivePositionQueue.stream().mapToDouble((Double value) -> value).toArray();
+        inputs.odometryTurnPositions =
+                turnPositionQueue.stream()
+                        .map((Double value) -> Rotation2d.fromRadians(value))
+                        .toArray(Rotation2d[]::new);
+        timestampQueue.clear();
+        drivePositionQueue.clear();
+        turnPositionQueue.clear();
     }
 
     @Override

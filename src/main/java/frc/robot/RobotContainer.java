@@ -26,7 +26,7 @@ public class RobotContainer {
 
     // Subsystems
     public final SwerveDriveSubsystem drivetrain;
-    public final ShooterSubsystem shooter;
+    // public final ShooterSubsystem shooter;
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
@@ -46,9 +46,9 @@ public class RobotContainer {
                         new ModuleIOSpark(2),
                         new ModuleIOSpark(3));
 
-                shooter = new ShooterSubsystem(
-                        new ShooterIOKraken()
-                );
+                // shooter = new ShooterSubsystem(
+                //         new ShooterIOKraken()
+                // );
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -58,8 +58,8 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
-                shooter = new ShooterSubsystem(
-                        new ShooterIOSim());
+                // shooter = new ShooterSubsystem(
+                //         new ShooterIOSim());
                 break;
             default:
                 // Replay
@@ -69,8 +69,8 @@ public class RobotContainer {
                         new ModuleIO() {},
                         new ModuleIO() {},
                         new ModuleIO() {});
-                shooter = new ShooterSubsystem(
-                        new ShooterIO(){});
+                // shooter = new ShooterSubsystem(
+                //         new ShooterIO(){});
                 break;
         }
        
@@ -102,21 +102,21 @@ public class RobotContainer {
 
     private void configureButtonBindings() {
         // Set the drivetrain default command (replaced by shooter command which controls both)
-        // drivetrain.setDefaultCommand(new SwerveCommand(
-        //         drivetrain,
-        //         primaryDriverController::getLeftY,
-        //         primaryDriverController::getLeftX,
-        //         primaryDriverController::getRightX)
-        //     );
+        drivetrain.setDefaultCommand(new SwerveCommand(
+                drivetrain,
+                primaryDriverController::getLeftY,
+                primaryDriverController::getLeftX,
+                primaryDriverController::getRightX)
+            );
         
         // Set the shooter default command to continuously calculate shots and aim
         // This command controls rotation (auto-aim) while driver controls translation (left stick)
-        shooter.setDefaultCommand(new ContinuousShotCalculationCommand(
-            drivetrain, 
-            shooter,
-            primaryDriverController::getLeftY,
-            primaryDriverController::getLeftX
-        ));
+        // shooter.setDefaultCommand(new ContinuousShotCalculationCommand(
+        //     drivetrain, 
+        //     shooter,
+        //     primaryDriverController::getLeftY,
+        //     primaryDriverController::getLeftX
+        // ));
     }
 
     public void configureNamedCommands() {
