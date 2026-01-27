@@ -2,30 +2,46 @@ package frc.robot.subsystems.Climber;
 
 import org.littletonrobotics.junction.AutoLog;
 
+import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
+
 public interface ClimberIO {
     @AutoLog
     public static class ClimberIOInputs{
-        public double deployMotorPositionRotations = 0.0;
-        public double deployMotorVelocityRadPerSec = 0.0;
-        public double deployMotorAppliedVolts = 0.0;
-        public double deployMotorCurrentAmps = 0.0;
+        public double climberPositionRotations = 0.0;
+        public double climberVelocityRotationsPerSec = 0.0;
+        public double climberAppliedVoltage = 0.0;
+        public double climberCurrentAmps = 0.0;
 
-        public double intakeMotorPositionRotations = 0.0;
-        public double intakeMotorVelocityRadPerSec = 0.0;
-        public double intakeMotorAppliedVolts = 0.0;
-        public double intakeMotorCurrentAmps = 0.0;
         public boolean deployed = false;
     }
     
     default void updateInputs(ClimberIOInputs inputs) {
+
+    }
+
+    public default void setClosedLoop(boolean isClosed){
+
+    }
+
+    public default void updateClimberPosition(double rotations){
+
     }
 
     public default void deploy() {
+
     }
 
     public default void retract() {
+
     }
 
+    public default void setDeployVoltage(double volts) {
+    
+    }
+
+    public default void setRetractVoltage(double volts) {
+    
+    }
 }
 
 

@@ -2,8 +2,8 @@ package frc.robot.subsystems.Climber;
 
 import static frc.lib.SparkUtil.*;
 
-import static frc.robot.subsystems.Climber.*;
-import static frc.robot.subsystems.Climber.CLimberConstants;
+import static frc.robot.subsystems.Climber.ClimberConstants.*;
+import static frc.robot.subsystems.Climber.Climber.*;
 
 import java.util.function.DoubleSupplier;
 
@@ -25,7 +25,8 @@ import edu.wpi.first.wpilibj.DutyCycleEncoder;
 
 public class ClimberIOSpark implements ClimberIO {
     final SparkMax deployMotor = new SparkMax(kClimberCanID, MotorType.kBrushless);
- 
+    private final RelativeEncoder deployEncoder = deployMotor.getEncoder();
+
     private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Climber/P", ClimberConstants.kProportionalGainSpark);
     private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Climber/D", ClimberConstants.kDerivativeTermSpark);
     private LoggedNetworkNumber tuningG = new LoggedNetworkNumber("/Tuning/Climber/G", ClimberConstants.kGravityTermSpark); 
@@ -33,14 +34,14 @@ public class ClimberIOSpark implements ClimberIO {
     @AutoLogOutput(key="Climber/Setpoint")
     private double absSetpoint;
 
+    @AutoLogOutput(key="Climber/IsClosed")
+    private boolean isClosed = true;
+
     private PIDController controller = new PIDController(kProportionalGainSpark, kIntegralTermSpark, kDerivativeTermSpark);
 
     private SparkMaxConfig deployConfig;
 
-    @AutoLogOutput(key="Climber/DesiredVoltage")
-    private double desiredVoltage = 0.0;
-
-    @AutoLogOutput(key="Climber/Deployed")
+        @AutoLogOutput(key="Climber/Deployed")
     public boolean deployed = false;
     
     public ClimberIOSpark(){
@@ -48,6 +49,7 @@ public class ClimberIOSpark implements ClimberIO {
     
         deployConfig = new SparkMaxConfig();
         deployConfig
+            
             .idleMode(IdleMode.kBrake)
             .smartCurrentLimit(ClimberConstants.kCurrentLimit)    
             .voltageCompensation(12); 
@@ -58,16 +60,6 @@ public class ClimberIOSpark implements ClimberIO {
             () -> deployMotor.configure(deployConfig, ResetMode.kResetSafeParameters,
                     PersistMode.kPersistParameters));
 
-        var intakeConfig = new SparkMaxConfig().apply(deployConfig);
-        intakeConfig.smartCurrentLimit(ClimberConstants.kIntakeCurrentLimit);
-        
-        intakeConfig.inverted(true);
-        tryUntilOk(
-            intakeMotor,
-            5,
-            () -> intakeMotor.configure(intakeConfig, ResetMode.kResetSafeParameters,
-                    PersistMode.kPersistParameters));
-
         this.controller.setTolerance(kTolerance); // doesn't actually do anything unless you are using controller.atSetpoint()
 
     }
@@ -75,62 +67,28 @@ public class ClimberIOSpark implements ClimberIO {
     @Override
     public void updateInputs(ClimberIOInputs inputs) {
 
-        ifOk(deployMotor, deployEncoder::getPosition, (value) -> inputs.deployMotorPositionRotations = value);
-        ifOk(deployMotor, deployEncoder::getVelocity, (value) -> inputs.deployMotorVelocityRadPerSec = value);
+        ifOk(deployMotor, deployEncoder::getPosition, (value) -> inputs.climberPositionRotations = value);
+        ifOk(deployMotor, deployEncoder::getVelocity, (value) -> inputs.climberVelocityRotationsPerSec = value);
         ifOk(
             deployMotor,
             new DoubleSupplier[] {deployMotor::getAppliedOutput, deployMotor::getBusVoltage},
-            (values -> inputs.deployMotorAppliedVolts = values[0] * values[1]));
-        ifOk(deployMotor, deployMotor::getOutputCurrent, (value) -> inputs.deployMotorCurrentAmps = value);
-        
-        ifOk(intakeMotor, intakeEncoder::getPosition, (value) -> inputs.intakeMotorPositionRotations = value);
-        ifOk(intakeMotor, intakeEncoder::getVelocity, (value) -> inputs.intakeMotorVelocityRadPerSec = value);
-        ifOk(
-            intakeMotor,
-            new DoubleSupplier[] {intakeMotor::getAppliedOutput, intakeMotor::getBusVoltage},
-            (values -> inputs.intakeMotorAppliedVolts = values[0] * values[1]));
-        ifOk(intakeMotor, intakeMotor::getOutputCurrent, (value) -> inputs.intakeMotorCurrentAmps = value);
+            (values -> inputs.climberAppliedVoltage = values[0] * values[1]));
+        ifOk(deployMotor, deployMotor::getOutputCurrent, (value) -> inputs.climberCurrentAmps = value);
 
-        if(absEncoderInitialized == false) {
-            initializeDutyEncoder();
+        double desiredVoltage = this.controller.calculate(inputs.climberPositionRotations) + this.calculateFeedforward();
+        if (this.isClosed){
+            this.setDeployVoltage(desiredVoltage);
         }
-
-        this.desiredVoltage = this.controller.calculate(getAbsEncoder()) * -1.0 + (this.tuningG.get() * Math.cos(getAbsEncoder()*2*Math.PI));
-        this.setDeployVoltage(this.desiredVoltage);
 
         if (ClimberConstants.kTuningMode){
             this.updatePID();
         }
         inputs.deployed = this.deployed;
     }
-
-    public void initializeDutyEncoder(){
-        this.absSetpoint = getAbsEncoder();
-        this.controller.setSetpoint(absSetpoint);
-        absEncoderInitialized = true;
-    }
-
-    public boolean getSensor(DigitalInput sensor) {
-        return sensor.get();
-    }
-
-    @AutoLogOutput(key="Climber/AbsRotations")
-    public double getAbsEncoder() {
-        return this.deployAbsEncoder.get() + kAbsEncoderOffset;
-    }
-
-    public double getDeployPositionRotations() {
-        return deployEncoder.getPosition();
-    }
     
     @Override
     public void setDeployVoltage(double volts) {
         deployMotor.setVoltage(volts);
-    }
-
-    @Override
-    public void setIntakeVoltage(double volts) {
-        intakeMotor.setVoltage(volts);
     }
 
     public void updateSetpoint(double setpoint) {
@@ -145,6 +103,11 @@ public class ClimberIOSpark implements ClimberIO {
         //     return ClimberConstants.kRestAbsoluteRotations;
         // }
         return setpoint;
+    }
+
+    private double calculateFeedforward() {
+        double feedforward = ClimberConstants.kTuningMode ? this.tuningG.get() : ClimberConstants.kGravityTermSpark;
+        return feedforward;
     }
 
     private void updatePID() {
@@ -163,7 +126,6 @@ public class ClimberIOSpark implements ClimberIO {
 
     public void retract() {
         updateSetpoint(kRestAbsoluteRotations);
-        setIntakeVoltage(0.0);
         deployed = false;
     }
  }

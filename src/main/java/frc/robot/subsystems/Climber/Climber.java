@@ -5,6 +5,12 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
+import static frc.robot.subsystems.Climber.ClimberConstants.kGravityTermSpark;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+import frc.robot.Constants;
+import frc.robot.subsystems.Climber.ClimberConstants;
+
 public class Climber extends SubsystemBase {
     private final ClimberIO io;
     private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
@@ -19,16 +25,36 @@ public class Climber extends SubsystemBase {
         Logger.processInputs("Climber", inputs);
     }
 
-    public Command setReachVoltageCommand(double volts) {
-        return Commands.run(() -> io.setReachVoltage(volts), this).finallyDo(interrupted -> io.setReachVoltage(0));
+    public Command setVoltageCommand(double volts) {
+        this.io.setClosedLoop(false);
+        if (Constants.currentMode != Constants.simMode){
+            return Commands.run(() -> {
+                io.setClosedLoop(false);
+                io.setDeployVoltage(volts + kGravityTermSpark);
+            }, this);
+        }
+        return Commands.run(() -> {
+            io.setClosedLoop(false);
+            io.setDeployVoltage(volts);
+        }, this);
+    } 
+    public Command goToPresetCommand(double rotations) {
+         return Commands.run(() -> {
+            this.io.setClosedLoop(true);
+            io.updateClimberPosition(rotations);
+        }, this);
+    }
+
+    public double getClimberPosition() {
+        return inputs.climberPositionRotations;
     }
 
     public Command deployCommand() {
-        return Commands.run(() -> io.deploy(), this).finallyDo(interrupted -> io.setIntakeVoltage(0));
+        return Commands.run(() -> io.deploy(), this).finallyDo(interrupted -> io.setDeployVoltage(0));
     }
 
     public Command retractCommand() {
-        return Commands.run(() -> io.retract(), this).finallyDo(interrupted -> io.setIntakeVoltage(0));
+        return Commands.run(() -> io.retract(), this).finallyDo(interrupted -> io.setRetractVoltage(0));
     }
 
     public void setDeployVoltage(double volts) {

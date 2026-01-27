@@ -17,11 +17,17 @@ import frc.robot.subsystems.Drivetrain.ModuleIOSim;
 import frc.robot.subsystems.Drivetrain.ModuleIOSpark;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
 
+import frc.robot.subsystems.Climber.Climber;
+import frc.robot.subsystems.Climber.ClimberConstants;
+import frc.robot.subsystems.Climber.ClimberIO;
+import frc.robot.subsystems.Climber.ClimberIOSim;
+import frc.robot.subsystems.Climber.ClimberIOSpark;
+
 public class RobotContainer {
 
     // Subsystems
     public final SwerveDriveSubsystem drivetrain;
-
+    public final Climber climber;
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
@@ -40,6 +46,8 @@ public class RobotContainer {
                         new ModuleIOSpark(1),
                         new ModuleIOSpark(2),
                         new ModuleIOSpark(3));
+                climber = new Climber(
+                        new ClimberIOSpark());
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -49,6 +57,8 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
+                climber = new Climber(
+                        new ClimberIOSim());
                 break;
             default:
                 // Replay
@@ -59,6 +69,9 @@ public class RobotContainer {
                         new ModuleIO() {},
                         new ModuleIO() {}
                     );
+                climber = new Climber(
+                        new ClimberIO(){
+                    });
                 break;
         }
        
@@ -96,6 +109,9 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
+        primaryDriverController.a().onTrue(climber.goToPresetCommand(ClimberConstants.kRestMotorRotations));
+        primaryDriverController.x().onTrue(climber.goToPresetCommand(ClimberConstants.kDeployedMotorRotations));
+        primaryDriverController.y().onTrue(climber.goToPresetCommand(ClimberConstants.kEngagedMotorRotations));
     }
 
     public void configureNamedCommands() {
