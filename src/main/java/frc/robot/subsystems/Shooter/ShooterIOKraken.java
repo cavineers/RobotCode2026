@@ -14,7 +14,7 @@ public class ShooterIOKraken implements ShooterIO {
     private final VoltageOut voltageControl = new VoltageOut(0);
 
     public ShooterIOKraken() {
-        flywheelMotor = new TalonFX(kFlywheelCanID, kShooterCanBus);
+        flywheelMotor = new TalonFX(kFlywheelCanID);
         
         // Enable FOC in velocity control
         velocityControl = new VelocityVoltage(0)

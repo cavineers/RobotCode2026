@@ -24,8 +24,8 @@ public class ShooterConstants {
     public static final NeutralModeValue kNeutralMode = NeutralModeValue.Coast;
     public static final InvertedValue kMotorInverted = InvertedValue.CounterClockwise_Positive;
     
-    public static final double kSupplyCurrentLimit = 40.0; // Amps
-    public static final double kStatorCurrentLimit = 80.0; // Amps
+    public static final double kSupplyCurrentLimit = 20.0; // Amps
+    public static final double kStatorCurrentLimit = 40.0; // Amps
 
     // PID gains (Slot 0)
     public static final double kP = 0.1; // TODO: Tune

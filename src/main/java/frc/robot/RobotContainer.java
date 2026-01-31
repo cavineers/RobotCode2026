@@ -16,11 +16,17 @@ import frc.robot.subsystems.Drivetrain.ModuleIO;
 import frc.robot.subsystems.Drivetrain.ModuleIOSim;
 import frc.robot.subsystems.Drivetrain.ModuleIOSpark;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
+import frc.robot.subsystems.Shooter.Shooter;
+import frc.robot.subsystems.Shooter.ShooterIO;
+import frc.robot.subsystems.Shooter.ShooterIOSim;
+import frc.robot.subsystems.Shooter.ShooterIOKraken;
+import frc.robot.commands.Shoot;
 
 public class RobotContainer {
 
     // Subsystems
     public final SwerveDriveSubsystem drivetrain;
+    public final Shooter shooter;
 
 
     // Controllers
@@ -40,6 +46,8 @@ public class RobotContainer {
                         new ModuleIOSpark(1),
                         new ModuleIOSpark(2),
                         new ModuleIOSpark(3));
+                shooter = new Shooter(
+                        new ShooterIOKraken());
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -49,6 +57,8 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
+                shooter = new Shooter(
+                        new ShooterIOSim());
                 break;
             default:
                 // Replay
@@ -59,6 +69,8 @@ public class RobotContainer {
                         new ModuleIO() {},
                         new ModuleIO() {}
                     );
+                shooter = new Shooter(
+                        new ShooterIO() {});
                 break;
         }
        
@@ -86,6 +98,11 @@ public class RobotContainer {
         // autoChooser.addOption(
         // "Drive SysId (Dynamic Reverse)",
         // drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+
+        shooter.setDefaultCommand(new Shoot(
+            shooter,
+            () -> primaryDriverController.getRightTriggerAxis()
+        ));
     }
 
     private void configureButtonBindings() {
