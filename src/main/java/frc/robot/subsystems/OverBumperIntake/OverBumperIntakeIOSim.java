@@ -1,0 +1,49 @@
+package frc.robot.subsystems.OverBumperIntake;
+
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+
+public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
+
+    private DCMotorSim deployMotor = new DCMotorSim(
+        LinearSystemId.createDCMotorSystem(DCMotor.getNEO(1), 0.004,1),
+        DCMotor.getNEO(1));
+
+    private DCMotorSim intakeMotor = new DCMotorSim(
+        LinearSystemId.createDCMotorSystem(DCMotor.getNEO(1), 0.004, 1), // not applying any gear ratio here bc it doesn't matter
+        DCMotor.getNEO(1));
+    
+    private double appliedVolts = 0.0;
+
+    @Override
+    public void updateInputs(OverBumperIntakeIOInputs inputs) {
+        deployMotor.setInputVoltage(appliedVolts);
+        deployMotor.update(0.02);
+
+        inputs.deployPositionRad = deployMotor.getAngularPositionRad();
+        inputs.deployVelocityRadPerSec = deployMotor.getAngularVelocityRadPerSec();
+        inputs.deployAppliedVolts = appliedVolts;
+        inputs.deployCurrentAmps = deployMotor.getCurrentDrawAmps();
+
+        intakeMotor.setInputVoltage(appliedVolts);
+        intakeMotor.update(0.02);
+
+        inputs.intakePositionRad = intakeMotor.getAngularPositionRad();
+        inputs.intakeVelocityRadPerSec = intakeMotor.getAngularVelocityRadPerSec();
+        inputs.intakeAppliedVolts = appliedVolts;
+        inputs.intakeCurrentAmps = intakeMotor.getCurrentDrawAmps();
+    }
+
+    @Override
+    public void setDeployVoltage(double volts) {
+        appliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
+    }
+
+    @Override
+    public void setIntakeVoltage(double volts) {
+        appliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
+    }
+}
+

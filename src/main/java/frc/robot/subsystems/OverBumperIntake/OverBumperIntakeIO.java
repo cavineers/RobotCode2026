@@ -1,0 +1,25 @@
+package frc.robot.subsystems.OverBumperIntake;
+
+import org.littletonrobotics.junction.AutoLog;
+
+public interface OverBumperIntakeIO {
+    @AutoLog
+    public static class OverBumperIntakeIOInputs {
+        public double deployPositionRad = 0.0;
+        public double deployVelocityRadPerSec = 0.0;
+        public double deployAppliedVolts = 0.0;
+        public double deployCurrentAmps = 0.0;
+
+        public double intakePositionRad = 0.0;
+        public double intakeVelocityRadPerSec = 0.0;
+        public double intakeAppliedVolts = 0.0;
+        public double intakeCurrentAmps = 0.0;
+    }
+
+    
+    public default void updateInputs(OverBumperIntakeIOInputs inputs) {}
+
+    public default void setIntakeVoltage(double volts) {}
+
+    public default void setDeployVoltage(double volts) {}
+}
