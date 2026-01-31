@@ -40,9 +40,9 @@ public class Shoot extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    double shooterSpeed = triggerValue.get() * 12.0;
+    double shooterSpeed = triggerValue.get() * 6000;
 
-    shooter.setVoltage(shooterSpeed);
+    shooter.setVelocity(shooterSpeed);
   }
 
   // Called once the command ends or is interrupted.

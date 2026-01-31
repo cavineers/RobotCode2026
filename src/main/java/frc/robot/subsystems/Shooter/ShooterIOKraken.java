@@ -58,6 +58,11 @@ public class ShooterIOKraken implements ShooterIO {
     }
 
     @Override
+    public void setVelocity(double velocityRPM) {
+        flywheelMotor.setControl(velocityControl.withVelocity(velocityRPM / 60.0));
+    }
+
+    @Override
     public void setPID(double kP, double kI, double kD) {
         var config = new TalonFXConfiguration();
         config.Slot0.kP = kP;
