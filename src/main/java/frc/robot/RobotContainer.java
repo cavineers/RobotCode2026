@@ -2,12 +2,10 @@ package frc.robot;
 
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.commands.OverBumperCommand;
 import frc.robot.commands.SwerveCommand;
 
 import frc.robot.subsystems.Drivetrain.GyroIO;
@@ -16,12 +14,15 @@ import frc.robot.subsystems.Drivetrain.ModuleIO;
 import frc.robot.subsystems.Drivetrain.ModuleIOSim;
 import frc.robot.subsystems.Drivetrain.ModuleIOSpark;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntake;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSim;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSpark;
 
 public class RobotContainer {
 
     // Subsystems
     public final SwerveDriveSubsystem drivetrain;
-
+    public final OverBumperIntake oBIntake;
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
@@ -40,6 +41,9 @@ public class RobotContainer {
                         new ModuleIOSpark(1),
                         new ModuleIOSpark(2),
                         new ModuleIOSpark(3));
+                oBIntake = new OverBumperIntake(
+                    new OverBumperIntakeIOSpark()
+                );
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -49,6 +53,9 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
+                oBIntake = new OverBumperIntake(
+                    new OverBumperIntakeIOSim()
+                );
                 break;
             default:
                 // Replay
@@ -59,6 +66,9 @@ public class RobotContainer {
                         new ModuleIO() {},
                         new ModuleIO() {}
                     );
+                oBIntake = new OverBumperIntake(
+                    new OverBumperIntakeIOSpark() {}
+                );
                 break;
         }
        
@@ -96,6 +106,7 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
+        oBIntake.setDefaultCommand(new OverBumperCommand(oBIntake));
     }
 
     public void configureNamedCommands() {

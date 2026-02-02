@@ -8,6 +8,7 @@ import java.util.function.DoubleSupplier;
 
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.SparkMax;
 
 public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
@@ -17,7 +18,16 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     private final SparkMax deployMotor = new SparkMax(kDeployMotorCanID, MotorType.kBrushless);
     private final RelativeEncoder deployEncoder = deployMotor.getEncoder();
 
+    private SparkMaxConfig motorConfig;
+
     public OverBumperIntakeIOSpark() {
+        
+        motorConfig = new SparkMaxConfig();
+
+        motorConfig.idleMode(kIdleMode);
+        motorConfig.inverted(kInverted);
+        motorConfig.smartCurrentLimit(kCurrentLimit);
+
         //Could do motor configuration here
     }
 
