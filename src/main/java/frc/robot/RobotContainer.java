@@ -16,12 +16,17 @@ import frc.robot.subsystems.Drivetrain.ModuleIO;
 import frc.robot.subsystems.Drivetrain.ModuleIOSim;
 import frc.robot.subsystems.Drivetrain.ModuleIOSpark;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntake;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIO;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSim;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSpark;
 
 public class RobotContainer {
 
     // Subsystems
     public final SwerveDriveSubsystem drivetrain;
 
+    public final OverBumperIntake overBumperIntake;
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
@@ -40,6 +45,7 @@ public class RobotContainer {
                         new ModuleIOSpark(1),
                         new ModuleIOSpark(2),
                         new ModuleIOSpark(3));
+                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSpark());
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -49,6 +55,7 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
+                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSim());
                 break;
             default:
                 // Replay
@@ -59,6 +66,7 @@ public class RobotContainer {
                         new ModuleIO() {},
                         new ModuleIO() {}
                     );
+                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIO() {});
                 break;
         }
        

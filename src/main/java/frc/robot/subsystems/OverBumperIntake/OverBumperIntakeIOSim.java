@@ -12,7 +12,7 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         DCMotor.getNEO(1));
 
     private DCMotorSim intakeMotor = new DCMotorSim(
-        LinearSystemId.createDCMotorSystem(DCMotor.getNEO(1), 0.004, 1), // not applying any gear ratio here bc it doesn't matter
+        LinearSystemId.createDCMotorSystem(DCMotor.getNEO(1), 0.004, 1),
         DCMotor.getNEO(1));
     
     private double appliedVolts = 0.0;
@@ -44,6 +44,21 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
     @Override
     public void setIntakeVoltage(double volts) {
         appliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
+    }
+
+    @Override
+    public void deploy() {
+        setDeployVoltage(OverBumperIntakeConstants.kDeployVoltage * 12.0);
+    }
+
+    @Override
+    public void retract() {
+        setDeployVoltage(-OverBumperIntakeConstants.kDeployVoltage * 12.0);
+    }
+
+    @Override
+    public void intake() {
+        setIntakeVoltage(OverBumperIntakeConstants.kIntakeVoltage * 12.0);
     }
 }
 

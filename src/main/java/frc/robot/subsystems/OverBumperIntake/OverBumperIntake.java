@@ -26,4 +26,16 @@ public class OverBumperIntake extends SubsystemBase {
     public void setDeployVoltage(double volts) {
         io.setDeployVoltage(volts);
     }
+
+    public Command deployCommand() {
+        return Commands.run(() -> io.deploy(), this).finallyDo(interrupted -> io.setDeployVoltage(0));
+    }
+
+    public Command retractCommand() {
+        return Commands.run(() -> io.retract(), this).finallyDo(interrupted -> io.setDeployVoltage(0));
+    }
+
+    public Command intakeCommand(double volts) {
+        return Commands.run(() -> io.intake(), this).finallyDo(interrupted -> io.setIntakeVoltage(0.0));
+    }
 }
