@@ -119,12 +119,12 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX));
 
-        primaryDriverController.povUp().onTrue(turret.setTurretVoltsCommand(1));
-        primaryDriverController.povUp().onFalse(turret.setTurretVoltsCommand(0));
-        primaryDriverController.povDown().onTrue(turret.setTurretVoltsCommand(-1));
-        primaryDriverController.povDown().onFalse(turret.setTurretVoltsCommand(0));
+        primaryDriverController.povUp().onTrue(turret.setTurretVoltageCommand(1));
+        primaryDriverController.povUp().onFalse(turret.setTurretVoltageCommand(0));
+        primaryDriverController.povDown().onTrue(turret.setTurretVoltageCommand(-1));
+        primaryDriverController.povDown().onFalse(turret.setTurretVoltageCommand(0));
 
-        primaryDriverController.b().onTrue(turret.goToPresetCommand(TurretConstants.kMinAngle));
+        primaryDriverController.b().onTrue(turret.goToPresetCommand(TurretConstants.kMinAngleRad));
     }
 
     public void configureNamedCommands() {

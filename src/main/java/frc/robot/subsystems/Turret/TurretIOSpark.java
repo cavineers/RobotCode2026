@@ -32,7 +32,7 @@ public class TurretIOSpark implements TurretIO{
     private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Turret/D", TurretConstants.kDerivativeTermSpark);
 
     @AutoLogOutput
-    private double absSetpoint;
+    private double absAngle;
 
     private final SparkFlexConfig config;
 
@@ -43,6 +43,7 @@ public class TurretIOSpark implements TurretIO{
              .idleMode(TurretConstants.kIdleMode)
              .smartCurrentLimit((int) TurretConstants.kCurrentLimit)
              .voltageCompensation(12.0);
+             // positionConversionFactor MotorRotations -> Turretrads
         config.signals
             .appliedOutputPeriodMs(20)
             .busVoltagePeriodMs(20)
@@ -76,22 +77,21 @@ public class TurretIOSpark implements TurretIO{
     }
 
     @Override
-    public void setTurretVolts(double volts) {
+    public void setTurretVoltage(double volts) {
         motor.setVoltage(volts);
     }
     @Override
-    public void updateTurretPosition(double setpoint) {
-      this.absSetpoint = this.clipSetpoint(setpoint);
-      this.controller.setSetpoint(absSetpoint);
+    public void updateTurretPosition(double angle) {
+      this.absAngle = this.clipAngle(angle);
     }
 
-     public double clipSetpoint(double setpoint) {
-        // if(absSetpoint < TurretConstants.kMaxAngle) {
+     public double clipAngle(double angle) {
+        // if(absAngle < TurretConstants.kMaxAngle) {
         //     return TurretConstants.kMaxAngle;
-        // } else if(absSetpoint < TurretConstants.kMinAngle) {
+        // } else if(absAngle < TurretConstants.kMinAngle) {
         //     return TurretConstants.kMinAngle;
         // }
-        return setpoint;
+        return angle;
     }
 
     private void updatePID() {
@@ -105,13 +105,13 @@ public class TurretIOSpark implements TurretIO{
 
     
     public void rotate(){
-        updateTurretPosition(kMinAngle);
-        setTurretVolts(12.0);
+        updateTurretPosition(kMinAngleRad);
+        setTurretVoltage(12.0);
     }
 
     public void resetTurretPosition(){
-        updateTurretPosition(kMinAngle);
-        setTurretVolts(-12.0);
+        updateTurretPosition(kMinAngleRad);
+        setTurretVoltage(-12.0);
     }
 }
 

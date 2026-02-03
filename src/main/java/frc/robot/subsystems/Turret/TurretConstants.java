@@ -8,14 +8,11 @@ public class TurretConstants {
     //all currently placeholders, just getting setup for now!
     public static final boolean kTuningMode = true;
 
-
-    public static final int kTurretCanID = 1; 
-    public static final int kTurretLimitSwitchID = 0;
+    public static final int kTurretCanID = 1; //TODO: input actual term
+    public static final int kTurretLimitSwitchID = 0; //TODO: input actual term
   
-    public static final double kMaxAngle = Units.degreesToRadians(359.0); //359 degrees in radians
-    public static final double kMinAngle = 0.0;
-
-    
+    public static final double kMaxAngleRad = Units.degreesToRadians(359.0); //TODO: input real terms
+    public static final double kMinAngleRad = Units.degreesToRadians(0.0);
 
     public static final double kProportionalGainSpark = 0.0;// TODO: update with actual term
     public static final double kDerivativeTermSpark = 0.0;// TODO: update with actual term

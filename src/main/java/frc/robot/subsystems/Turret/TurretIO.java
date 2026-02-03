@@ -17,7 +17,7 @@ public interface TurretIO {
     default void updateInputs(TurretIOInputs inputs){
     }
 
-    public default void updateTurretPosition(double positionRad){
+    public default void updateTurretPosition(double Pose2d){
     }
 
     public default void setClosedLoop(boolean isClosed){}
@@ -26,7 +26,7 @@ public interface TurretIO {
     public default void resetTurretPosition(){
     }
 
-    public default void setTurretVolts(double volts){
+    public default void setTurretVoltage(double volts){
     }
 
     public default void rotate(){
