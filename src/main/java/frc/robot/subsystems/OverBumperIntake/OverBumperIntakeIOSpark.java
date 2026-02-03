@@ -1,3 +1,6 @@
+
+
+
 package frc.robot.subsystems.OverBumperIntake;
 
 import static frc.lib.SparkUtil.*;
@@ -73,6 +76,12 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
             new DoubleSupplier[] {deployMotor::getAppliedOutput, deployMotor::getBusVoltage},
             (values) -> inputs.deployAppliedVolts = values[0] * values[1]);
         ifOk(deployMotor, deployMotor::getOutputCurrent, (value) -> inputs.deployCurrentAmps = value);
+        
+        for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
+            inputs.recentAmpsHistory[i] = inputs.recentAmpsHistory[i + 1];
+        }
+        // Set the last element to currentAmps
+        inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.deployCurrentAmps;
 
         inputs.deployed = this.deployed;
     }
@@ -102,5 +111,10 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     @Override
     public void intake() {
         setIntakeVoltage(kIntakeVoltage * 12.0);
+    }
+
+    @Override
+    public void outtake() {
+        setIntakeVoltage(-kIntakeVoltage * 12.0);
     }
 }   

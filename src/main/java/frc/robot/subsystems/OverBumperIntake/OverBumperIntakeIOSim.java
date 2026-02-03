@@ -34,6 +34,12 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         inputs.intakeVelocityRadPerSec = intakeMotor.getAngularVelocityRadPerSec();
         inputs.intakeAppliedVolts = appliedVolts;
         inputs.intakeCurrentAmps = intakeMotor.getCurrentDrawAmps();
+
+        for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
+            inputs.recentAmpsHistory[i] = inputs.recentAmpsHistory[i + 1];
+        }
+        // Set the last element to currentAmps
+        inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.deployCurrentAmps;
     }
 
     @Override
@@ -59,6 +65,11 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
     @Override
     public void intake() {
         setIntakeVoltage(OverBumperIntakeConstants.kIntakeVoltage * 12.0);
+    }
+
+    @Override
+    public void outtake() {
+        setIntakeVoltage(-OverBumperIntakeConstants.kIntakeVoltage * 12.0);
     }
 }
 

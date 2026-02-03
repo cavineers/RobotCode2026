@@ -104,10 +104,15 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
+        primaryDriverController.povUp().onTrue(overBumperIntake.retractCommand());
+        primaryDriverController.povDown().onTrue(overBumperIntake.deployCommand());
+        primaryDriverController.leftBumper().onTrue(overBumperIntake.outtakeCommand());
+        primaryDriverController.rightBumper().onTrue(overBumperIntake.intakeCommand());
     }
 
     public void configureNamedCommands() {
         // Register Named Commands
+        NamedCommands.registerCommand(null, getAutonomousCommand());
     }
 
     public Command getAutonomousCommand() {
