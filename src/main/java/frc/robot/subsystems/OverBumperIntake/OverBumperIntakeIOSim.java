@@ -12,7 +12,7 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         DCMotor.getNEO(1));
 
     private DCMotorSim intakeMotor = new DCMotorSim(
-        LinearSystemId.createDCMotorSystem(DCMotor.getNEO(1), 0.004, 1), // not applying any gear ratio here bc it doesn't matter
+        LinearSystemId.createDCMotorSystem(DCMotor.getNEO(1), 0.004, 1),
         DCMotor.getNEO(1));
     
     private double appliedVolts = 0.0;
@@ -34,6 +34,12 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         inputs.intakeVelocityRadPerSec = intakeMotor.getAngularVelocityRadPerSec();
         inputs.intakeAppliedVolts = appliedVolts;
         inputs.intakeCurrentAmps = intakeMotor.getCurrentDrawAmps();
+
+        for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
+            inputs.recentAmpsHistory[i] = inputs.recentAmpsHistory[i + 1];
+        }
+        // Set the last element to currentAmps
+        inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.deployCurrentAmps;
     }
 
     @Override
@@ -44,6 +50,26 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
     @Override
     public void setIntakeVoltage(double volts) {
         appliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
+    }
+
+    @Override
+    public void deploy() {
+        setDeployVoltage(OverBumperIntakeConstants.kDeployVoltage * 12.0);
+    }
+
+    @Override
+    public void retract() {
+        setDeployVoltage(-OverBumperIntakeConstants.kDeployVoltage * 12.0);
+    }
+
+    @Override
+    public void intake() {
+        setIntakeVoltage(OverBumperIntakeConstants.kIntakeVoltage * 12.0);
+    }
+
+    @Override
+    public void outtake() {
+        setIntakeVoltage(-OverBumperIntakeConstants.kIntakeVoltage * 12.0);
     }
 }
 
