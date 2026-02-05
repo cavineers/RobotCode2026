@@ -87,6 +87,11 @@ public class TurretIOSim implements TurretIO {
 		positionController.reset();
 	}
 
+	@Override
+	public void configurePID(double kp, double ki, double kd) {
+		positionController.setPID(kp, ki, kd);
+	}
+
 	private void simulateStep() {
 		double commandVoltage = closedLoopEnabled
 				? positionController.calculate(positionRad)

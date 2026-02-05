@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 public class Turret extends SubsystemBase {
     private enum ControlMode {
@@ -36,6 +37,14 @@ public class Turret extends SubsystemBase {
     @AutoLogOutput(key = "Turret/Homed")
     private boolean homed = !TurretConstants.kUseHomingSwitch;
 
+    private final LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Turret/PositionKp", TurretConstants.kPositionKp);
+    private final LoggedNetworkNumber tuningI = new LoggedNetworkNumber("/Tuning/Turret/PositionKi", TurretConstants.kPositionKi);
+    private final LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Turret/PositionKd", TurretConstants.kPositionKd);
+
+    private double currentKp = TurretConstants.kPositionKp;
+    private double currentKi = TurretConstants.kPositionKi;
+    private double currentKd = TurretConstants.kPositionKd;
+    
     private boolean lastHomeSwitchState = false;
 
     public Turret(TurretIO io, DoubleSupplier robotHeadingSupplier) {
@@ -50,6 +59,8 @@ public class Turret extends SubsystemBase {
     @Override
     public void periodic() {
         io.updateInputs(inputs);
+
+        updateTunableGains();
 
         Logger.processInputs("Turret", inputs);
 
@@ -208,6 +219,26 @@ public class Turret extends SubsystemBase {
             wrapped += 2.0 * Math.PI;
         }
         return wrapped;
+    }
+
+    private void updateTunableGains() {
+        double newKp = tuningP.get();
+        double newKi = tuningI.get();
+        double newKd = tuningD.get();
+
+        boolean pChanged = Math.abs(newKp - currentKp) > 1e-4;
+        boolean iChanged = Math.abs(newKi - currentKi) > 1e-4;
+        boolean dChanged = Math.abs(newKd - currentKd) > 1e-4;
+
+        if (pChanged || iChanged || dChanged) {
+            currentKp = newKp;
+            currentKi = newKi;
+            currentKd = newKd;
+            io.configurePID(currentKp, currentKi, currentKd);
+            Logger.recordOutput("Turret/TunedKp", currentKp);
+            Logger.recordOutput("Turret/TunedKi", currentKi);
+            Logger.recordOutput("Turret/TunedKd", currentKd);
+        }
     }
 
 }

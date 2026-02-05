@@ -31,4 +31,6 @@ public interface TurretIO {
 	default void setBrakeMode(boolean enable) {}
 
 	default void stop() {}
+
+	default void configurePID(double kp, double ki, double kd) {}
 }

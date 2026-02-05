@@ -10,7 +10,7 @@ import edu.wpi.first.math.util.Units;
 public final class TurretConstants {
 
     // CAN IDs / hardware
-    public static final int kTurretMotorId = 1; // TODO: Update with real CAN ID
+    public static final int kTurretMotorId = 50; // TODO: Update with real CAN ID
     public static final boolean kMotorInverted = false;
 
     // Gearbox and conversion factors

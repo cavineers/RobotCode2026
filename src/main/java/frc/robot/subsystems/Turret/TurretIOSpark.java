@@ -149,6 +149,19 @@ public class TurretIOSpark implements TurretIO {
         motor.stopMotor();
     }
 
+    @Override
+    public void configurePID(double kp, double ki, double kd) {
+        ClosedLoopConfig pidOnlyConfig = new ClosedLoopConfig();
+        pidOnlyConfig.pid(kp, ki, kd);
+        SparkMaxConfig config = new SparkMaxConfig();
+        config.closedLoop.apply(pidOnlyConfig);
+        tryUntilOk(
+                motor,
+                5,
+                () -> motor.configure(
+                        config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters));
+    }
+
     private boolean isHomeSwitchPressed() {
         if (homeSwitch == null) {
             return false;
