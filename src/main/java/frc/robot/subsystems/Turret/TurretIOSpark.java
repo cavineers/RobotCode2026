@@ -151,10 +151,17 @@ public class TurretIOSpark implements TurretIO {
 
     @Override
     public void configurePID(double kp, double ki, double kd) {
-        ClosedLoopConfig pidOnlyConfig = new ClosedLoopConfig();
-        pidOnlyConfig.pid(kp, ki, kd);
+        ClosedLoopConfig newConfig = new ClosedLoopConfig();
+        newConfig
+                .pid(kp, ki, kd)
+                .outputRange(-1.0, 1.0)
+                .maxMotion
+                .cruiseVelocity(TurretConstants.kMaxMotionCruiseVelocityRadPerSec)
+                .maxAcceleration(TurretConstants.kMaxMotionAccelerationRadPerSecSq)
+                .allowedProfileError(TurretConstants.kMaxMotionAllowedErrorRad);
+
         SparkMaxConfig config = new SparkMaxConfig();
-        config.closedLoop.apply(pidOnlyConfig);
+        config.closedLoop.apply(newConfig);
         tryUntilOk(
                 motor,
                 5,
