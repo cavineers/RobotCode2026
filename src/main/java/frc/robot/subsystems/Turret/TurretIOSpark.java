@@ -33,18 +33,21 @@ public class TurretIOSpark implements TurretIO {
         motor = new SparkMax(TurretConstants.kTurretMotorId, MotorType.kBrushless);
 
         SparkMaxConfig config = new SparkMaxConfig();
-        config.idleMode(TurretConstants.kBrakeModeEnabled ? IdleMode.kBrake : IdleMode.kCoast);
-        config.inverted(TurretConstants.kMotorInverted);
-        config.smartCurrentLimit(TurretConstants.kCurrentLimitAmps);
-        config.voltageCompensation(12.0);
+        config
+            .idleMode(TurretConstants.kBrakeModeEnabled ? IdleMode.kBrake : IdleMode.kCoast)
+            .inverted(TurretConstants.kMotorInverted)
+            .smartCurrentLimit(TurretConstants.kCurrentLimitAmps)
+            .voltageCompensation(12.0);
 
-        config.encoder.positionConversionFactor(TurretConstants.kPositionConversionFactor);
-        config.encoder.velocityConversionFactor(TurretConstants.kVelocityConversionFactor);
+        config.encoder
+            .positionConversionFactor(TurretConstants.kPositionConversionFactor)
+            .velocityConversionFactor(TurretConstants.kVelocityConversionFactor);
 
-        config.softLimit.forwardSoftLimit(TurretConstants.kMaxAngleRad);
-        config.softLimit.forwardSoftLimitEnabled(true);
-        config.softLimit.reverseSoftLimit(TurretConstants.kMinAngleRad);
-        config.softLimit.reverseSoftLimitEnabled(true);
+        config.softLimit
+            .forwardSoftLimit(TurretConstants.kMaxAngleRad)
+            .forwardSoftLimitEnabled(true)
+            .reverseSoftLimit(TurretConstants.kMinAngleRad)
+            .reverseSoftLimitEnabled(true);
 
         config.signals
                 .primaryEncoderPositionAlwaysOn(true)
@@ -55,14 +58,19 @@ public class TurretIOSpark implements TurretIO {
                 .busVoltagePeriodMs(20)
                 .outputCurrentPeriodMs(20);
 
-        ClosedLoopConfig closedLoopConfig = new ClosedLoopConfig();
-        closedLoopConfig.pid(
-                TurretConstants.kPositionKp,
-                TurretConstants.kPositionKi,
-                TurretConstants.kPositionKd);
+    ClosedLoopConfig closedLoopConfig = new ClosedLoopConfig();
+    closedLoopConfig
+        .pid(
+            TurretConstants.kPositionKp,
+            TurretConstants.kPositionKi,
+            TurretConstants.kPositionKd)
+        .outputRange(-1.0, 1.0)
+        .maxMotion
+        .cruiseVelocity(TurretConstants.kMaxMotionCruiseVelocityRadPerSec)
+        .maxAcceleration(TurretConstants.kMaxMotionAccelerationRadPerSecSq)
+        .allowedProfileError(TurretConstants.kMaxMotionAllowedErrorRad);
 
-        closedLoopConfig.outputRange(-1.0, 1.0);
-        config.closedLoop.apply(closedLoopConfig);
+    config.closedLoop.apply(closedLoopConfig);
 
         tryUntilOk(
                 motor,
@@ -91,7 +99,7 @@ public class TurretIOSpark implements TurretIO {
                 values -> inputs.appliedVolts = values[0] * values[1]);
         ifOk(motor, motor::getOutputCurrent, value -> inputs.supplyCurrentAmps = value);
         ifOk(motor, motor::getMotorTemperature, value -> inputs.motorTempCelsius = value);
-        
+
         inputs.zeroSwitchPressed = isHomeSwitchPressed();
         inputs.forwardLimit = inputs.positionRad >= TurretConstants.kMaxAngleRad;
         inputs.reverseLimit = inputs.positionRad <= TurretConstants.kMinAngleRad;
@@ -106,7 +114,7 @@ public class TurretIOSpark implements TurretIO {
     public void setPositionSetpoint(double positionRad) {
         double clampedPosition = MathUtil.clamp(positionRad, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
 
-        REVLibError status = closedLoopController.setSetpoint(clampedPosition, ControlType.kPosition);
+    REVLibError status = closedLoopController.setSetpoint(clampedPosition, ControlType.kMAXMotionPositionControl);
 
         if (status != REVLibError.kOk) {
             DriverStation.reportError(

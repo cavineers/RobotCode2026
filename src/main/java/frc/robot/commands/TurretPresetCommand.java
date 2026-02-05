@@ -6,7 +6,6 @@ import org.littletonrobotics.junction.Logger;
 
 /**
  * Command that drives the turret to a predefined preset angle using closed-loop control.
- * Designed to be bound to controller buttons (e.g. via {@code whileTrue} bindings).
  */
 public class TurretPresetCommand extends Command {
     private final Turret turret;

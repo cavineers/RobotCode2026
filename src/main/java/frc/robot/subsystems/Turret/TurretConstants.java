@@ -31,6 +31,11 @@ public final class TurretConstants {
     public static final double kPresetTwoRad = Units.degreesToRadians(90.0);
     public static final double kPresetThreeRad = Units.degreesToRadians(150.0);
 
+    // MAXMotion constraints (radians / second and radians / second^2)
+    public static final double kMaxMotionCruiseVelocityRadPerSec = Units.degreesToRadians(90.0);
+    public static final double kMaxMotionAccelerationRadPerSecSq = Units.degreesToRadians(180.0);
+    public static final double kMaxMotionAllowedErrorRad = Units.degreesToRadians(1.0);
+
     // Electrical limits 
     public static final double kMaxVoltage = 12.0;
     public static final int kCurrentLimitAmps = 30;
