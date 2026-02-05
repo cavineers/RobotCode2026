@@ -14,4 +14,12 @@ public class OverBumperIntakeConstants {
     public static final double kIntakeVoltage = 0.5;
     public static final double kDeployVoltage = 0.5;
     public static final double kCutOffAmps = 5.5; //TODO: set value
+
+    //PID Gains (Slot 0)
+    public static final double kP = 0.1; //TODO: tune
+    public static final double kI = 0.0;
+    public static final double kD = 0.0;
+
+    //P Gains
+    public static final double kSimP = 0.0685; //TODO: tune
 }

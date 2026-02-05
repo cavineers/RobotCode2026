@@ -4,12 +4,21 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 import static frc.robot.subsystems.OverBumperIntake.OverBumperIntakeConstants.*;
 
 
 public class OverBumperIntake extends SubsystemBase {
     private final OverBumperIntakeIO io;
     private final OverBumperIntakeIOInputsAutoLogged inputs = new OverBumperIntakeIOInputsAutoLogged();
+
+    private double kP;
+    private double kI;
+    private double kD;
+
+    private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/OverBumperIntake/kP", OverBumperIntakeConstants.kP);  
+    private LoggedNetworkNumber tuningI = new LoggedNetworkNumber ("/Tuning/OverBumperIntake/kI", OverBumperIntakeConstants.kI);  
+    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber ("/Tuning/OverBumperIntake/kD", OverBumperIntakeConstants.kD);  
 
     public OverBumperIntake(OverBumperIntakeIO io) {
         this.io = io;
@@ -30,7 +39,13 @@ public class OverBumperIntake extends SubsystemBase {
         } else {
             Logger.recordOutput("OverBumperIntake/CutOff", false);
         }
-        
+
+        if (kP != tuningP.get() || kI != tuningI.get() || kD != tuningD.get()) {
+            kP = tuningP.get();
+            kI = tuningI.get();
+            kD = tuningD.get();
+            io.setPID(kP, kI, kD);
+        }
         Logger.processInputs("OverBumperIntake", inputs);
     }
 
@@ -40,6 +55,10 @@ public class OverBumperIntake extends SubsystemBase {
 
     public void setDeployVoltage(double volts) {
         io.setDeployVoltage(volts);
+    }
+
+    public void setPID(double kp, double ki, double kd) {
+        io.setPID(kp, ki, kd);
     }
 
     public Command deployCommand() {
