@@ -20,6 +20,17 @@ public class OverBumperIntakeConstants {
     public static final double kI = 0.0;
     public static final double kD = 0.0;
 
-    //P Gains
-    public static final double kSimP = 0.0685; //TODO: tune
+    //Feed Forward Gains
+    public static final double kS = 0.0; //TODO: tune
+    public static final double kV = 0.12; //Velocity feedforward [(V/(rot/s)) = 12V / 100 RPS = 0.12
+    public static final double kA = 0.0;
+
+    //Simulation Constants
+    public static final double kSimP = 0.047; //TODO: tune
+    public static final double kSimI = 0.0;
+    public static final double kSimD = 0.0;
+    public static final double kSimS = 0.0; //TODO: tune
+    public static final double kSimV = 0.12;
+    public static final double kSimA = 0.0;
+
 }
