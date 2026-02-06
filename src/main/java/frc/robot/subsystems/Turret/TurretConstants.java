@@ -14,7 +14,7 @@ public final class TurretConstants {
     public static final boolean kMotorInverted = false;
 
     // Gearbox and conversion factors
-    public static final double kGearRatio = 10; // TODO: Verify with actual gearbox ratio
+    public static final double kGearRatio = 20; // TODO: Verify with actual gear ratio
 
     /** Turret radians per motor rotation. */
     public static final double kPositionConversionFactor = (2.0 * Math.PI) / kGearRatio; // rad / motor rotation

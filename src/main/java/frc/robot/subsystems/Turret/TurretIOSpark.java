@@ -58,19 +58,15 @@ public class TurretIOSpark implements TurretIO {
                 .busVoltagePeriodMs(20)
                 .outputCurrentPeriodMs(20);
 
-    ClosedLoopConfig closedLoopConfig = new ClosedLoopConfig();
-    closedLoopConfig
-        .pid(
-            TurretConstants.kPositionKp,
-            TurretConstants.kPositionKi,
-            TurretConstants.kPositionKd)
-        .outputRange(-1.0, 1.0)
-        .maxMotion
-        .cruiseVelocity(TurretConstants.kMaxMotionCruiseVelocityRadPerSec)
-        .maxAcceleration(TurretConstants.kMaxMotionAccelerationRadPerSecSq)
-        .allowedProfileError(TurretConstants.kMaxMotionAllowedErrorRad);
+        ClosedLoopConfig closedLoopConfig = new ClosedLoopConfig();
+        closedLoopConfig
+                .pid(
+                        TurretConstants.kPositionKp,
+                        TurretConstants.kPositionKi,
+                        TurretConstants.kPositionKd)
+                .outputRange(-1.0, 1.0);
 
-    config.closedLoop.apply(closedLoopConfig);
+        config.closedLoop.apply(closedLoopConfig);
 
         tryUntilOk(
                 motor,
@@ -114,7 +110,7 @@ public class TurretIOSpark implements TurretIO {
     public void setPositionSetpoint(double positionRad) {
         double clampedPosition = MathUtil.clamp(positionRad, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
 
-    REVLibError status = closedLoopController.setSetpoint(clampedPosition, ControlType.kMAXMotionPositionControl);
+        REVLibError status = closedLoopController.setSetpoint(clampedPosition, ControlType.kPosition);
 
         if (status != REVLibError.kOk) {
             DriverStation.reportError(
@@ -154,11 +150,7 @@ public class TurretIOSpark implements TurretIO {
         ClosedLoopConfig newConfig = new ClosedLoopConfig();
         newConfig
                 .pid(kp, ki, kd)
-                .outputRange(-1.0, 1.0)
-                .maxMotion
-                .cruiseVelocity(TurretConstants.kMaxMotionCruiseVelocityRadPerSec)
-                .maxAcceleration(TurretConstants.kMaxMotionAccelerationRadPerSecSq)
-                .allowedProfileError(TurretConstants.kMaxMotionAllowedErrorRad);
+                .outputRange(-1.0, 1.0);
 
         SparkMaxConfig config = new SparkMaxConfig();
         config.closedLoop.apply(newConfig);
