@@ -63,7 +63,7 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
 
     @Override
     public void retract() {
-        setDeployVoltage(OverBumperIntakeConstants.kDeployVoltage * 12.0);
+        setDeployVoltage(OverBumperIntakeConstants.kDeployVoltage * -12.0);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
 
     @Override
     public void outtake() {
-        setIntakeVoltage(-OverBumperIntakeConstants.kIntakeVoltage * 12.0);
+        setIntakeVoltage(OverBumperIntakeConstants.kIntakeVoltage * -12.0);
     }
 
     @Override 
