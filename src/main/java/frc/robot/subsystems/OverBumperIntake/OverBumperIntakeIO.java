@@ -32,4 +32,8 @@ public interface OverBumperIntakeIO {
     public default void setIntakeVoltage(double volts) {}
 
     public default void setDeployVoltage(double volts) {}
+
+    public default void setPID(double kp, double ki, double kd) {}
+
+    public default void setFF(double ks, double kv, double ka) {}
 }

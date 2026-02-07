@@ -29,7 +29,7 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     private SparkMaxConfig deployConfig;
     private SparkMaxConfig intakeConfig;
 
-    @AutoLogOutput(key="Dealgaefier/Deployed")
+    @AutoLogOutput(key="OverBumperIntake/Deployed")
     public boolean deployed = false;
 
     public OverBumperIntakeIOSpark() {
