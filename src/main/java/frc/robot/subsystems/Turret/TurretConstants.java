@@ -49,7 +49,7 @@ public final class TurretConstants {
     // Tuning for MAXMotion:
     // 1.0 (max output) / 60.0 (max free rad/s) = ~0.016
     public static final double kVelocityF = 0.0168; 
-    public static final double kPositionKp = 0.5; // Reduced from 2.0 to prevent oscillation on low-inertia test rig
+    public static final double kPositionKp = 0.45; // Reduced from 2.0 to prevent oscillation on low-inertia test rig
     public static final double kPositionKi = 0.0;
     public static final double kPositionKd = 0.0;
 

@@ -116,7 +116,7 @@ public class TurretIOSpark implements TurretIO {
     public void setPositionSetpoint(double positionRad) {
         double clampedPosition = MathUtil.clamp(positionRad, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
 
-        REVLibError status = closedLoopController.setSetpoint(clampedPosition, ControlType.kMAXMotionPositionControl);
+        REVLibError status = closedLoopController.setSetpoint(clampedPosition, ControlType.kPosition);
 
         if (status != REVLibError.kOk) {
             DriverStation.reportError(
