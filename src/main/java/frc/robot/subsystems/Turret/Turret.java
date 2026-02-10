@@ -40,10 +40,16 @@ public class Turret extends SubsystemBase {
     private final LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Turret/PositionKp", TurretConstants.kPositionKp);
     private final LoggedNetworkNumber tuningI = new LoggedNetworkNumber("/Tuning/Turret/PositionKi", TurretConstants.kPositionKi);
     private final LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Turret/PositionKd", TurretConstants.kPositionKd);
+    private final LoggedNetworkNumber tuningCruise = new LoggedNetworkNumber("/Tuning/Turret/CruiseVel", TurretConstants.kMaxMotionCruiseVelocityRadPerSec);
+    private final LoggedNetworkNumber tuningAccel = new LoggedNetworkNumber("/Tuning/Turret/MaxAccel", TurretConstants.kMaxMotionAccelerationRadPerSecSq);
+    private final LoggedNetworkNumber tuningKV = new LoggedNetworkNumber("/Tuning/Turret/kV", TurretConstants.kVelocityF);
 
     private double currentKp = TurretConstants.kPositionKp;
     private double currentKi = TurretConstants.kPositionKi;
     private double currentKd = TurretConstants.kPositionKd;
+    private double currentCruise = TurretConstants.kMaxMotionCruiseVelocityRadPerSec;
+    private double currentAccel = TurretConstants.kMaxMotionAccelerationRadPerSecSq;
+    private double currentKV = TurretConstants.kVelocityF;
     
     private boolean lastHomeSwitchState = false;
 
@@ -225,19 +231,31 @@ public class Turret extends SubsystemBase {
         double newKp = tuningP.get();
         double newKi = tuningI.get();
         double newKd = tuningD.get();
+        double newCruise = tuningCruise.get();
+        double newAccel = tuningAccel.get();
+        double newKV = tuningKV.get();
 
         boolean pChanged = Math.abs(newKp - currentKp) > 1e-4;
         boolean iChanged = Math.abs(newKi - currentKi) > 1e-4;
         boolean dChanged = Math.abs(newKd - currentKd) > 1e-4;
+        boolean cruiseChanged = Math.abs(newCruise - currentCruise) > 1e-4;
+        boolean accelChanged = Math.abs(newAccel - currentAccel) > 1e-4;
+        boolean kVChanged = Math.abs(newKV - currentKV) > 1e-6;
 
-        if (pChanged || iChanged || dChanged) {
+        if (pChanged || iChanged || dChanged || cruiseChanged || accelChanged || kVChanged) {
             currentKp = newKp;
             currentKi = newKi;
             currentKd = newKd;
-            io.configurePID(currentKp, currentKi, currentKd);
+            currentCruise = newCruise;
+            currentAccel = newAccel;
+            currentKV = newKV;
+            io.configureClosedLoop(currentKp, currentKi, currentKd, currentCruise, currentAccel, currentKV);
             Logger.recordOutput("Turret/TunedKp", currentKp);
             Logger.recordOutput("Turret/TunedKi", currentKi);
             Logger.recordOutput("Turret/TunedKd", currentKd);
+            Logger.recordOutput("Turret/TunedCruise", currentCruise);
+            Logger.recordOutput("Turret/TunedAccel", currentAccel);
+            Logger.recordOutput("Turret/TunedKV", currentKV);
         }
     }
 

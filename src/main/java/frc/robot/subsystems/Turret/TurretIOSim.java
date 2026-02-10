@@ -88,7 +88,7 @@ public class TurretIOSim implements TurretIO {
 	}
 
 	@Override
-	public void configurePID(double kp, double ki, double kd) {
+	public void configureClosedLoop(double kp, double ki, double kd, double cruiseVelocity, double maxAcceleration, double kV) {
 		positionController.setPID(kp, ki, kd);
 	}
 

@@ -32,5 +32,6 @@ public interface TurretIO {
 
 	default void stop() {}
 
-	default void configurePID(double kp, double ki, double kd) {}
+    // Updated to include ff (kV)
+	default void configureClosedLoop(double kp, double ki, double kd, double cruiseVelocity, double maxAcceleration, double kV) {}
 }

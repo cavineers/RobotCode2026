@@ -10,11 +10,11 @@ import edu.wpi.first.math.util.Units;
 public final class TurretConstants {
 
     // CAN IDs / hardware
-    public static final int kTurretMotorId = 50; // TODO: Update with real CAN ID
-    public static final boolean kMotorInverted = false;
+    public static final int kTurretMotorId = 52; // TODO: Update with real CAN ID
+    public static final boolean kMotorInverted = true;
 
     // Gearbox and conversion factors
-    public static final double kGearRatio = 20; // TODO: Verify with actual gear ratio
+    public static final double kGearRatio = 10; // TODO: Verify with actual gear ratio
 
     /** Turret radians per motor rotation. */
     public static final double kPositionConversionFactor = (2.0 * Math.PI) / kGearRatio; // rad / motor rotation
@@ -30,11 +30,15 @@ public final class TurretConstants {
     public static final double kPresetOneRad = Units.degreesToRadians(0.0);
     public static final double kPresetTwoRad = Units.degreesToRadians(90.0);
     public static final double kPresetThreeRad = Units.degreesToRadians(150.0);
+    
 
     // MAXMotion constraints (radians / second and radians / second^2)
-    public static final double kMaxMotionCruiseVelocityRadPerSec = Units.degreesToRadians(90.0);
-    public static final double kMaxMotionAccelerationRadPerSecSq = Units.degreesToRadians(180.0);
-    public static final double kMaxMotionAllowedErrorRad = Units.degreesToRadians(1.0);
+    // NEO Free Speed ~ 5676 RPM / 10 = 567.6 RPM = ~59.4 rad/s
+    // Setting cruise to ~1/2 free speed for testing
+    // Free speed is ~60 rad/s. 
+    public static final double kMaxMotionCruiseVelocityRadPerSec = 45.0;
+    public static final double kMaxMotionAccelerationRadPerSecSq = 180.0;
+    public static final double kMaxMotionAllowedErrorRad = Units.degreesToRadians(2.0);
 
     // Electrical limits 
     public static final double kMaxVoltage = 12.0;
@@ -42,15 +46,18 @@ public final class TurretConstants {
     public static final boolean kBrakeModeEnabled = true;
 
     // PID tuning
-    public static final double kPositionKp = 6.0;
+    // Tuning for MAXMotion:
+    // 1.0 (max output) / 60.0 (max free rad/s) = ~0.016
+    public static final double kVelocityF = 0.0168; 
+    public static final double kPositionKp = 0.5; // Reduced from 2.0 to prevent oscillation on low-inertia test rig
     public static final double kPositionKi = 0.0;
-    public static final double kPositionKd = 0.4;
+    public static final double kPositionKd = 0.0;
 
     public static final double kPositionToleranceRad = Math.toRadians(1.0);
     public static final double kVelocityToleranceRadPerSec = Math.toRadians(5.0);
 
     // Homing / limit switch
-    public static final boolean kUseHomingSwitch = true;
+    public static final boolean kUseHomingSwitch = false;
     public static final boolean kHomingSwitchNormallyOpen = true;
     public static final int kHomingSwitchDioPort = 0; // TODO: Update with actual DIO port
     public static final double kHomingSwitchZeroPositionRad = 0.0;

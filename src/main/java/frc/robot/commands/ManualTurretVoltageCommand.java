@@ -34,7 +34,7 @@ public class ManualTurretVoltageCommand extends Command {
     public void execute() {
         double rawAxis = axisSupplier.getAsDouble();
         double processedAxis = MathUtil.applyDeadband(rawAxis, AXIS_DEADBAND);
-        turret.setManualVoltage(processedAxis * TurretConstants.kMaxVoltage / 2.0);
+        turret.setManualVoltage(-1 * processedAxis * TurretConstants.kMaxVoltage / 2.0);
         Logger.recordOutput("Turret/ManualAxis", rawAxis);
     }
 

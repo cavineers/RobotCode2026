@@ -28,11 +28,12 @@ public class TurretIOSpark implements TurretIO {
     private final RelativeEncoder encoder;
     private final SparkClosedLoopController closedLoopController;
     private final DigitalInput homeSwitch;
+    private final SparkMaxConfig config;
 
     public TurretIOSpark() {
         motor = new SparkMax(TurretConstants.kTurretMotorId, MotorType.kBrushless);
 
-        SparkMaxConfig config = new SparkMaxConfig();
+        config = new SparkMaxConfig();
         config
             .idleMode(TurretConstants.kBrakeModeEnabled ? IdleMode.kBrake : IdleMode.kCoast)
             .inverted(TurretConstants.kMotorInverted)
@@ -64,7 +65,12 @@ public class TurretIOSpark implements TurretIO {
                         TurretConstants.kPositionKp,
                         TurretConstants.kPositionKi,
                         TurretConstants.kPositionKd)
-                .outputRange(-1.0, 1.0);
+                .outputRange(-1.0, 1.0)
+                .maxMotion
+                .cruiseVelocity(TurretConstants.kMaxMotionCruiseVelocityRadPerSec)
+                .maxAcceleration(TurretConstants.kMaxMotionAccelerationRadPerSecSq)
+                .allowedProfileError(TurretConstants.kMaxMotionAllowedErrorRad);
+        closedLoopConfig.feedForward.kV(TurretConstants.kVelocityF);
 
         config.closedLoop.apply(closedLoopConfig);
 
@@ -110,7 +116,7 @@ public class TurretIOSpark implements TurretIO {
     public void setPositionSetpoint(double positionRad) {
         double clampedPosition = MathUtil.clamp(positionRad, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
 
-        REVLibError status = closedLoopController.setSetpoint(clampedPosition, ControlType.kPosition);
+        REVLibError status = closedLoopController.setSetpoint(clampedPosition, ControlType.kMAXMotionPositionControl);
 
         if (status != REVLibError.kOk) {
             DriverStation.reportError(
@@ -146,14 +152,27 @@ public class TurretIOSpark implements TurretIO {
     }
 
     @Override
-    public void configurePID(double kp, double ki, double kd) {
-        ClosedLoopConfig newConfig = new ClosedLoopConfig();
-        newConfig
-                .pid(kp, ki, kd)
-                .outputRange(-1.0, 1.0);
+    public void configureClosedLoop(double kp, double ki, double kd, double cruiseVelocity, double maxAcceleration, double kV) {
+        // Convert Rad/s constraints to RPM for Spark Max internal units
+        double velocityFactor = TurretConstants.kVelocityConversionFactor;
+        double cruiseVelocityRpm = cruiseVelocity / velocityFactor;
+        double maxAccelerationRpmPerSec = maxAcceleration / velocityFactor;
+        
+        // Convert kV from (Volts / Rad/s) to (Volts / RPM)
+        double kVRpm = kV * velocityFactor;
 
-        SparkMaxConfig config = new SparkMaxConfig();
-        config.closedLoop.apply(newConfig);
+        ClosedLoopConfig closedLoopConfig = new ClosedLoopConfig(); // Only closed loop settings
+        closedLoopConfig
+                .pid(kp, ki, kd)
+                .outputRange(-1.0, 1.0)
+                .maxMotion
+                .cruiseVelocity(cruiseVelocityRpm)
+                .maxAcceleration(maxAccelerationRpmPerSec)
+                .allowedProfileError(TurretConstants.kMaxMotionAllowedErrorRad); // Position units usually respect conversion factor
+        closedLoopConfig.feedForward.kV(kVRpm);
+        
+        config.closedLoop.apply(closedLoopConfig);
+
         tryUntilOk(
                 motor,
                 5,
