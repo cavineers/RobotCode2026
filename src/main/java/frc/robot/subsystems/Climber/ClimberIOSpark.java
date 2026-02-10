@@ -18,6 +18,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -41,11 +42,10 @@ public class ClimberIOSpark implements ClimberIO {
 
     private SparkMaxConfig deployConfig;
 
-        @AutoLogOutput(key="Climber/Deployed")
+    @AutoLogOutput(key="Climber/Deployed")
     public boolean deployed = false;
     
     public ClimberIOSpark(){
-        this.controller.enableContinuousInput(0, 1);
     
         deployConfig = new SparkMaxConfig();
         deployConfig
@@ -75,7 +75,10 @@ public class ClimberIOSpark implements ClimberIO {
             (values -> inputs.climberAppliedVoltage = values[0] * values[1]));
         ifOk(deployMotor, deployMotor::getOutputCurrent, (value) -> inputs.climberCurrentAmps = value);
 
-        double desiredVoltage = this.controller.calculate(inputs.climberPositionRotations) + this.calculateFeedforward();
+        double desiredVoltage = this.controller.calculate(deployEncoder.getPosition()) + this.calculateFeedforward();
+        Logger.recordOutput("Climber/desiredVoltage", desiredVoltage);
+        Logger.recordOutput("Climber/Error", this.controller.getError());
+        Logger.recordOutput("Climber/PIDSetpoint", this.controller.getSetpoint());
         if (this.isClosed){
             this.setDeployVoltage(desiredVoltage);
         }
@@ -97,11 +100,12 @@ public class ClimberIOSpark implements ClimberIO {
     }
 
     public double clipSetpoint(double setpoint) {
-        // if(absSetpoint < ClimberConstants.kDeployedAbsoluteRotations) {
-        //     return ClimberConstants.kDeployedAbsoluteRotations;
-        // } else if(absSetpoint < ClimberConstants.kRestAbsoluteRotations) {
-        //     return ClimberConstants.kRestAbsoluteRotations;
-        // }
+        if(absSetpoint > ClimberConstants.kDeployedMotorRotations) {
+            return ClimberConstants.kDeployedMotorRotations;
+        }
+        else if(absSetpoint < ClimberConstants.kRestMotorRotations) {
+             return ClimberConstants.kRestMotorRotations;
+        }
         return setpoint;
     }
 
@@ -126,12 +130,12 @@ public class ClimberIOSpark implements ClimberIO {
     }
 
     public void deploy() {
-        updateClimberSetpoint(kDeployedAbsoluteRotations);
+        updateClimberSetpoint(kDeployedMotorRotations);
         deployed = true;
     }
 
     public void retract() {
-        updateClimberSetpoint(kRestAbsoluteRotations);
+        updateClimberSetpoint(kRestMotorRotations);
         deployed = false;
     }
  }

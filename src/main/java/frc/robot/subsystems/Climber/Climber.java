@@ -28,18 +28,18 @@ public class Climber extends SubsystemBase {
     public Command setVoltageCommand(double volts) {
         this.io.setClosedLoop(false);
         if (Constants.currentMode != Constants.simMode){
-            return Commands.run(() -> {
+            return Commands.runOnce(() -> {
                 io.setClosedLoop(false);
                 io.setDeployVoltage(volts + kGravityTermSpark); //kG throwing off?????
             }, this);
         }
-        return Commands.run(() -> {
+        return Commands.runOnce(() -> {
             io.setClosedLoop(false);
             io.setDeployVoltage(volts);
         }, this);
     } 
     public Command goToPresetCommand(double rotations) {
-         return Commands.run(() -> {
+         return Commands.runOnce(() -> {
             this.io.setClosedLoop(true);
             io.updateClimberSetpoint(rotations);
         }, this);
