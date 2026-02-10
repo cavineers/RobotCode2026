@@ -58,7 +58,7 @@ public class ClimberIOSim implements ClimberIO {
         }
 
         @Override
-        public void updateClimberPosition(double positionRad){
+        public void updateClimberSetpoint(double positionRad){
             this.climberSetpoint = positionRad;
             climberController.setSetpoint(this.climberSetpoint);
         }

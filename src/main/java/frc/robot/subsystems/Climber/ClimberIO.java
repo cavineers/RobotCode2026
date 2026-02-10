@@ -22,7 +22,7 @@ public interface ClimberIO {
 
     }
 
-    public default void updateClimberPosition(double rotations){
+    public default void updateClimberSetpoint(double rotations){
 
     }
 

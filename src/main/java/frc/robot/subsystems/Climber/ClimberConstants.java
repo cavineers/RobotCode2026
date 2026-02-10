@@ -16,8 +16,8 @@ public class ClimberConstants {
 
     public static final double kProportionalGainSpark = 1.0; //TODO: Update
     public static final double kIntegralTermSpark = 0.0; //TODO: Update
-    public static final double kDerivativeTermSpark = 1.0; //TODO: Update
-    public static final double kGravityTermSpark = -0.6; //TODO: Update
+    public static final double kDerivativeTermSpark = 0.0; //TODO: Update
+    public static final double kGravityTermSpark = 0.0; //TODO: Update
 
     public static final double kProportionalTermSim = 0.1;
     public static final double kDerivativeTermSim = 0.0;

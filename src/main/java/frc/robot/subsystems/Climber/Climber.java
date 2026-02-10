@@ -14,7 +14,7 @@ import frc.robot.subsystems.Climber.ClimberConstants;
 public class Climber extends SubsystemBase {
     private final ClimberIO io;
     private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
-
+    
     public Climber(ClimberIO io) {
         this.io = io;
     }
@@ -30,7 +30,7 @@ public class Climber extends SubsystemBase {
         if (Constants.currentMode != Constants.simMode){
             return Commands.run(() -> {
                 io.setClosedLoop(false);
-                io.setDeployVoltage(volts + kGravityTermSpark);
+                io.setDeployVoltage(volts + kGravityTermSpark); //kG throwing off?????
             }, this);
         }
         return Commands.run(() -> {
@@ -41,7 +41,7 @@ public class Climber extends SubsystemBase {
     public Command goToPresetCommand(double rotations) {
          return Commands.run(() -> {
             this.io.setClosedLoop(true);
-            io.updateClimberPosition(rotations);
+            io.updateClimberSetpoint(rotations);
         }, this);
     }
 

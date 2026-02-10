@@ -91,7 +91,7 @@ public class ClimberIOSpark implements ClimberIO {
         deployMotor.setVoltage(volts);
     }
 
-    public void updateSetpoint(double setpoint) {
+    public void updateClimberSetpoint(double setpoint) {
         this.absSetpoint = this.clipSetpoint(setpoint);
         this.controller.setSetpoint(absSetpoint);
     }
@@ -104,6 +104,12 @@ public class ClimberIOSpark implements ClimberIO {
         // }
         return setpoint;
     }
+
+    @Override
+    public void setClosedLoop(boolean val) {
+        this.isClosed = val;
+    }
+
 
     private double calculateFeedforward() {
         double feedforward = ClimberConstants.kTuningMode ? this.tuningG.get() : ClimberConstants.kGravityTermSpark;
@@ -120,12 +126,12 @@ public class ClimberIOSpark implements ClimberIO {
     }
 
     public void deploy() {
-        updateSetpoint(kDeployedAbsoluteRotations);
+        updateClimberSetpoint(kDeployedAbsoluteRotations);
         deployed = true;
     }
 
     public void retract() {
-        updateSetpoint(kRestAbsoluteRotations);
+        updateClimberSetpoint(kRestAbsoluteRotations);
         deployed = false;
     }
  }
