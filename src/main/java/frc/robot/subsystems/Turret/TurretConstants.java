@@ -27,7 +27,7 @@ public final class TurretConstants {
     public static final double kMaxAngleRad = Units.degreesToRadians(180.0);
     // Offset from the robot's front (0 degrees) to the turret's zero (90 degrees CCW)
     // 90 degrees CCW = +PI/2
-    public static final double kTurretZeroOffsetRad = Units.degreesToRadians(90.0);
+    public static final double kTurretZeroOffsetRad = 0;//Units.degreesToRadians(90.0);
 
     // Preset positions (robot-relative angles)
     public static final double kPresetOneRad = Units.degreesToRadians(0.0);

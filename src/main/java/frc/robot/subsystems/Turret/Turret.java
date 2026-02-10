@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
@@ -19,7 +20,7 @@ public class Turret extends SubsystemBase {
 
     private final TurretIO io;
     private final TurretIOInputsAutoLogged inputs = new TurretIOInputsAutoLogged();
-    private final DoubleSupplier robotHeadingSupplier;
+    private final Supplier<Pose3d> robotPoseSupplier;
 
     private ControlMode controlMode = ControlMode.DISABLED;
 
@@ -53,13 +54,13 @@ public class Turret extends SubsystemBase {
     
     private boolean lastHomeSwitchState = false;
 
-    public Turret(TurretIO io, DoubleSupplier robotHeadingSupplier) {
+    public Turret(TurretIO io, Supplier<Pose3d> robotPoseSupplier) {
         this.io = io;
-        this.robotHeadingSupplier = robotHeadingSupplier;
+        this.robotPoseSupplier = robotPoseSupplier;
     }
 
     public Turret(TurretIO io) {
-        this(io, () -> 0.0);
+        this(io, () -> new Pose3d());
     }
 
     @Override
@@ -82,9 +83,11 @@ public class Turret extends SubsystemBase {
         Logger.recordOutput("Turret/ManualDemandVolts", controlMode == ControlMode.MANUAL ? manualDemandVolts : 0.0);
         Logger.recordOutput("Turret/FieldAngleRad", getCurrentFieldAngleRad());
         Logger.recordOutput("Turret/PositionErrorRad", getPositionError());
-        Logger.recordOutput(
-        "Turret/FieldPose3d",
-        new Pose3d(new Translation3d(), new Rotation3d(0.0, 0.0, getCurrentFieldAngleRad())));
+        
+        Pose3d robotPose = robotPoseSupplier.get();
+        Pose3d turretPose = new Pose3d(robotPose.getTranslation(), new Rotation3d(0, 0, getCurrentFieldAngleRad()));
+        
+        Logger.recordOutput("Turret/FieldPose3d", turretPose);
     }
 
     public void setFieldRelativeTarget(double fieldAngleRad) {
@@ -93,7 +96,7 @@ public class Turret extends SubsystemBase {
     }
 
     public void setRobotRelativeTarget(double turretAngleRad) {
-        double robotHeading = wrapAngle(robotHeadingSupplier.getAsDouble());
+        double robotHeading = wrapAngle(robotPoseSupplier.get().getRotation().getZ());
         double normalizedTurret = wrapAngle(turretAngleRad);
         setFieldRelativeTarget(normalizedTurret + robotHeading);
     }
@@ -141,7 +144,7 @@ public class Turret extends SubsystemBase {
     }
 
     public double getCurrentFieldAngleRad() {
-        return wrapAngle(inputs.positionRad + TurretConstants.kTurretZeroOffsetRad + robotHeadingSupplier.getAsDouble());
+        return wrapAngle(inputs.positionRad + TurretConstants.kTurretZeroOffsetRad + robotPoseSupplier.get().getRotation().getZ());
     }
 
     public double getTargetFieldAngleRad() {
@@ -200,7 +203,7 @@ public class Turret extends SubsystemBase {
 
     private double calculateRobotRelativeSetpoint(double fieldAngleRad) {
         double normalizedField = wrapAngle(fieldAngleRad);
-        double robotHeading = wrapAngle(robotHeadingSupplier.getAsDouble());
+        double robotHeading = wrapAngle(robotPoseSupplier.get().getRotation().getZ());
         // To find the necessary turret angle:
         // FieldTarget = RobotHeading + TurretOffset + TurretAngle
         // TurretAngle = FieldTarget - RobotHeading - TurretOffset
