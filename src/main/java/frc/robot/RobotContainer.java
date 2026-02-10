@@ -2,6 +2,10 @@ package frc.robot;
 
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
@@ -17,6 +21,8 @@ public class RobotContainer {
 
     // Subsystems
     private final Turret turret;
+    private final SparkMax testGyro; 
+    private final RelativeEncoder testGyroEncoder;
     // Controllers
     private final CommandXboxController secondaryDriverController = new CommandXboxController(1);
 
@@ -24,10 +30,13 @@ public class RobotContainer {
     // private final LoggedDashboardChooser<Command> autoChooser;
 
     public RobotContainer() {
+        testGyro = new SparkMax(50, MotorType.kBrushless);
+        testGyroEncoder = testGyro.getEncoder();
+
         switch (Constants.currentMode) {
             // Instantiate input/output for their respective modes
             case REAL:
-                turret = new Turret(new TurretIOSpark(), () -> 0.0);
+                turret = new Turret(new TurretIOSpark(), () -> testGyroEncoder.getPosition() * 2 * Math.PI);
                 break;
             case SIM:
                 turret = new Turret(new TurretIOSim(), () -> 0.0);
@@ -38,8 +47,8 @@ public class RobotContainer {
                 break;
         }
 
-        turret.setDefaultCommand(
-                new ManualTurretVoltageCommand(turret, () -> secondaryDriverController.getHID().getRawAxis(0)));
+        // turret.setDefaultCommand(
+        //         new ManualTurretVoltageCommand(turret, () -> secondaryDriverController.getHID().getRawAxis(0)));
 
         configureButtonBindings();
         configureNamedCommands();

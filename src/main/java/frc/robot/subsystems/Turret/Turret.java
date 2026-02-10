@@ -141,7 +141,7 @@ public class Turret extends SubsystemBase {
     }
 
     public double getCurrentFieldAngleRad() {
-        return wrapAngle(inputs.positionRad + robotHeadingSupplier.getAsDouble());
+        return wrapAngle(inputs.positionRad + TurretConstants.kTurretZeroOffsetRad + robotHeadingSupplier.getAsDouble());
     }
 
     public double getTargetFieldAngleRad() {
@@ -201,7 +201,10 @@ public class Turret extends SubsystemBase {
     private double calculateRobotRelativeSetpoint(double fieldAngleRad) {
         double normalizedField = wrapAngle(fieldAngleRad);
         double robotHeading = wrapAngle(robotHeadingSupplier.getAsDouble());
-        double robotRelative = wrapAngle(normalizedField - robotHeading);
+        // To find the necessary turret angle:
+        // FieldTarget = RobotHeading + TurretOffset + TurretAngle
+        // TurretAngle = FieldTarget - RobotHeading - TurretOffset
+        double robotRelative = wrapAngle(normalizedField - robotHeading - TurretConstants.kTurretZeroOffsetRad);
         return MathUtil.clamp(robotRelative, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
     }
 
