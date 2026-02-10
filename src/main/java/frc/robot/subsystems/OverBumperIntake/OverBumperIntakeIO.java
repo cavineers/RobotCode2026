@@ -17,17 +17,18 @@ public interface OverBumperIntakeIO {
         public double intakeAppliedVolts = 0.0;
         public double intakeCurrentAmps = 0.0;
     }
-
     
     public default void updateInputs(OverBumperIntakeIOInputs inputs) {}
 
-    public default void deploy() {}
-
-    public default void retract() {}
+    public default void autoDeploy() {}
 
     public default void intake() {}
 
     public default void outtake() {}
+
+    public default void updateSetpoint(double setpoint) {}
+
+    public default void setClosedLoop(boolean isClosed){}
 
     public default void setIntakeVoltage(double volts) {}
 

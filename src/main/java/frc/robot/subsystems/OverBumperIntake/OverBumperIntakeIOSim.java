@@ -1,5 +1,7 @@
 package frc.robot.subsystems.OverBumperIntake;
 
+import org.littletonrobotics.junction.AutoLogOutput;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
@@ -17,7 +19,11 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         LinearSystemId.createDCMotorSystem(DCMotor.getNEO(1), 0.004, 1),
         DCMotor.getNEO(1));
     
+    @AutoLogOutput(key="OverBumperIntake/Deployed")
+    public boolean deployed = false;
+
     private double appliedVolts = 0.0;
+    private double motorSetpoint = 0;
     private PIDController simPID = new PIDController (OverBumperIntakeConstants.kSimP, OverBumperIntakeConstants.kSimI, OverBumperIntakeConstants.kSimD);
     private SimpleMotorFeedforward simFF = new SimpleMotorFeedforward (OverBumperIntakeConstants.kSimS, OverBumperIntakeConstants.kSimV, OverBumperIntakeConstants.kSimA);
 
@@ -56,14 +62,30 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         appliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
     }
 
-    @Override
-    public void deploy() {
-        setDeployVoltage(OverBumperIntakeConstants.kDeployVoltage * 12.0);
+        @Override
+    public void updateSetpoint(double setpoint) {
+        this.motorSetpoint = this.clipSetpoint(setpoint);
+        this.simPID.setSetpoint(motorSetpoint);
     }
 
+    public double clipSetpoint(double setpoint) {
+        if (motorSetpoint > OverBumperIntakeConstants.kDeployedRotations) {
+            return OverBumperIntakeConstants.kDeployedRotations;
+        } else if (motorSetpoint < OverBumperIntakeConstants.kRetractedRotations) {
+            return OverBumperIntakeConstants.kRetractedRotations;
+        }
+        return setpoint;
+    }
+    
     @Override
-    public void retract() {
-        setDeployVoltage(OverBumperIntakeConstants.kDeployVoltage * -12.0);
+    public void autoDeploy() {
+        if (deployed) {
+            updateSetpoint(OverBumperIntakeConstants.kRetractedRotations);
+            this.deployed = false;
+        } else {
+            updateSetpoint(OverBumperIntakeConstants.kDeployedRotations);
+            this.deployed = true;
+        }
     }
 
     @Override

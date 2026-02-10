@@ -19,6 +19,8 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.math.controller.PIDController;
+
 public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     private final SparkMax intakeMotor = new SparkMax(kIntakeMotorCanID, MotorType.kBrushless);
     private final RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
@@ -26,11 +28,18 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     private final SparkMax deployMotor = new SparkMax(kDeployMotorCanID, MotorType.kBrushless);
     private final RelativeEncoder deployEncoder = deployMotor.getEncoder();
 
+    private double motorSetpoint = 0;
+
     private SparkMaxConfig deployConfig;
     private SparkMaxConfig intakeConfig;
 
+    PIDController controller = new PIDController(kP, kI, kD);
+
     @AutoLogOutput(key="OverBumperIntake/Deployed")
     public boolean deployed = false;
+
+    @AutoLogOutput(key="OverBumperIntake/IsClosed")
+    private boolean isClosed = true;
 
     public OverBumperIntakeIOSpark() {
         deployConfig = new SparkMaxConfig();
@@ -88,24 +97,43 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
         
     @Override
     public void setIntakeVoltage(double volts) {
-            intakeMotor.setVoltage(volts);
+        intakeMotor.setVoltage(volts);
     }
 
     @Override
     public void setDeployVoltage(double volts) {
-            deployMotor.setVoltage(volts);
+        deployMotor.setVoltage(volts);
     }
 
     @Override
-    public void deploy() {
-        setDeployVoltage(kDeployVoltage * 12.0);    
-        deployed = true;
+    public void updateSetpoint(double setpoint) {
+        this.motorSetpoint = this.clipSetpoint(setpoint);
+        this.controller.setSetpoint(motorSetpoint);
+    }
+
+    public double clipSetpoint(double setpoint) {
+        if (motorSetpoint > OverBumperIntakeConstants.kDeployedRotations) {
+            return OverBumperIntakeConstants.kDeployedRotations;
+        } else if (motorSetpoint < OverBumperIntakeConstants.kRetractedRotations) {
+            return OverBumperIntakeConstants.kRetractedRotations;
+        }
+        return setpoint;
+    }
+
+     @Override
+    public void setClosedLoop(boolean val) {
+        this.isClosed = val;
     }
 
     @Override
-    public void retract() {
-        setDeployVoltage(-kDeployVoltage * 12.0);
-        deployed = false;
+    public void autoDeploy() {
+        if (deployed) {
+            updateSetpoint(kRetractedRotations);
+            this.deployed = false;
+        } else {
+            updateSetpoint(kDeployedRotations);
+            this.deployed = true;
+        }
     }
 
     @Override
@@ -117,4 +145,4 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     public void outtake() {
         setIntakeVoltage(-kIntakeVoltage * 12.0);
     }
-}   
+}

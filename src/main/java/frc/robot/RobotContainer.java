@@ -17,6 +17,7 @@ import frc.robot.subsystems.Drivetrain.ModuleIOSim;
 import frc.robot.subsystems.Drivetrain.ModuleIOSpark;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntake;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeConstants;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIO;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSim;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSpark;
@@ -104,10 +105,16 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
-        primaryDriverController.povUp().onTrue(overBumperIntake.retractCommand());
-        primaryDriverController.povDown().onTrue(overBumperIntake.deployCommand());
+        
+        primaryDriverController.a().onTrue(overBumperIntake.deployCommand());
+        primaryDriverController.povUp().onTrue(overBumperIntake.setDeployVoltageCommand(1));
+        primaryDriverController.povUp().onFalse(overBumperIntake.setDeployVoltageCommand(0));
+        primaryDriverController.povUp().onTrue(overBumperIntake.setDeployVoltageCommand(-1));
+        primaryDriverController.povUp().onFalse(overBumperIntake.setDeployVoltageCommand(0));
         primaryDriverController.leftBumper().onTrue(overBumperIntake.outtakeCommand());
+        primaryDriverController.leftBumper().onFalse(overBumperIntake.setIntakeVoltageCommand(0));
         primaryDriverController.rightBumper().onTrue(overBumperIntake.intakeCommand());
+        primaryDriverController.rightBumper().onFalse(overBumperIntake.setIntakeVoltageCommand(0));
     }
 
     public void configureNamedCommands() {

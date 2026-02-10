@@ -18,7 +18,7 @@ public class OverBumperIntake extends SubsystemBase {
 
     private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/OverBumperIntake/kP", OverBumperIntakeConstants.kP);  
     private LoggedNetworkNumber tuningI = new LoggedNetworkNumber ("/Tuning/OverBumperIntake/kI", OverBumperIntakeConstants.kI);  
-    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber ("/Tuning/OverBumperIntake/kD", OverBumperIntakeConstants.kD);  
+    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber ("/Tuning/OverBumperIntake/kD", OverBumperIntakeConstants.kD); 
 
     public OverBumperIntake(OverBumperIntakeIO io) {
         this.io = io;
@@ -61,12 +61,20 @@ public class OverBumperIntake extends SubsystemBase {
         io.setPID(kp, ki, kd);
     }
 
-    public Command deployCommand() {
-        return Commands.run(() -> io.deploy(), this).finallyDo(interrupted -> io.setDeployVoltage(0));
+    public Command setDeployVoltageCommand(double volts) {
+        this.io.setClosedLoop(false);
+        return Commands.run(() -> io.setDeployVoltage(volts), this).finallyDo(interrupted -> io.setDeployVoltage(0));
     }
 
-    public Command retractCommand() {
-        return Commands.run(() -> io.retract(), this).finallyDo(interrupted -> io.setDeployVoltage(0));
+    public Command setIntakeVoltageCommand(double volts) {
+        return Commands.run(() -> io.setIntakeVoltage(volts), this).finallyDo(interrupted -> io.setIntakeVoltage(0.0));
+    }
+
+    public Command deployCommand() {
+        return Commands.run(() -> {
+            this.io.setClosedLoop(true);
+            io.autoDeploy();
+        }, this);
     }
 
     public Command intakeCommand() {
