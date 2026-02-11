@@ -16,7 +16,7 @@ public class TurretIOSim implements TurretIO {
 	private static final DCMotor MOTOR_MODEL = DCMotor.getNEO(1).withReduction(TurretConstants.kGearRatio);
 
 	private final PIDController positionController =
-			new PIDController(TurretConstants.kPositionKp, TurretConstants.kPositionKi, TurretConstants.kPositionKd);
+			new PIDController(2.0, TurretConstants.kPositionKi, TurretConstants.kPositionKd);
 
 	private double positionRad = TurretConstants.kSimStartingAngleRad;
 	private double velocityRadPerSec = 0.0;
@@ -31,7 +31,7 @@ public class TurretIOSim implements TurretIO {
 	private boolean brakeModeEnabled = TurretConstants.kBrakeModeEnabled;
 
 	public TurretIOSim() {
-		positionController.enableContinuousInput(TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
+		// positionController.enableContinuousInput(TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
 		positionController.setTolerance(TurretConstants.kPositionToleranceRad);
 		positionController.setSetpoint(targetPositionRad);
 	}
@@ -88,7 +88,7 @@ public class TurretIOSim implements TurretIO {
 	}
 
 	@Override
-	public void configureClosedLoop(double kp, double ki, double kd, double cruiseVelocity, double maxAcceleration, double kV) {
+	public void configureClosedLoop(double kp, double ki, double kd) {
 		positionController.setPID(kp, ki, kd);
 	}
 
@@ -145,10 +145,10 @@ public class TurretIOSim implements TurretIO {
 	}
 
 	private static double clampToRange(double angleRad) {
-		double wrapped = MathUtil.angleModulus(angleRad);
-		if (wrapped < TurretConstants.kMinAngleRad) {
-			wrapped += 2.0 * Math.PI;
-		}
+		double wrapped = MathUtil.angleModulus(angleRad); // Wraps to -PI to PI
+        // Since our range is -PI/2 to PI/2, we don't need to add 2PI if it's below Min
+        // because MathUtil.angleModulus already centers it correctly for this range.
+        // However, we should just clamp directly.
 		return MathUtil.clamp(wrapped, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
 	}
 }

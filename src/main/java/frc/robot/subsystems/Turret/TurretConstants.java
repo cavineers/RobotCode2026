@@ -23,16 +23,19 @@ public final class TurretConstants {
     public static final double kVelocityConversionFactor = kPositionConversionFactor / 60.0; // rad / s per motor RPM
 
     // Mechanical limits
-    public static final double kMinAngleRad = 0.0;
-    public static final double kMaxAngleRad = Units.degreesToRadians(180.0);
-    // Offset from the robot's front (0 degrees) to the turret's zero (90 degrees CCW)
-    // 90 degrees CCW = +PI/2
-    public static final double kTurretZeroOffsetRad = 0;//Units.degreesToRadians(90.0);
+    // Defined as Robot-Relative angles (0 is Front/North)
+    // Range: -90 degrees (Right) to +90 degrees (Left)
+    public static final double kMinAngleRad = Units.degreesToRadians(-150.0);
+    public static final double kMaxAngleRad = Units.degreesToRadians(150.0);
+    
+    // Offset from the robot's front (0 degrees) to the turret's "Mechanical Zero"
+    // Since we defined 0 as Front/North, the offset is 0.0
+    public static final double kTurretZeroOffsetRad = 0.0;
 
     // Preset positions (robot-relative angles)
-    public static final double kPresetOneRad = Units.degreesToRadians(0.0);
-    public static final double kPresetTwoRad = Units.degreesToRadians(90.0);
-    public static final double kPresetThreeRad = Units.degreesToRadians(150.0);
+    public static final double kPresetOneRad = Units.degreesToRadians(0.0); // Front
+    public static final double kPresetTwoRad = Units.degreesToRadians(45.0); // Left Diagonal
+    public static final double kPresetThreeRad = Units.degreesToRadians(-45.0); // Right Diagonal
     
 
     // MAXMotion constraints (radians / second and radians / second^2)

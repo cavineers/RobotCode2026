@@ -152,25 +152,12 @@ public class TurretIOSpark implements TurretIO {
     }
 
     @Override
-    public void configureClosedLoop(double kp, double ki, double kd, double cruiseVelocity, double maxAcceleration, double kV) {
-        // Convert Rad/s constraints to RPM for Spark Max internal units
-        double velocityFactor = TurretConstants.kVelocityConversionFactor;
-        double cruiseVelocityRpm = cruiseVelocity / velocityFactor;
-        double maxAccelerationRpmPerSec = maxAcceleration / velocityFactor;
-        
-        // Convert kV from (Volts / Rad/s) to (Volts / RPM)
-        double kVRpm = kV * velocityFactor;
-
+    public void configureClosedLoop(double kp, double ki, double kd){
         ClosedLoopConfig closedLoopConfig = new ClosedLoopConfig(); // Only closed loop settings
         closedLoopConfig
                 .pid(kp, ki, kd)
-                .outputRange(-1.0, 1.0)
-                .maxMotion
-                .cruiseVelocity(cruiseVelocityRpm)
-                .maxAcceleration(maxAccelerationRpmPerSec)
-                .allowedProfileError(TurretConstants.kMaxMotionAllowedErrorRad); // Position units usually respect conversion factor
-        closedLoopConfig.feedForward.kV(kVRpm);
-        
+                .outputRange(-1.0, 1.0);
+
         config.closedLoop.apply(closedLoopConfig);
 
         tryUntilOk(

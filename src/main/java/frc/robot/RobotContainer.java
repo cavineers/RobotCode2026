@@ -72,7 +72,7 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
-                turret = new Turret(new TurretIOSim(), () -> new Pose3d());
+                turret = new Turret(new TurretIOSim(), () -> new Pose3d(drivetrain.getPose()));
                 break;
             default:
                 drivetrain = new SwerveDriveSubsystem(

@@ -41,18 +41,12 @@ public class Turret extends SubsystemBase {
     private final LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Turret/PositionKp", TurretConstants.kPositionKp);
     private final LoggedNetworkNumber tuningI = new LoggedNetworkNumber("/Tuning/Turret/PositionKi", TurretConstants.kPositionKi);
     private final LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Turret/PositionKd", TurretConstants.kPositionKd);
-    private final LoggedNetworkNumber tuningCruise = new LoggedNetworkNumber("/Tuning/Turret/CruiseVel", TurretConstants.kMaxMotionCruiseVelocityRadPerSec);
-    private final LoggedNetworkNumber tuningAccel = new LoggedNetworkNumber("/Tuning/Turret/MaxAccel", TurretConstants.kMaxMotionAccelerationRadPerSecSq);
-    private final LoggedNetworkNumber tuningKV = new LoggedNetworkNumber("/Tuning/Turret/kV", TurretConstants.kVelocityF);
-
     private double currentKp = TurretConstants.kPositionKp;
     private double currentKi = TurretConstants.kPositionKi;
     private double currentKd = TurretConstants.kPositionKd;
-    private double currentCruise = TurretConstants.kMaxMotionCruiseVelocityRadPerSec;
-    private double currentAccel = TurretConstants.kMaxMotionAccelerationRadPerSecSq;
-    private double currentKV = TurretConstants.kVelocityF;
     
     private boolean lastHomeSwitchState = false;
+
 
     public Turret(TurretIO io, Supplier<Pose3d> robotPoseSupplier) {
         this.io = io;
@@ -85,7 +79,15 @@ public class Turret extends SubsystemBase {
         Logger.recordOutput("Turret/PositionErrorRad", getPositionError());
         
         Pose3d robotPose = robotPoseSupplier.get();
-        Pose3d turretPose = new Pose3d(robotPose.getTranslation(), new Rotation3d(0, 0, getCurrentFieldAngleRad()));
+        // Since Rotation3d(x, y, z) is roll-pitch-yaw, using z-rotation for yaw
+        // Also manually adding robot pose rotation since the previous getZ() was returning 0.0 or failing
+        
+      
+        Pose3d turretPose = new Pose3d(
+            robotPose.getTranslation().plus(new Translation3d(0.0, .0, 0.5
+            )), 
+            new Rotation3d(0.0, 0.0, getCurrentFieldAngleRad())
+        );
         
         Logger.recordOutput("Turret/FieldPose3d", turretPose);
     }
@@ -204,11 +206,24 @@ public class Turret extends SubsystemBase {
     private double calculateRobotRelativeSetpoint(double fieldAngleRad) {
         double normalizedField = wrapAngle(fieldAngleRad);
         double robotHeading = wrapAngle(robotPoseSupplier.get().getRotation().getZ());
+        
+        // Debug components
+        Logger.recordOutput("Turret/Debug/Setpt/Field", normalizedField);
+        Logger.recordOutput("Turret/Debug/Setpt/Heading", robotHeading);
+        
         // To find the necessary turret angle:
         // FieldTarget = RobotHeading + TurretOffset + TurretAngle
         // TurretAngle = FieldTarget - RobotHeading - TurretOffset
-        double robotRelative = wrapAngle(normalizedField - robotHeading - TurretConstants.kTurretZeroOffsetRad);
-        return MathUtil.clamp(robotRelative, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
+        double rawRel = normalizedField - robotHeading - TurretConstants.kTurretZeroOffsetRad;
+        Logger.recordOutput("Turret/Debug/Setpt/RawRel", rawRel);
+
+        double robotRelative = wrapAngle(rawRel);
+        Logger.recordOutput("Turret/Debug/Setpt/WrappedRel", robotRelative);
+
+        double clamped = MathUtil.clamp(robotRelative, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
+        Logger.recordOutput("Turret/Debug/Setpt/Clamped", clamped);
+
+        return clamped;
     }
 
     private double applySoftLimits(double volts) {
@@ -226,43 +241,29 @@ public class Turret extends SubsystemBase {
     }
 
     private static double wrapAngle(double angleRad) {
-        double wrapped = MathUtil.angleModulus(angleRad);
-        if (wrapped < TurretConstants.kMinAngleRad) {
-            wrapped += 2.0 * Math.PI;
-        }
-        return wrapped;
+        // Range is -90 to +90 (approx -1.57 to +1.57 rad)
+        // angleModulus wraps to -PI to +PI.
+        // Since -90 to +90 is within -PI to +PI, we don't need custom wrapping logic for 0-360 range anymore.
+        return MathUtil.angleModulus(angleRad);
     }
 
     private void updateTunableGains() {
         double newKp = tuningP.get();
         double newKi = tuningI.get();
         double newKd = tuningD.get();
-        double newCruise = tuningCruise.get();
-        double newAccel = tuningAccel.get();
-        double newKV = tuningKV.get();
-
+   
         boolean pChanged = Math.abs(newKp - currentKp) > 1e-4;
         boolean iChanged = Math.abs(newKi - currentKi) > 1e-4;
         boolean dChanged = Math.abs(newKd - currentKd) > 1e-4;
-        boolean cruiseChanged = Math.abs(newCruise - currentCruise) > 1e-4;
-        boolean accelChanged = Math.abs(newAccel - currentAccel) > 1e-4;
-        boolean kVChanged = Math.abs(newKV - currentKV) > 1e-6;
 
-        if (pChanged || iChanged || dChanged || cruiseChanged || accelChanged || kVChanged) {
+        if (pChanged || iChanged || dChanged) {
             currentKp = newKp;
             currentKi = newKi;
             currentKd = newKd;
-            currentCruise = newCruise;
-            currentAccel = newAccel;
-            currentKV = newKV;
-            io.configureClosedLoop(currentKp, currentKi, currentKd, currentCruise, currentAccel, currentKV);
-            Logger.recordOutput("Turret/TunedKp", currentKp);
-            Logger.recordOutput("Turret/TunedKi", currentKi);
-            Logger.recordOutput("Turret/TunedKd", currentKd);
-            Logger.recordOutput("Turret/TunedCruise", currentCruise);
-            Logger.recordOutput("Turret/TunedAccel", currentAccel);
-            Logger.recordOutput("Turret/TunedKV", currentKV);
+            io.configureClosedLoop(currentKp, currentKi, currentKd);
+          
         }
+        
     }
 
 }
