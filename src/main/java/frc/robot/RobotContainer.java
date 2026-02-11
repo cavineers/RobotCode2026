@@ -1,5 +1,7 @@
 package frc.robot;
 
+import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.kTopVoltage;
+
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -21,6 +23,7 @@ import frc.robot.subsystems.InBumperIntake.InBumperIntake;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSim;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSpark;
+import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
 
 public class RobotContainer {
 
@@ -104,6 +107,27 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
+        
+        primaryDriverController.rightBumper().onTrue(inBumperIntake.setTopVoltageCommand(12*kTopVoltage));
+        primaryDriverController.rightBumper().onFalse(inBumperIntake.setTopVoltageCommand(0));
+        primaryDriverController.rightBumper().onTrue(inBumperIntake.setBottomVoltageCommand(-12*kBottomVoltage));
+        primaryDriverController.rightBumper().onFalse(inBumperIntake.setBottomVoltageCommand(0));
+        primaryDriverController.rightBumper().onTrue(inBumperIntake.setHopperVoltageCommand(12*kHopperVoltage));
+        primaryDriverController.rightBumper().onFalse(inBumperIntake.setHopperVoltageCommand(0));
+
+        primaryDriverController.leftBumper().onTrue(inBumperIntake.setTopVoltageCommand(-12*kTopVoltage));
+        primaryDriverController.leftBumper().onFalse(inBumperIntake.setTopVoltageCommand(0));
+        primaryDriverController.leftBumper().onTrue(inBumperIntake.setBottomVoltageCommand(-12*kBottomVoltage));
+        primaryDriverController.leftBumper().onFalse(inBumperIntake.setBottomVoltageCommand(0));
+        primaryDriverController.leftBumper().onTrue(inBumperIntake.setHopperVoltageCommand(12*kHopperVoltage));
+        primaryDriverController.leftBumper().onFalse(inBumperIntake.setHopperVoltageCommand(0));
+
+        primaryDriverController.rightTrigger().onTrue(inBumperIntake.setTopVoltageCommand(12*kTopVoltage));
+        primaryDriverController.rightTrigger().onFalse(inBumperIntake.setTopVoltageCommand(0));
+        primaryDriverController.rightTrigger().onTrue(inBumperIntake.setBottomVoltageCommand(-12*kBottomVoltage));
+        primaryDriverController.rightTrigger().onFalse(inBumperIntake.setBottomVoltageCommand(0));
+        primaryDriverController.rightTrigger().onTrue(inBumperIntake.setHopperVoltageCommand(-12*kHopperVoltage));
+        primaryDriverController.rightTrigger().onFalse(inBumperIntake.setHopperVoltageCommand(0));
     }
 
     public void configureNamedCommands() {

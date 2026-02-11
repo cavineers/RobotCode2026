@@ -12,5 +12,9 @@ public class InBumperIntakeConstants {
     public static final boolean kInverted = false;
     public static final IdleMode kIdleMode = IdleMode.kBrake;
     public static final int kCurrentLimit = 80;
+    public static final double kBottomVoltage = 0.3;
+    public static final double kTopVoltage = 0.3;
+    public static final double kHopperVoltage = 0.3;
+    public static final double kCutOffAmps = 40.0; //TODO: set value
 
 }

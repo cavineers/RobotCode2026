@@ -1,10 +1,10 @@
 package frc.robot.subsystems.InBumperIntake;
 
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import org.littletonrobotics.junction.Logger;
-import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 
 public class InBumperIntake extends SubsystemBase {
@@ -31,6 +31,18 @@ public class InBumperIntake extends SubsystemBase {
 
     public void setTopVoltage(double volts) {
         io.setTopVoltage(volts);
+    }
+
+    public Command setBottomVoltageCommand(double volts) {
+        return Commands.run(() -> io.setBottomVoltage(volts), this).finallyDo(interrupted -> io.setBottomVoltage(0));
+    }
+
+    public Command setHopperVoltageCommand(double volts) {
+        return Commands.run(() -> io.setHopperVoltage(volts), this).finallyDo(interrupted -> io.setHopperVoltage(0));
+    }
+
+    public Command setTopVoltageCommand(double volts) {
+        return Commands.run(() -> io.setTopVoltage(volts), this).finallyDo(interrupted -> io.setTopVoltage(0.0));
     }
 
 }
