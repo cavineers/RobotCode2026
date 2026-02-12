@@ -28,6 +28,7 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     private final SparkMax deployMotor = new SparkMax(kDeployMotorCanID, MotorType.kBrushless);
     private final RelativeEncoder deployEncoder = deployMotor.getEncoder();
 
+    @AutoLogOutput(key="OverBumperIntake/motorSetpoint")
     private double motorSetpoint = 0;
 
     private SparkMaxConfig deployConfig;
@@ -130,7 +131,8 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
         if (deployed) {
             updateSetpoint(kRetractedRotations);
             this.deployed = false;
-        } else {
+        } 
+        else {
             updateSetpoint(kDeployedRotations);
             this.deployed = true;
         }

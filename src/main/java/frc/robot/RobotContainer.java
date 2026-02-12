@@ -115,7 +115,7 @@ public class RobotContainer {
 
     public void configureNamedCommands() {
         // Register Named Commands
-        NamedCommands.registerCommand(null, getAutonomousCommand());
+        //NamedCommands.registerCommand(null, getAutonomousCommand());
     }
 
     public Command getAutonomousCommand() {
