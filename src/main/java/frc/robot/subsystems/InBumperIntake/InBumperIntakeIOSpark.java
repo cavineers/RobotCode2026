@@ -14,54 +14,59 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO.InBumperIntakeIOInputs;
+
 import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
 
 public class InBumperIntakeIOSpark implements InBumperIntakeIO {
     private final SparkMax bottomMotor = new SparkMax(kBottomMotorCanID, MotorType.kBrushless);
     private final RelativeEncoder bottomEncoder = bottomMotor.getEncoder();
 
-    private final SparkMax hopperMotor = new SparkMax(kHopperMotorCanID, MotorType.kBrushless);
-    private final RelativeEncoder hopperEncoder = hopperMotor.getEncoder();
-
-    private final SparkMax topMotor = new SparkMax(kTopMotorCanID, MotorType.kBrushless); 
+    private final SparkMax topMotor = new SparkMax(kTopMotorCanID, MotorType.kBrushless);
     private final RelativeEncoder topEncoder = topMotor.getEncoder();
 
-    private SparkMaxConfig bottomConfig;
-    private SparkMaxConfig hopperConfig;
-    private SparkMaxConfig topConfig;
+    private final SparkMax outsideMotor = new SparkMax(kOutsideMotorCanID, MotorType.kBrushless); 
+    private final RelativeEncoder outsideEncoder = outsideMotor.getEncoder();
 
-    public InBumperIntakeIOSpark() {
+    private SparkMaxConfig bottomConfig;
+    private SparkMaxConfig topConfig;
+    private SparkMaxConfig outsideConfig;
+
+    public InBumperIntakeIOSpark()  {
         bottomConfig = new SparkMaxConfig();
         bottomConfig
-            .idleMode(IdleMode.kBrake)
-            .smartCurrentLimit(InBumperIntakeConstants.kCurrentLimit)
-            .voltageCompensation(12);
+            .idleMode(kBottomIdleMode)
+            .smartCurrentLimit(kBottomCurrentLimit)
+            .voltageCompensation(12)
+            .inverted(kBottomInverted);
         tryUntilOk(
             bottomMotor,
             5,
             () -> bottomMotor.configure(bottomConfig, ResetMode.kResetSafeParameters,
                     PersistMode.kPersistParameters));
 
-        hopperConfig = new SparkMaxConfig();
-        hopperConfig
-            .idleMode(IdleMode.kBrake)
-            .smartCurrentLimit(InBumperIntakeConstants.kCurrentLimit)
-            .voltageCompensation(12);
-        tryUntilOk(
-            hopperMotor,
-            5,
-            () -> hopperMotor.configure(hopperConfig, ResetMode.kResetSafeParameters,
-                    PersistMode.kPersistParameters));
-
         topConfig = new SparkMaxConfig();
         topConfig
-            .idleMode(IdleMode.kBrake)
-            .smartCurrentLimit(InBumperIntakeConstants.kCurrentLimit)
-            .voltageCompensation(12);
+            .idleMode(kTopIdleMode)
+            .smartCurrentLimit(kTopCurrentLimit)
+            .voltageCompensation(12)
+            .inverted(kTopInverted);
         tryUntilOk(
             topMotor,
             5,
             () -> topMotor.configure(topConfig, ResetMode.kResetSafeParameters,
+                    PersistMode.kPersistParameters));
+
+        outsideConfig = new SparkMaxConfig();
+        outsideConfig
+            .idleMode(kOutsideIdleMode)
+            .smartCurrentLimit(kOutsideCurrentLimit)
+            .voltageCompensation(12)
+            .inverted(kOutsideInverted);
+        tryUntilOk(
+            outsideMotor,
+            5,
+            () -> outsideMotor.configure(outsideConfig, ResetMode.kResetSafeParameters,
                     PersistMode.kPersistParameters));
     }
 
@@ -76,15 +81,6 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
         ifOk(bottomMotor, bottomMotor::getOutputCurrent, (value) -> inputs.bottomMotorCurrentAmps = value);
 
 
-        ifOk(hopperMotor, hopperEncoder::getPosition, (value) -> inputs.hopperMotorPositionRad = value);
-        ifOk(hopperMotor, hopperEncoder::getVelocity, (value) -> inputs.hopperMotorVelocityRadPerSec = value);
-        ifOk(
-            hopperMotor,
-            new DoubleSupplier[] {hopperMotor::getAppliedOutput, hopperMotor::getBusVoltage},
-            (values) -> inputs.hopperMotorAppliedVolts = values[0] * values[1]);
-        ifOk(hopperMotor, hopperMotor::getOutputCurrent, (value) -> inputs.hopperMotorCurrentAmps = value);
-
-
         ifOk(topMotor, topEncoder::getPosition, (value) -> inputs.topMotorPositionRad = value);
         ifOk(topMotor, topEncoder::getVelocity, (value) -> inputs.topMotorVelocityRadPerSec = value);
         ifOk(
@@ -92,6 +88,15 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
             new DoubleSupplier[] {topMotor::getAppliedOutput, topMotor::getBusVoltage},
             (values) -> inputs.topMotorAppliedVolts = values[0] * values[1]);
         ifOk(topMotor, topMotor::getOutputCurrent, (value) -> inputs.topMotorCurrentAmps = value);
+
+
+        ifOk(outsideMotor, outsideEncoder::getPosition, (value) -> inputs.outsideMotorPositionRad = value);
+        ifOk(outsideMotor, outsideEncoder::getVelocity, (value) -> inputs.outsideMotorVelocityRadPerSec = value);
+        ifOk(
+            outsideMotor,
+            new DoubleSupplier[] {outsideMotor::getAppliedOutput, outsideMotor::getBusVoltage},
+            (values) -> inputs.outsideMotorAppliedVolts = values[0] * values[1]);
+        ifOk(outsideMotor, outsideMotor::getOutputCurrent, (value) -> inputs.outsideMotorCurrentAmps = value);
     }
 
     @Override
@@ -100,12 +105,13 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
     }
     
     @Override
-    public void setHopperVoltage(double volts) {
-        hopperMotor.setVoltage(volts);
-    }
-
-    @Override
     public void setTopVoltage(double volts) {
         topMotor.setVoltage(volts);
     }
+
+    @Override
+    public void setOutsideVoltage(double volts) {
+        outsideMotor.setVoltage(volts);
+    }
+
 }

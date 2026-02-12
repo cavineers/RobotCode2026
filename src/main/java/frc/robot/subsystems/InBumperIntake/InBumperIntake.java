@@ -25,24 +25,60 @@ public class InBumperIntake extends SubsystemBase {
         io.setBottomVoltage(volts);
     }
 
-    public void setHopperVoltage(double volts) {
-        io.setHopperVoltage(volts);
-    }
-
     public void setTopVoltage(double volts) {
         io.setTopVoltage(volts);
     }
 
-    public Command setBottomVoltageCommand(double volts) {
-        return Commands.run(() -> io.setBottomVoltage(volts), this).finallyDo(interrupted -> io.setBottomVoltage(0));
+    public void setOutsideVoltage(double volts) {
+        io.setOutsideVoltage(volts);
     }
 
-    public Command setHopperVoltageCommand(double volts) {
-        return Commands.run(() -> io.setHopperVoltage(volts), this).finallyDo(interrupted -> io.setHopperVoltage(0));
+    public Command setOutsideVoltageCommand(double volts) {
+        return Commands.run(() -> io.setOutsideVoltage(volts)).finallyDo(interrupted -> io.setOutsideVoltage(0.0));
+    }
+
+    public Command setBottomVoltageCommand(double volts) {
+        return Commands.run(() -> io.setBottomVoltage(volts)).finallyDo(interrupted -> io.setBottomVoltage(0));
     }
 
     public Command setTopVoltageCommand(double volts) {
-        return Commands.run(() -> io.setTopVoltage(volts), this).finallyDo(interrupted -> io.setTopVoltage(0.0));
+        return Commands.run(() -> io.setTopVoltage(volts)).finallyDo(interrupted -> io.setTopVoltage(0));
+    }
+
+    public Command runGroundToShooter(double outsideVolts, double bottomVolts, double topVolts) {
+        return Commands.run(() -> {
+            io.setOutsideVoltage(-outsideVolts);
+            io.setBottomVoltage(bottomVolts);
+            io.setTopVoltage(topVolts);})
+        .finallyDo(interrupted -> {
+            io.setOutsideVoltage(0);
+            io.setBottomVoltage(0);
+            io.setTopVoltage(0);
+        });
+    }
+
+    public Command runGroundToHopper(double outsideVolts, double bottomVolts, double topVolts) {
+        return Commands.run(() -> {
+            io.setOutsideVoltage(-outsideVolts);
+            io.setBottomVoltage(bottomVolts);
+            io.setTopVoltage(-topVolts);})
+        .finallyDo(interrupted -> {
+            io.setOutsideVoltage(0);
+            io.setBottomVoltage(0);
+            io.setTopVoltage(0);
+        });
+    }
+
+    public Command runHopperToShooter(double outsideVolts, double bottomVolts, double topVolts) {
+        return Commands.run(() -> {
+            io.setOutsideVoltage(-outsideVolts);
+            io.setBottomVoltage(-bottomVolts);
+            io.setTopVoltage(topVolts);})
+        .finallyDo(interrupted -> {
+            io.setOutsideVoltage(0);
+            io.setBottomVoltage(0);
+            io.setTopVoltage(0);
+        });
     }
 
 }

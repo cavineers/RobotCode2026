@@ -10,15 +10,15 @@ public interface InBumperIntakeIO {
         public double bottomMotorAppliedVolts = 0.0;
         public double bottomMotorCurrentAmps = 0.0;
 
-        public double hopperMotorPositionRad = 0.0;
-        public double hopperMotorVelocityRadPerSec = 0.0;
-        public double hopperMotorAppliedVolts = 0.0;
-        public double hopperMotorCurrentAmps = 0.0;
-
         public double topMotorPositionRad = 0.0;
         public double topMotorVelocityRadPerSec = 0.0;
         public double topMotorAppliedVolts = 0.0;
         public double topMotorCurrentAmps = 0.0;
+
+        public double outsideMotorPositionRad = 0.0;
+        public double outsideMotorVelocityRadPerSec = 0.0;
+        public double outsideMotorAppliedVolts = 0.0;
+        public double outsideMotorCurrentAmps = 0.0;
 
     }
     
@@ -26,7 +26,7 @@ public interface InBumperIntakeIO {
     
     public default void setBottomVoltage(double volts) {}
 
-    public default void setHopperVoltage(double volts) {}
-
     public default void setTopVoltage(double volts) {}
+
+    public default void setOutsideVoltage(double volts) {}
 } 
