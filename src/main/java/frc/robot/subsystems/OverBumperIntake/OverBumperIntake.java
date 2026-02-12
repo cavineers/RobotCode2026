@@ -71,7 +71,7 @@ public class OverBumperIntake extends SubsystemBase {
     }
 
     public Command deployCommand() {
-        return Commands.run(() -> {
+        return Commands.runOnce(() -> {
             this.io.setClosedLoop(true);
             io.autoDeploy();
         }, this);
