@@ -9,6 +9,9 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
 import static frc.robot.subsystems.Shooter.ShooterConstants.*;
 
+import org.littletonrobotics.junction.AutoLog;
+import org.littletonrobotics.junction.AutoLogOutput;
+
 public class ShooterIOKraken implements ShooterIO {
     
     private final TalonFX flywheelMotor;
@@ -91,5 +94,10 @@ public class ShooterIOKraken implements ShooterIO {
         flywheelConfig.Slot0.kV = kV;
         flywheelConfig.Slot0.kA = kA;
         flywheelMotor.getConfigurator().apply(flywheelConfig.Slot0);
+    }
+
+    @AutoLogOutput(key = "Shooter/PIDError")
+    public double getPIDError(){
+        return this.flywheelMotor.getClosedLoopError(true).getValueAsDouble();
     }
 }

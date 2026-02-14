@@ -114,7 +114,7 @@ public class RobotContainer {
                 primaryDriverController::getRightX)
             );
 
-        primaryDriverController.b().whileTrue(shooter.setVelocityCommand(4500));
+        primaryDriverController.b().whileTrue(shooter.setVelocityCommand(4000));
     }
 
     public void configureNamedCommands() {

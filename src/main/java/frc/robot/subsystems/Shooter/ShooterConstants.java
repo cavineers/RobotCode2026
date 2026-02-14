@@ -6,7 +6,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 public class ShooterConstants {
-    public static final int kFlywheelCanID = 1; //TODO: Set to actual CanID
+    public static final int kFlywheelCanID = 7; //TODO: Set to actual CanID
     public static final int kFollowerCanID = 3;
     public static final int kAngleCanID = 2;
     public static final String kShooterCanBus = "";
@@ -23,9 +23,9 @@ public class ShooterConstants {
 
     // Motor configuration Kraken X60
     public static final NeutralModeValue kFlywheelNeutralMode = NeutralModeValue.Coast;
-    public static final InvertedValue kFlywheelMotorInverted = InvertedValue.CounterClockwise_Positive;
+    public static final InvertedValue kFlywheelMotorInverted = InvertedValue.Clockwise_Positive;
     public static final NeutralModeValue kFollowerNeutralMode = NeutralModeValue.Coast;
-    public static final InvertedValue kFollowerMotorInverted = InvertedValue.CounterClockwise_Positive;
+    public static final InvertedValue kFollowerMotorInverted = InvertedValue.Clockwise_Positive;
     
     public static final double kSupplyCurrentLimit = 20.0; // Amps
     public static final double kStatorCurrentLimit = 40.0; // Amps
