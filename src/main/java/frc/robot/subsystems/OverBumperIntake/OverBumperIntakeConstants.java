@@ -31,7 +31,7 @@ public class OverBumperIntakeConstants {
     //Simulation Constants
     public static final double kSimP = 0.047; //TODO: tune
     public static final double kSimI = 0.0;
-    public static final double kSimD = 0.0;
+    public static final double kSimD = 0.1;
     public static final double kSimS = 0.0; //TODO: tune
     public static final double kSimV = 0.12;
     public static final double kSimA = 0.0;

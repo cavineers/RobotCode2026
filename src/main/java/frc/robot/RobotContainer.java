@@ -17,7 +17,6 @@ import frc.robot.subsystems.Drivetrain.ModuleIOSim;
 import frc.robot.subsystems.Drivetrain.ModuleIOSpark;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntake;
-import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeConstants;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIO;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSim;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSpark;
@@ -115,7 +114,6 @@ public class RobotContainer {
 
     public void configureNamedCommands() {
         // Register Named Commands
-        //NamedCommands.registerCommand(null, getAutonomousCommand());
     }
 
     public Command getAutonomousCommand() {

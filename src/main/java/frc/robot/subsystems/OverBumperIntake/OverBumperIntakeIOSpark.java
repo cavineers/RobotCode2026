@@ -10,6 +10,7 @@ import static frc.robot.subsystems.OverBumperIntake.OverBumperIntakeConstants.*;
 import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -40,7 +41,7 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     public boolean deployed = false;
 
     @AutoLogOutput(key="OverBumperIntake/IsClosed")
-    private boolean isClosed = true;
+    private boolean isClosed = false;
 
     public OverBumperIntakeIOSpark() {
         deployConfig = new SparkMaxConfig();
@@ -93,6 +94,14 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
         // Set the last element to currentAmps
         inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.deployCurrentAmps;
 
+        double desiredVoltage = this.controller.calculate(inputs.deployPositionRad);
+
+        Logger.recordOutput("OverBumperIntake/PIDRequestedVoltage", desiredVoltage);
+
+        if (this.isClosed){
+            this.setDeployVoltage(desiredVoltage);
+        }
+
         inputs.deployed = this.deployed;
     }
         
@@ -113,15 +122,15 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     }
 
     public double clipSetpoint(double setpoint) {
-        if (motorSetpoint > OverBumperIntakeConstants.kDeployedRotations) {
+        if (setpoint > OverBumperIntakeConstants.kDeployedRotations) {
             return OverBumperIntakeConstants.kDeployedRotations;
-        } else if (motorSetpoint < OverBumperIntakeConstants.kRetractedRotations) {
+        } else if (setpoint < OverBumperIntakeConstants.kRetractedRotations) {
             return OverBumperIntakeConstants.kRetractedRotations;
         }
         return setpoint;
     }
 
-     @Override
+    @Override
     public void setClosedLoop(boolean val) {
         this.isClosed = val;
     }

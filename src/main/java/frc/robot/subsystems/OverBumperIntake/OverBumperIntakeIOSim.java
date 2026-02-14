@@ -1,6 +1,7 @@
 package frc.robot.subsystems.OverBumperIntake;
 
 import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -19,11 +20,16 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         LinearSystemId.createDCMotorSystem(DCMotor.getNEO(1), 0.004, 1),
         DCMotor.getNEO(1));
     
+    @AutoLogOutput(key="OverBumperIntake/motorSetpoint")
+    private double motorSetpoint = 0;
+
     @AutoLogOutput(key="OverBumperIntake/Deployed")
     public boolean deployed = false;
 
+    @AutoLogOutput(key="OverBumperIntake/IsClosed")
+    private boolean isClosed = false;
+
     private double appliedVolts = 0.0;
-    private double motorSetpoint = 0;
     private PIDController simPID = new PIDController (OverBumperIntakeConstants.kSimP, OverBumperIntakeConstants.kSimI, OverBumperIntakeConstants.kSimD);
     private SimpleMotorFeedforward simFF = new SimpleMotorFeedforward (OverBumperIntakeConstants.kSimS, OverBumperIntakeConstants.kSimV, OverBumperIntakeConstants.kSimA);
 
@@ -50,6 +56,14 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         }
         // Set the last element to currentAmps
         inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.deployCurrentAmps;
+
+        double desiredVoltage = this.simPID.calculate(inputs.deployPositionRad);
+
+        Logger.recordOutput("OverBumperIntake/PIDRequestedVoltage", desiredVoltage);
+
+        if (this.isClosed){
+            this.setDeployVoltage(desiredVoltage);
+        }
     }
 
     @Override
@@ -62,21 +76,26 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         appliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
     }
 
-        @Override
+    @Override
     public void updateSetpoint(double setpoint) {
         this.motorSetpoint = this.clipSetpoint(setpoint);
         this.simPID.setSetpoint(motorSetpoint);
     }
 
     public double clipSetpoint(double setpoint) {
-        if (motorSetpoint > OverBumperIntakeConstants.kDeployedRotations) {
+        if (setpoint > OverBumperIntakeConstants.kDeployedRotations) {
             return OverBumperIntakeConstants.kDeployedRotations;
-        } else if (motorSetpoint < OverBumperIntakeConstants.kRetractedRotations) {
+        } else if (setpoint < OverBumperIntakeConstants.kRetractedRotations) {
             return OverBumperIntakeConstants.kRetractedRotations;
         }
         return setpoint;
     }
     
+    @Override
+    public void setClosedLoop(boolean val) {
+        this.isClosed = val;
+    }
+
     @Override
     public void autoDeploy() {
         if (deployed) {
