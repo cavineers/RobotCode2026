@@ -15,7 +15,7 @@ import static frc.robot.subsystems.Drivetrain.SwerveDriveConstants.DriveConstant
 
 /** IO implementation for Pigeon 2. */
 public class GyroPigeonIO implements GyroIO {
-    private final Pigeon2 pigeon = new Pigeon2(kPigeonID);
+    private final Pigeon2 pigeon = new Pigeon2(kPigeonID, kCANBus);
     private final StatusSignal<Angle> yaw = pigeon.getYaw();
     private final Queue<Double> yawPositionQueue;
     private final Queue<Double> yawTimestampQueue;
@@ -25,14 +25,11 @@ public class GyroPigeonIO implements GyroIO {
         pigeon.getConfigurator().apply(new Pigeon2Configuration());
         pigeon.getConfigurator().setYaw(0.0);
         yaw.setUpdateFrequency(kOdometryFrequency);
-        yawVelocity.setUpdateFrequency(50.0);
+        yawVelocity.setUpdateFrequency(kOdometryFrequency);
         pigeon.optimizeBusUtilization();
         
-        yawTimestampQueue = OdometryThreadSparkMax.getInstance().makeTimestampQueue();
-        var yawClone = yaw.clone(); // Status signals are not thread-safe
-        yawPositionQueue =
-                OdometryThreadSparkMax.getInstance()
-                        .registerSignal(() -> yawClone.refresh().getValueAsDouble());
+        yawTimestampQueue = PhoenixOdometryThread.getInstance().makeTimestampQueue();
+        yawPositionQueue = PhoenixOdometryThread.getInstance().registerSignal(yaw.clone());
     }
 
     @Override

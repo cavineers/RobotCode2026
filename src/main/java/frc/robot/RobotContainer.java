@@ -15,12 +15,8 @@ import frc.robot.subsystems.Drivetrain.GyroIO;
 import frc.robot.subsystems.Drivetrain.GyroPigeonIO;
 import frc.robot.subsystems.Drivetrain.ModuleIO;
 import frc.robot.subsystems.Drivetrain.ModuleIOSim;
-import frc.robot.subsystems.Drivetrain.ModuleIOSpark;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
-import frc.robot.subsystems.Shooter.ShooterIO;
-import frc.robot.subsystems.Shooter.ShooterIOKraken;
-import frc.robot.subsystems.Shooter.ShooterIOSim;
-import frc.robot.subsystems.Shooter.ShooterSubsystem;
+import frc.robot.subsystems.Drivetrain.ModuleIOTalonFX;
 import frc.robot.commands.SystemIdCommands;
 
 public class RobotContainer {
@@ -42,10 +38,10 @@ public class RobotContainer {
             case REAL:
                 drivetrain = new SwerveDriveSubsystem(
                         new GyroPigeonIO(),
-                        new ModuleIOSpark(0),
-                        new ModuleIOSpark(1),
-                        new ModuleIOSpark(2),
-                        new ModuleIOSpark(3));
+                        new ModuleIOTalonFX(0),
+                        new ModuleIOTalonFX(1),
+                        new ModuleIOTalonFX(2),
+                        new ModuleIOTalonFX(3));
 
                 // shooter = new ShooterSubsystem(
                 //         new ShooterIOKraken()
@@ -102,7 +98,6 @@ public class RobotContainer {
     }
 
     private void configureButtonBindings() {
-        // Set the drivetrain default command (replaced by shooter command which controls both)
         drivetrain.setDefaultCommand(new SwerveCommand(
                 drivetrain,
                 primaryDriverController::getLeftY,

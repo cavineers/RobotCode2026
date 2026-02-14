@@ -5,18 +5,33 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.math.system.plant.DCMotor;
 
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
 
 public class SwerveDriveConstants {
+    
+    // Enum for closed loop output selection
+    public enum ClosedLoopOutputType {
+        Voltage,
+        TorqueCurrentFOC
+    }
+    
     public static final class ModuleConstants {
-        public static final double kDriveMotorGearRatio = 1 / 6.853; // taken from vendor TODO: confirm
-        public static final double kTurningMotorGearRatio = 1 / (150 / 7.0); // input to output
-        public static final double kTurningDegreesToRad = Math.PI / 180;
-        public static final double kDriveEncoderRot2Rad = kDriveMotorGearRatio * Math.PI * 2;
-        public static final double kTurningEncoderRot2Rad = kTurningMotorGearRatio * 2 * Math.PI;
+        public static final double kDriveMotorGearRatio = 6.03; // taken from vendor TODO: confirm
+        public static final double kTurningMotorGearRatio = (287 / 11.0); // input to output
+        public static final double kTurningDegreesToRad = Math.PI / 180.0;
+        public static final double kDriveEncoderRot2Rad = (1.0 / kDriveMotorGearRatio) * Math.PI * 2;
+        public static final double kTurningEncoderRot2Rad = (1.0 / kTurningMotorGearRatio) * 2 * Math.PI;
         public static final double kDriveEncoderRPM2RadPerSec = kDriveEncoderRot2Rad / 60;
         public static final double kTurningEncoderRPM2RadPerSec = kTurningEncoderRot2Rad / 60;
+        
+        public static final FeedbackSensorSourceValue kTurnFeedbackSource = FeedbackSensorSourceValue.FusedCANcoder; // Set to RemoteCanCoder if not Fused
+        
+        // Closed loop output configuration
+        public static final ClosedLoopOutputType kDriveClosedLoopOutput = ClosedLoopOutputType.Voltage;
+        public static final ClosedLoopOutputType kSteerClosedLoopOutput = ClosedLoopOutputType.Voltage;
     }
 
     public static final class DriveConstants {
@@ -25,7 +40,9 @@ public class SwerveDriveConstants {
 
         public static final double kPhysicalMaxSpeedMetersPerSecond = 4.07; 
         public static final double kPhysicalMaxAngularSpeedRadiansPerSecond = Units.degreesToRadians(720);
-        public static final double kWheelRadiusMeters = Units.inchesToMeters(3.91) / 2.0;
+        public static final double kWheelRadiusMeters = Units.inchesToMeters(2.0);
+        public static final double kSpeedAt12Volts = 5800 * ModuleConstants.kDriveEncoderRPM2RadPerSec * kWheelRadiusMeters; // 5,800RPM freespeed 
+        public static final CANBus kCANBus = new CANBus("canivore"); // NEEDS TO BE CANIVORE NAME OR SERIAL NUMBER
 
         public static final int kFrontLeftTurningCanID = 8;
         public static final int kFrontRightTurningCanID = 2;
@@ -44,10 +61,10 @@ public class SwerveDriveConstants {
 
         public static final int kPigeonID = 13;
 
-        public static final boolean kFrontLeftTurningEncoderReversed = true;
-        public static final boolean kBackLeftTurningEncoderReversed = true;
-        public static final boolean kFrontRightTurningEncoderReversed = true;
-        public static final boolean kBackRightTurningEncoderReversed = true;
+        public static final boolean kFrontLeftTurningEncoderReversed = false;
+        public static final boolean kBackLeftTurningEncoderReversed = false;
+        public static final boolean kFrontRightTurningEncoderReversed = false;
+        public static final boolean kBackRightTurningEncoderReversed = false;
 
         public static final boolean kFrontLeftDriveEncoderReversed = false;
         public static final boolean kBackLeftDriveEncoderReversed = false;
@@ -56,7 +73,7 @@ public class SwerveDriveConstants {
 
         public static final double kTeleDriveMaxSpeedMetersPerSecond = kPhysicalMaxSpeedMetersPerSecond;
         public static final double kTeleDriveMaxAngularSpeedRadiansPerSecond = kPhysicalMaxAngularSpeedRadiansPerSecond
-                / 2;
+                / 2.0;
         public static final double kTeleDriveMaxAccelerationUnitsPerSecond = 3.5;
         public static final double kTeleDriveMaxAngularAccelerationUnitsPerSecond = 2.5;
 
@@ -89,7 +106,7 @@ public class SwerveDriveConstants {
         // Drive PID configuration
         public static final double kDriveKp = 0.0;
         public static final double kDriveKd = 0.0;
-        public static final double kDriveKs = 0.10513;
+        public static final double kDriveKs = 0.;
         public static final double kDriveKv = 0.14043;
         
         public static final double kDriveSimP = 1;

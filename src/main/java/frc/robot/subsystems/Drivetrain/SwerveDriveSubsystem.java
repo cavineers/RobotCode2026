@@ -95,7 +95,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
 
         // Start odometry thread
-        OdometryThreadSparkMax.getInstance().start();
+        PhoenixOdometryThread.getInstance().start();
 
         // Configure the System Identification routine
         this.sysId = new SysIdRoutine(new SysIdRoutine.Config(null, null, null,
