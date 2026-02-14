@@ -1,47 +1,60 @@
 package frc.robot.subsystems.Shooter;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
 import static frc.robot.subsystems.Shooter.ShooterConstants.*;
 
 public class ShooterIOKraken implements ShooterIO {
     
     private final TalonFX flywheelMotor;
+    private final TalonFX followerMotor;
     private final VelocityVoltage velocityControl;
     private final VoltageOut voltageControl = new VoltageOut(0);
 
     public ShooterIOKraken() {
         flywheelMotor = new TalonFX(kFlywheelCanID);
+        followerMotor = new TalonFX(kFollowerCanID);
         
         // Enable FOC in velocity control
         velocityControl = new VelocityVoltage(0)
             .withSlot(0)
             .withEnableFOC(kEnableFOC);
 
-        var config = new TalonFXConfiguration();
+        var flywheelConfig = new TalonFXConfiguration();
+        var followerConfig = new TalonFXConfiguration();
         
         // Motor configuration
-        config.MotorOutput.NeutralMode = kNeutralMode;
-        config.MotorOutput.Inverted = kMotorInverted;
+        flywheelConfig.MotorOutput.NeutralMode = kFlywheelNeutralMode;
+        flywheelConfig.MotorOutput.Inverted = kFlywheelMotorInverted;
+        followerConfig.MotorOutput.NeutralMode = kFlywheelNeutralMode;
+        followerConfig.MotorOutput.Inverted = kFollowerMotorInverted;
         
         // Current limits
-        config.CurrentLimits.SupplyCurrentLimit = kSupplyCurrentLimit;
-        config.CurrentLimits.SupplyCurrentLimitEnable = true;
-        config.CurrentLimits.StatorCurrentLimit = kStatorCurrentLimit;
-        config.CurrentLimits.StatorCurrentLimitEnable = true;
+        flywheelConfig.CurrentLimits.SupplyCurrentLimit = kSupplyCurrentLimit;
+        flywheelConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        flywheelConfig.CurrentLimits.StatorCurrentLimit = kStatorCurrentLimit;
+        flywheelConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+        followerConfig.CurrentLimits.SupplyCurrentLimit = kSupplyCurrentLimit;
+        followerConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        followerConfig.CurrentLimits.StatorCurrentLimit = kStatorCurrentLimit;
+        followerConfig.CurrentLimits.StatorCurrentLimitEnable = true;
         
-        // PID configuration (slot 0)
-        config.Slot0.kP = kP;
-        config.Slot0.kI = kI;
-        config.Slot0.kD = kD;
-        config.Slot0.kS = kS;
-        config.Slot0.kV = kV;
-        config.Slot0.kA = kA;
+        // PID flywheelConfiguration (slot 0)
+        flywheelConfig.Slot0.kP = kP;
+        flywheelConfig.Slot0.kI = kI;
+        flywheelConfig.Slot0.kD = kD;
+        flywheelConfig.Slot0.kS = kS;
+        flywheelConfig.Slot0.kV = kV;
+        flywheelConfig.Slot0.kA = kA;
         
-        flywheelMotor.getConfigurator().apply(config);
+        flywheelMotor.getConfigurator().apply(flywheelConfig);
+        followerMotor.getConfigurator().apply(followerConfig);
+        followerMotor.setControl(new Follower(kFlywheelCanID, MotorAlignmentValue.Opposed));//TODO: Check
     }
 
     @Override
@@ -64,19 +77,19 @@ public class ShooterIOKraken implements ShooterIO {
 
     @Override
     public void setPID(double kP, double kI, double kD) {
-        var config = new TalonFXConfiguration();
-        config.Slot0.kP = kP;
-        config.Slot0.kI = kI;
-        config.Slot0.kD = kD;
-        flywheelMotor.getConfigurator().apply(config.Slot0);
+        var flywheelConfig = new TalonFXConfiguration();
+        flywheelConfig.Slot0.kP = kP;
+        flywheelConfig.Slot0.kI = kI;
+        flywheelConfig.Slot0.kD = kD;
+        flywheelMotor.getConfigurator().apply(flywheelConfig.Slot0);
     }
 
     @Override
     public void setFF(double kS, double kV, double kA) {
-        var config = new TalonFXConfiguration();
-        config.Slot0.kS = kS;
-        config.Slot0.kV = kV;
-        config.Slot0.kA = kA;
-        flywheelMotor.getConfigurator().apply(config.Slot0);
+        var flywheelConfig = new TalonFXConfiguration();
+        flywheelConfig.Slot0.kS = kS;
+        flywheelConfig.Slot0.kV = kV;
+        flywheelConfig.Slot0.kA = kA;
+        flywheelMotor.getConfigurator().apply(flywheelConfig.Slot0);
     }
 }
