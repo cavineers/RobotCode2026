@@ -69,4 +69,8 @@ public class Shooter extends SubsystemBase{
     public Command stopCommand() {
         return Commands.run(() -> io.setVoltage(0), this);
     }
+
+    public Command setVelocityCommand(double velocityRPM) {
+        return Commands.run(() -> io.setVelocity(velocityRPM), this);
+    }
 }
