@@ -26,11 +26,13 @@ public class ClimberIOSim implements ClimberIO {
 
     private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("Tuning/Dealgaefier/P", kProportionalTermSim);
     private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("Tuning/Dealgaefier/I", kDerivativeTermSim);
-    
+
+    private static DIOSim limitSwitch = new DIOSim(kLimitSwitchID);
+
     private PIDController climberController = new PIDController(tuningP.get(), 0.0, tuningD.get());
 
-        @Override
-        public void updateInputs(ClimberIOInputs inputs) {
+    @Override
+    public void updateInputs(ClimberIOInputs inputs) {
             
         if (tuningP.get() != climberController.getP() || tuningD.get() != climberController.getD()) {
             climberController.setPID(tuningP.get(), 0.0, tuningD.get());
@@ -51,20 +53,24 @@ public class ClimberIOSim implements ClimberIO {
 
         }
 
-        }
+    }
 
-        public void setClimberVolts(double volts) {
-            appliedVolts = MathUtil.clamp(volts, -12, 12);
-        }
+    public void setClimberVolts(double volts) {
+        appliedVolts = MathUtil.clamp(volts, -12, 12);
+    }
 
-        @Override
-        public void updateClimberSetpoint(double positionRad){
-            this.climberSetpoint = positionRad;
-            climberController.setSetpoint(this.climberSetpoint);
-        }
+    public boolean getLimitSwitch() {
+        return limitSwitch.getValue();
+    }
+    
+    @Override
+    public void updateClimberSetpoint(double positionRad){
+        this.climberSetpoint = positionRad;
+        climberController.setSetpoint(this.climberSetpoint);
+    }
             
 
-        }
+}
 
        
 

@@ -5,6 +5,8 @@ public class ClimberConstants {
 
     public static final int kClimberCanID = 51; //TODO: Update
 
+    public static final int kLimitSwitchID = 0; //TODO: Update
+
     public static final double kRestAbsoluteRotations = 0.0; //TODO: Update
     public static final double kDeployedAbsoluteRotations = 5.0; //TODO: Update
     public static final double kEngagedAbsoluteRotations = 2.5; //TODO: Update

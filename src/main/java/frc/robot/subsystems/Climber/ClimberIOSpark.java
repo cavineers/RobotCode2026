@@ -42,6 +42,8 @@ public class ClimberIOSpark implements ClimberIO {
 
     private SparkMaxConfig deployConfig;
 
+    private DigitalInput limitSwitch = new DigitalInput(kLimitSwitchID);
+
     @AutoLogOutput(key="Climber/Deployed")
     public boolean deployed = false;
     
@@ -77,10 +79,18 @@ public class ClimberIOSpark implements ClimberIO {
 
         double desiredVoltage = this.controller.calculate(deployEncoder.getPosition()) + this.calculateFeedforward();
         Logger.recordOutput("Climber/desiredVoltage", desiredVoltage);
+        Logger.recordOutput("Climber/climberPositionRotations", inputs.climberPositionRotations);
         Logger.recordOutput("Climber/Error", this.controller.getError());
         Logger.recordOutput("Climber/PIDSetpoint", this.controller.getSetpoint());
+        Logger.recordOutput("Climber/limitSwitchPressed", this.limitSwitchPressed());
+        
         if (this.isClosed){
             this.setDeployVoltage(desiredVoltage);
+        }
+
+        if (this.limitSwitchPressed()){
+            this.deployed = false;
+            inputs.climberPositionRotations = 0;
         }
 
         if (ClimberConstants.kTuningMode){
@@ -94,6 +104,7 @@ public class ClimberIOSpark implements ClimberIO {
         deployMotor.setVoltage(volts);
     }
 
+    @Override
     public void updateClimberSetpoint(double setpoint) {
         this.absSetpoint = this.clipSetpoint(setpoint);
         this.controller.setSetpoint(absSetpoint);
@@ -129,13 +140,19 @@ public class ClimberIOSpark implements ClimberIO {
         }
     }
 
+    @Override
     public void deploy() {
         updateClimberSetpoint(kDeployedMotorRotations);
         deployed = true;
     }
 
+    @Override
     public void retract() {
         updateClimberSetpoint(kRestMotorRotations);
         deployed = false;
+    }
+
+    public boolean limitSwitchPressed() {
+        return limitSwitch.get();
     }
  }

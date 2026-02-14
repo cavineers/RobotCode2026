@@ -12,6 +12,7 @@ public interface ClimberIO {
         public double climberCurrentAmps = 0.0;
 
         public boolean deployed = false;
+        public boolean limitSwitch;
     }
     
     default void updateInputs(ClimberIOInputs inputs) {
