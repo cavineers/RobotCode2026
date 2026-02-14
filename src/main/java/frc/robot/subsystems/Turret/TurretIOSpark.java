@@ -1,6 +1,7 @@
 package frc.robot.subsystems.Turret;
 
 import static frc.robot.subsystems.Turret.TurretConstants.*;
+import static frc.robot.subsystems.Turret.TurretIO.*;
 import static frc.lib.SparkUtil.*;
 
 import java.util.function.DoubleSupplier;
@@ -17,8 +18,6 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DigitalInput;
-
-
 
 public class TurretIOSpark implements TurretIO{
     private final SparkFlex motor = new SparkFlex(kTurretCanID, MotorType.kBrushless);
@@ -43,7 +42,7 @@ public class TurretIOSpark implements TurretIO{
              .idleMode(TurretConstants.kIdleMode)
              .smartCurrentLimit((int) TurretConstants.kCurrentLimit)
              .voltageCompensation(12.0);
-             // positionConversionFactor MotorRotations -> Turretrads
+             //.positionConversionFactor(TurretIO.absoluteRadians * 2 * Math.PI);//TODO: positionConversionFactor MotorRotations -> Turretrads
         config.signals
             .appliedOutputPeriodMs(20)
             .busVoltagePeriodMs(20)
@@ -103,7 +102,6 @@ public class TurretIOSpark implements TurretIO{
         }
     }
 
-    
     public void rotate(){
         updateTurretPosition(kMinAngleRad);
         setTurretVoltage(12.0);

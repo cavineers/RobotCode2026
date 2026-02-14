@@ -14,9 +14,9 @@ public class TurretConstants {
     public static final double kMaxAngleRad = Units.degreesToRadians(359.0); //TODO: input real terms
     public static final double kMinAngleRad = Units.degreesToRadians(0.0);
 
-    public static final double kProportionalGainSpark = 0.0;// TODO: update with actual term
-    public static final double kDerivativeTermSpark = 0.0;// TODO: update with actual term
-    public static final double kIntegralTermSpark = 0.0; // TODO: update with actual term
+    public static final double kProportionalGainSpark = 0.1;// TODO: update with actual term
+    public static final double kDerivativeTermSpark = 0.1;// TODO: update with actual term
+    public static final double kIntegralTermSpark = 0.1; // TODO: update with actual term
 
     public static final double kProportionalTermSim = .1; // TODO: Update with actual term
     public static final double kDerivativeTermSim = .1; //TODO: Update with actual term
