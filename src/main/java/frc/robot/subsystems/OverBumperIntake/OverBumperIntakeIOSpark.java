@@ -35,7 +35,7 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     private SparkMaxConfig deployConfig;
     private SparkMaxConfig intakeConfig;
 
-    PIDController controller = new PIDController(kP, kI, kD);
+    PIDController controller = new PIDController(kProportionalGainSpark, kIntegralTermSpark, kDerivativeTermSpark);
 
     @AutoLogOutput(key="OverBumperIntake/Deployed")
     public boolean deployed = false;
@@ -155,5 +155,10 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     @Override
     public void outtake() {
         setIntakeVoltage(-kIntakeVoltage * 12.0);
+    }
+
+    @Override
+    public void setPID(double kp, double ki, double kd) {
+        this.controller.setPID(kp, ki, kd);
     }
 }

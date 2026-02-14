@@ -5,7 +5,6 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
@@ -31,8 +30,7 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
 
     private double appliedVolts = 0.0;
     private PIDController simPID = new PIDController (OverBumperIntakeConstants.kSimP, OverBumperIntakeConstants.kSimI, OverBumperIntakeConstants.kSimD);
-    private SimpleMotorFeedforward simFF = new SimpleMotorFeedforward (OverBumperIntakeConstants.kSimS, OverBumperIntakeConstants.kSimV, OverBumperIntakeConstants.kSimA);
-
+   
     @Override
     public void updateInputs(OverBumperIntakeIOInputs inputs) {
         deployMotor.setInputVoltage(appliedVolts);
@@ -122,13 +120,6 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         simPID.setP(kp);
         simPID.setI(ki);
         simPID.setD(kd);
-    }
-
-    @Override
-    public void setFF(double ks, double kv, double ka) {
-        simFF.setKs(ks);
-        simFF.setKv(kv);
-        simFF.setKa(ka);
     }
 }
 

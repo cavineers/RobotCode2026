@@ -3,6 +3,7 @@ package frc.robot.subsystems.OverBumperIntake;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 import static frc.robot.subsystems.OverBumperIntake.OverBumperIntakeConstants.*;
@@ -16,9 +17,9 @@ public class OverBumperIntake extends SubsystemBase {
     private double kI;
     private double kD;
 
-    private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/OverBumperIntake/kP", OverBumperIntakeConstants.kP);  
-    private LoggedNetworkNumber tuningI = new LoggedNetworkNumber ("/Tuning/OverBumperIntake/kI", OverBumperIntakeConstants.kI);  
-    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber ("/Tuning/OverBumperIntake/kD", OverBumperIntakeConstants.kD); 
+    private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/OverBumperIntake/kP", OverBumperIntakeConstants.kProportionalGainSpark);  
+    private LoggedNetworkNumber tuningI = new LoggedNetworkNumber ("/Tuning/OverBumperIntake/kI", OverBumperIntakeConstants.kIntegralTermSpark);  
+    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber ("/Tuning/OverBumperIntake/kD", OverBumperIntakeConstants.kDerivativeTermSpark); 
 
     public OverBumperIntake(OverBumperIntakeIO io) {
         this.io = io;
@@ -40,7 +41,7 @@ public class OverBumperIntake extends SubsystemBase {
             Logger.recordOutput("OverBumperIntake/CutOff", false);
         }
 
-        if (kP != tuningP.get() || kI != tuningI.get() || kD != tuningD.get()) {
+        if (kProportionalGainSpark != tuningP.get() || kIntegralTermSpark != tuningI.get() || kDerivativeTermSpark != tuningD.get()) {
             kP = tuningP.get();
             kI = tuningI.get();
             kD = tuningD.get();
@@ -63,7 +64,10 @@ public class OverBumperIntake extends SubsystemBase {
 
     public Command setDeployVoltageCommand(double volts) {
         this.io.setClosedLoop(false);
-        return Commands.run(() -> io.setDeployVoltage(volts), this).finallyDo(interrupted -> io.setDeployVoltage(0));
+        return Commands.run(() -> {
+            io.setClosedLoop(false);
+            io.setDeployVoltage(volts);
+        }, this);
     }
 
     public Command setIntakeVoltageCommand(double volts) {
