@@ -44,20 +44,20 @@ public class SwerveDriveConstants {
         public static final double kSpeedAt12Volts = 5800 * ModuleConstants.kDriveEncoderRPM2RadPerSec * kWheelRadiusMeters; // 5,800RPM freespeed 
         public static final CANBus kCANBus = new CANBus("canivore"); // NEEDS TO BE CANIVORE NAME OR SERIAL NUMBER
 
-        public static final int kFrontLeftTurningCanID = 8;
-        public static final int kFrontRightTurningCanID = 2;
-        public static final int kBackRightTurningCanID = 4;
-        public static final int kBackLeftTurningCanID = 6;
+        public static final int kFrontLeftTurningCanID = 1;
+        public static final int kBackLeftTurningCanID = 3;
+        public static final int kBackRightTurningCanID = 5;
+        public static final int kFrontRightTurningCanID = 7;
         
-        public static final int kFrontLeftDriveCanID = 7;
-        public static final int kFrontRightDriveCanID = 1;
-        public static final int kBackRightDriveCanID = 3;
-        public static final int kBackLeftDriveCanID = 5;
+        public static final int kFrontLeftDriveCanID = 2;
+        public static final int kBackLeftDriveCanID = 4;
+        public static final int kBackRightDriveCanID = 6;
+        public static final int kFrontRightDriveCanID = 8;
 
-        public static final int kFrontLeftAbsoluteEncoderPort = 12;
-        public static final int kFrontRightAbsoluteEncoderPort = 11;
-        public static final int kBackRightAbsoluteEncoderPort = 10;
-        public static final int kBackLeftAbsoluteEncoderPort = 9;
+        public static final int kFrontLeftAbsoluteEncoderPort = 9;
+        public static final int kBackLeftAbsoluteEncoderPort = 10;
+        public static final int kBackRightAbsoluteEncoderPort = 11;
+        public static final int kFrontRightAbsoluteEncoderPort = 12;
 
         public static final int kPigeonID = 13;
 
@@ -67,28 +67,31 @@ public class SwerveDriveConstants {
         public static final boolean kBackRightTurningEncoderReversed = false;
 
         public static final boolean kFrontLeftDriveEncoderReversed = false;
-        public static final boolean kBackLeftDriveEncoderReversed = false;
+        public static final boolean kBackLeftDriveEncoderReversed = true;
         public static final boolean kFrontRightDriveEncoderReversed = false;
-        public static final boolean kBackRightDriveEncoderReversed = false;
+        public static final boolean kBackRightDriveEncoderReversed = true;
 
         public static final double kTeleDriveMaxSpeedMetersPerSecond = kPhysicalMaxSpeedMetersPerSecond;
         public static final double kTeleDriveMaxAngularSpeedRadiansPerSecond = kPhysicalMaxAngularSpeedRadiansPerSecond
                 / 2.0;
-        public static final double kTeleDriveMaxAccelerationUnitsPerSecond = 3.5;
-        public static final double kTeleDriveMaxAngularAccelerationUnitsPerSecond = 2.5;
+        
+        // Linear acceleration limit (m/s²)
+        public static final double kTeleDriveMaxAccelerationMetersPerSecSq = 4.5;
+        
+        // Angular acceleration limit (rad/s²)
+        public static final double kTeleDriveMaxAngularAccelerationRadPerSecSq = 12.0;
 
-        public static final double kFrontLeftAbsoluteEncoderOffset = 0; // In rotations (read straight from the encoder)
-        public static final double kBackLeftAbsoluteEncoderOffset = 0; // This is done by zeroing in cancoder
-        public static final double kFrontRightAbsoluteEncoderOffset = 0;
-        public static final double kBackRightAbsoluteEncoderOffset = 0;
+        public static final double kFrontLeftAbsoluteEncoderOffset = -0.1255; 
+        public static final double kBackLeftAbsoluteEncoderOffset = 0.1618; 
+        public static final double kFrontRightAbsoluteEncoderOffset = -.3166;
+        public static final double kBackRightAbsoluteEncoderOffset = -0.3027;
 
         // Distance between right and left wheefls
-        public static final double kTrackWidth = Units.inchesToMeters(24);
+        public static final double kTrackWidth = Units.inchesToMeters(21.589);
         // Distance between front and back wheels
-        public static final double kWheelBase = Units.inchesToMeters(25);
+        public static final double kWheelBase = Units.inchesToMeters(21.589);
         public static final double kDriveBaseRadius = Math.hypot(kTrackWidth / 2.0, kWheelBase / 2.0);
-        public static final double kSideLength = Units.inchesToMeters(17.5); // 2.5 inches bumper: Represents full width
-                                                                             // of the robot
+
 
         public static final Translation2d[] moduleTranslations = new Translation2d[] {
                 new Translation2d(DriveConstants.kWheelBase / 2.0, DriveConstants.kTrackWidth / 2.0),
@@ -104,10 +107,10 @@ public class SwerveDriveConstants {
         public static final DCMotor kDriveGearbox = DCMotor.getNEO(1);
 
         // Drive PID configuration
-        public static final double kDriveKp = 0.0;
+        public static final double kDriveKp = 2.5;
         public static final double kDriveKd = 0.0;
-        public static final double kDriveKs = 0.;
-        public static final double kDriveKv = 0.14043;
+        public static final double kDriveKs = 0.11960;
+        public static final double kDriveKv = 0.10529;
         
         public static final double kDriveSimP = 1;
         public static final double kDriveSimD = 0.0;
@@ -119,12 +122,10 @@ public class SwerveDriveConstants {
         public static final DCMotor kTurnGearbox = DCMotor.getNEO(1);
 
         // Turn PID configuration
-        public static final double kTurnKp = 0.5;
+        public static final double kTurnKp = 100.0;
         public static final double kTurnKd = 0.0;
         public static final double kTurnSimP = 9.0;
         public static final double kTurnSimD = 0.0;
-        public static final double kTurnPIDMinInput = 0; // Radians
-        public static final double kTurnPIDMaxInput = 2 * Math.PI; // Radians
 
         // PathPlanner configuration
         public static final double kRobotMassKg = 56.7;
