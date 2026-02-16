@@ -65,12 +65,7 @@ public class TurretIOSpark implements TurretIO {
                         TurretConstants.kPositionKp,
                         TurretConstants.kPositionKi,
                         TurretConstants.kPositionKd)
-                .outputRange(-1.0, 1.0)
-                .maxMotion
-                .cruiseVelocity(TurretConstants.kMaxMotionCruiseVelocityRadPerSec)
-                .maxAcceleration(TurretConstants.kMaxMotionAccelerationRadPerSecSq)
-                .allowedProfileError(TurretConstants.kMaxMotionAllowedErrorRad);
-        closedLoopConfig.feedForward.kV(TurretConstants.kVelocityF);
+                .outputRange(-1.0, 1.0);
 
         config.closedLoop.apply(closedLoopConfig);
 

@@ -36,15 +36,6 @@ public final class TurretConstants {
     public static final double kPresetOneRad = Units.degreesToRadians(0.0); // Front
     public static final double kPresetTwoRad = Units.degreesToRadians(45.0); // Left Diagonal
     public static final double kPresetThreeRad = Units.degreesToRadians(-45.0); // Right Diagonal
-    
-
-    // MAXMotion constraints (radians / second and radians / second^2)
-    // NEO Free Speed ~ 5676 RPM / 10 = 567.6 RPM = ~59.4 rad/s
-    // Setting cruise to ~1/2 free speed for testing
-    // Free speed is ~60 rad/s. 
-    public static final double kMaxMotionCruiseVelocityRadPerSec = 45.0;
-    public static final double kMaxMotionAccelerationRadPerSecSq = 180.0;
-    public static final double kMaxMotionAllowedErrorRad = Units.degreesToRadians(2.0);
 
     // Electrical limits 
     public static final double kMaxVoltage = 12.0;
@@ -52,9 +43,6 @@ public final class TurretConstants {
     public static final boolean kBrakeModeEnabled = true;
 
     // PID tuning
-    // Tuning for MAXMotion:
-    // 1.0 (max output) / 60.0 (max free rad/s) = ~0.016
-    public static final double kVelocityF = 0.0168; 
     public static final double kPositionKp = 0.45; // Reduced from 2.0 to prevent oscillation on low-inertia test rig
     public static final double kPositionKi = 0.0;
     public static final double kPositionKd = 0.0;
