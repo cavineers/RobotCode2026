@@ -109,7 +109,9 @@ public class Turret extends SubsystemBase {
     }
 
     public void setManualVoltage(double volts) {
-        manualDemandVolts = MathUtil.clamp(volts, -TurretConstants.kMaxVoltage, TurretConstants.kMaxVoltage);
+        // If not homed, limit to slow homing search voltage for safety
+        double maxAllowedVoltage = homed ? TurretConstants.kMaxVoltage : TurretConstants.kHomingSearchMaxVoltage;
+        manualDemandVolts = MathUtil.clamp(volts, -maxAllowedVoltage, maxAllowedVoltage);
         controlMode = ControlMode.MANUAL;
     }
 
@@ -213,7 +215,8 @@ public class Turret extends SubsystemBase {
 
         boolean pressed = inputs.zeroSwitchPressed;
 
-        if (pressed && !lastHomeSwitchState) {
+        // Home on rising edge OR if switch is pressed on first run (robot booted while on switch)
+        if (pressed && (!lastHomeSwitchState || !homed)) {
             io.resetEncoder(TurretConstants.kHomingSwitchZeroPositionRad);
             homed = true;
             commandedFieldAngleRad = getCurrentFieldAngleRad();

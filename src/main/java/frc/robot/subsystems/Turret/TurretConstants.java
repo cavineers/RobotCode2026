@@ -67,6 +67,7 @@ public final class TurretConstants {
     public static final boolean kHomingSwitchNormallyOpen = true;
     public static final int kHomingSwitchDioPort = 0; // TODO: Update with actual DIO port
     public static final double kHomingSwitchZeroPositionRad = 0.0;
+    public static final double kHomingSearchMaxVoltage = 3.0; // Reduced voltage when not homed for safety
 
     // Simulation parameters
     public static final double kSimStartingAngleRad = 0.0;
