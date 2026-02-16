@@ -69,8 +69,7 @@ public class Module {
         state.optimize(getAngle());
         state.cosineScale(inputs.turnPosition);
 
-        // Apply setpoints
-        io.setDriveVelocity(state.speedMetersPerSecond / kWheelRadiusMeters);
+        io.setDriveVelocity(state.speedMetersPerSecond / kWheelRadiusMeters * SwerveDriveConstants.ModuleConstants.kDriveMotorGearRatio);
         io.setTurnPosition(state.angle);
     }
 
@@ -130,6 +129,7 @@ public class Module {
 
     /** Returns the module velocity in rad/sec. */
     public double getFFCharacterizationVelocity() {
-        return inputs.driveVelocityRadPerSec;
+        // Return motor velocity for feedforward characterization
+        return inputs.driveVelocityRadPerSec * SwerveDriveConstants.ModuleConstants.kDriveMotorGearRatio;
     }
 }

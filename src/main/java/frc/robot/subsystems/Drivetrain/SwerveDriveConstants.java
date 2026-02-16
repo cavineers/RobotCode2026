@@ -112,10 +112,10 @@ public class SwerveDriveConstants {
         public static final double kDriveKs = 0.11960;
         public static final double kDriveKv = 0.10529;
         
-        public static final double kDriveSimP = 1;
+        public static final double kDriveSimP = 0;
         public static final double kDriveSimD = 0.0;
-        public static final double kDriveSimKs = 0.01370;
-        public static final double kDriveSimKv = 0.13394;
+        public static final double kDriveSimKs = 0.01624;
+        public static final double kDriveSimKv = 0.01987;
 
         // Turn motor configuration
         public static final int kTurnMotorCurrentLimit = 40;
