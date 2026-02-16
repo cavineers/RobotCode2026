@@ -33,18 +33,6 @@ public class InBumperIntake extends SubsystemBase {
         io.setOutsideVoltage(volts);
     }
 
-    public Command setOutsideVoltageCommand(double volts) {
-        return Commands.run(() -> io.setOutsideVoltage(volts)).finallyDo(interrupted -> io.setOutsideVoltage(0.0));
-    }
-
-    public Command setBottomVoltageCommand(double volts) {
-        return Commands.run(() -> io.setBottomVoltage(volts)).finallyDo(interrupted -> io.setBottomVoltage(0));
-    }
-
-    public Command setTopVoltageCommand(double volts) {
-        return Commands.run(() -> io.setTopVoltage(volts)).finallyDo(interrupted -> io.setTopVoltage(0));
-    }
-
     public Command runGroundToShooter(double outsideVolts, double bottomVolts, double topVolts) {
         return Commands.run(() -> {
             io.setOutsideVoltage(-outsideVolts);
