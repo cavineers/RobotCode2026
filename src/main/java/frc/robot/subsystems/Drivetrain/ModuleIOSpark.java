@@ -206,11 +206,6 @@ public class ModuleIOSpark implements ModuleIO {
 
     @Override
     public void setDriveVelocity(double velocityRadPerSec) {
-        // velocityRadPerSec is in MOTOR SHAFT rad/s (from Module.java line 76)
-        // Spark encoder is configured to report motor shaft units (2π rad/rotation)
-        // So we command motor shaft velocity directly, just like TalonFX
-        
-        // Feedforward: kDriveKv is in V per motor rad/s
         double ffVolts = kDriveKs * Math.signum(velocityRadPerSec) + kDriveKv * velocityRadPerSec;
         
         // Command motor shaft velocity to Spark Max
