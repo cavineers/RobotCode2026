@@ -1,11 +1,15 @@
 package frc.robot.subsystems.Shooter;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 
 import static frc.robot.subsystems.Shooter.ShooterConstants.*;
 
@@ -16,10 +20,16 @@ public class ShooterIOKraken implements ShooterIO {
     private final TalonFX followerMotor;
     private final VelocityVoltage velocityControl;
     private final VoltageOut voltageControl = new VoltageOut(0);
+    
+    // WPILib Alerts for error handling
+    private final Alert leaderConfigAlert = new Alert("Shooter leader motor config failed", AlertType.kError);
+    private final Alert followerConfigAlert = new Alert("Shooter follower motor config failed", AlertType.kError);
+    private final Alert setPIDAlert = new Alert("Shooter setPID failed", AlertType.kWarning);
+    private final Alert setFFAlert = new Alert("Shooter setFF failed", AlertType.kWarning);
 
     public ShooterIOKraken() {
-        leaderMotor = new TalonFX(kFlywheelLeaderMotorCanID, kFlywheelCanBus);
-        followerMotor = new TalonFX(kFlywheelFollowerMotorCanID, kFlywheelCanBus);
+        leaderMotor = new TalonFX(kFlywheelLeaderMotorCanID);
+        followerMotor = new TalonFX(kFlywheelFollowerMotorCanID);
         
         velocityControl = new VelocityVoltage(0)
             .withSlot(0)
@@ -44,18 +54,41 @@ public class ShooterIOKraken implements ShooterIO {
         leaderConfig.Slot0.kV = kV;
         leaderConfig.Slot0.kA = kA;
         
-        // Follower motor setup (no inversion needed, handled by Follower control)
+        // Follower motor setup (minimal config - just current limits)
         followerConfig.MotorOutput.NeutralMode = kNeutralMode;
         followerConfig.CurrentLimits.SupplyCurrentLimit = kSupplyCurrentLimit;
         followerConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         followerConfig.CurrentLimits.StatorCurrentLimit = kStatorCurrentLimit;
         followerConfig.CurrentLimits.StatorCurrentLimitEnable = true;
         
-        leaderMotor.getConfigurator().apply(leaderConfig);
-        followerMotor.getConfigurator().apply(followerConfig);
+        // Apply configurations with error checking
+        StatusCode leaderStatus = leaderMotor.getConfigurator().apply(leaderConfig);
+        StatusCode followerStatus = followerMotor.getConfigurator().apply(followerConfig);
         
-        // Set follower to mirror leader output
+        leaderConfigAlert.set(!leaderStatus.isOK());
+        followerConfigAlert.set(!followerStatus.isOK());
+        
+        // Set follower to mirror leader output (opposed means it runs opposite direction)
         followerMotor.setControl(new Follower(kFlywheelLeaderMotorCanID, MotorAlignmentValue.Opposed));
+        
+        // Configure signal update frequencies for real-time control
+        BaseStatusSignal.setUpdateFrequencyForAll(100.0, // 100Hz for velocity control
+            leaderMotor.getVelocity(),
+            followerMotor.getVelocity()
+        );
+        
+        BaseStatusSignal.setUpdateFrequencyForAll(50.0, // 50Hz for telemetry
+            leaderMotor.getMotorVoltage(),
+            leaderMotor.getSupplyCurrent(),
+            leaderMotor.getDeviceTemp(),
+            followerMotor.getMotorVoltage(),
+            followerMotor.getSupplyCurrent(),
+            followerMotor.getDeviceTemp()
+        );
+        
+        // Optimize CAN bus utilization by reducing unused signals
+        leaderMotor.optimizeBusUtilization();
+        followerMotor.optimizeBusUtilization();
     }
 
     @Override
@@ -91,19 +124,27 @@ public class ShooterIOKraken implements ShooterIO {
 
     @Override
     public void setPID(double kP, double kI, double kD) {
+        // Read current configuration, modify only PID values, then reapply
         var config = new TalonFXConfiguration();
+        leaderMotor.getConfigurator().refresh(config);
         config.Slot0.kP = kP;
         config.Slot0.kI = kI;
         config.Slot0.kD = kD;
-        leaderMotor.getConfigurator().apply(config.Slot0);
+        
+        StatusCode status = leaderMotor.getConfigurator().apply(config.Slot0);
+        setPIDAlert.set(!status.isOK());
     }
 
     @Override
     public void setFF(double kS, double kV, double kA) {
+        // Read current configuration, modify only FF values, then reapply
         var config = new TalonFXConfiguration();
+        leaderMotor.getConfigurator().refresh(config);
         config.Slot0.kS = kS;
         config.Slot0.kV = kV;
         config.Slot0.kA = kA;
-        leaderMotor.getConfigurator().apply(config.Slot0);
+        
+        StatusCode status = leaderMotor.getConfigurator().apply(config.Slot0);
+        setFFAlert.set(!status.isOK());
     }
 }

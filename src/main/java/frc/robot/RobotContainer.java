@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.ContinuousShotCalculationCommand;
+import frc.robot.commands.ShooterCharacterizationCommand;
 import frc.robot.commands.SwerveCommand;
 
 import frc.robot.subsystems.Drivetrain.GyroIO;
@@ -80,6 +81,9 @@ public class RobotContainer {
         // // // Set up auto routines for SysIds
         autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
         // // Set up SysId routines
+        // NOTE: ShooterCharacterizationCommand currently has no constructor that accepts ShooterSubsystem.
+        // Use a placeholder no-op command until the command API is updated.
+        autoChooser.addOption("Shooter Characterization", ShooterCharacterizationCommand.feedforwardCharacterization(shooter));
         // autoChooser.addOption(
         // "Drive Wheel Radius Characterization",
         // SystemIdCommands.wheelRadiusCharacterization(drivetrain));
@@ -111,12 +115,49 @@ public class RobotContainer {
         
         // Set the shooter default command to continuously calculate shots and aim
         // This command controls rotation (auto-aim) while driver controls translation (left stick)
-        shooter.setDefaultCommand(new ContinuousShotCalculationCommand(
-            drivetrain, 
-            shooter,
-            primaryDriverController::getLeftY,
-            primaryDriverController::getLeftX
-        ));
+        // shooter.setDefaultCommand(new ContinuousShotCalculationCommand(
+        //     drivetrain, 
+        //     shooter,
+        //     primaryDriverController::getLeftY,
+        //     primaryDriverController::getLeftX
+        // ));
+        
+      
+        
+        // A button: Test velocity - 2000 RPM (slow test)
+        primaryDriverController.a().whileTrue(
+            Commands.run(() -> shooter.setVelocity(2000), shooter)
+                .finallyDo(() -> shooter.stop())
+        );
+        
+        // B button: Test velocity - 3500 RPM (medium test)
+        primaryDriverController.b().whileTrue(
+            Commands.run(() -> shooter.setVelocity(3500), shooter)
+                .finallyDo(() -> shooter.stop())
+        );
+        
+        // X button: Test velocity - 5000 RPM (high speed test)
+        primaryDriverController.x().whileTrue(
+            Commands.run(() -> shooter.setVelocity(5000), shooter)
+                .finallyDo(() -> shooter.stop())
+        );
+        
+        // Y button: Test voltage - 6V (open loop test)
+        primaryDriverController.y().whileTrue(
+            Commands.run(() -> shooter.setVoltage(6.0), shooter)
+                .finallyDo(() -> shooter.stop())
+        );
+        
+        // Right Bumper: Test voltage - 12V (full power open loop)
+        primaryDriverController.rightBumper().whileTrue(
+            Commands.run(() -> shooter.setVoltage(12.0), shooter)
+                .finallyDo(() -> shooter.stop())
+        );
+        
+        // Left Bumper: Stop shooter manually
+        primaryDriverController.leftBumper().onTrue(
+            Commands.runOnce(() -> shooter.stop(), shooter)
+        );
     }
 
     public void configureNamedCommands() {

@@ -15,9 +15,14 @@ public class ShooterIOSim implements ShooterIO {
     private double appliedVolts = 0.0;
 
     public ShooterIOSim() {
+        // Note: FOC is handled in hardware, simulation uses standard model
         flywheelSim = new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(DCMotor.getKrakenX60(1), kFlywheelMOI, kGearRatio),
-            DCMotor.getKrakenX60(1)
+            LinearSystemId.createDCMotorSystem(
+                DCMotor.getKrakenX44(2), 
+                kFlywheelMOI, 
+                kGearRatio
+            ),
+            DCMotor.getKrakenX44(2)
         );
     }
 
@@ -29,6 +34,13 @@ public class ShooterIOSim implements ShooterIO {
         inputs.flywheelAppliedVolts = appliedVolts;
         inputs.flywheelCurrentAmps = flywheelSim.getCurrentDrawAmps();
         inputs.flywheelTempCelsius = 25.0; // Simulated temp
+        
+        // Follower mirrors leader in sim
+        inputs.followerVelocityRPM = inputs.flywheelVelocityRPM;
+        inputs.followerAppliedVolts = appliedVolts;
+        inputs.followerCurrentAmps = flywheelSim.getCurrentDrawAmps();
+        inputs.followerTempCelsius = 25.0;
+        
         inputs.connected = true;
     }
 
