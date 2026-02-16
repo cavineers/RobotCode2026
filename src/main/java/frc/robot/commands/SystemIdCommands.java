@@ -45,12 +45,19 @@ public class SystemIdCommands {
                 Commands.runOnce(timer::restart),
 
                 // Accelerate and gather data
+                // Ramp at 1.0 V/s (reaches 12V in 12 seconds, much faster than 0.1 V/s)
                 Commands.run(
                         () -> {
-                            double voltage = timer.get() * 0.1;
+                            double voltage = timer.get() * 1.0; // Changed from 0.1 to 1.0
                             drive.runCharacterization(voltage);
-                            velocitySamples.add(drive.getCharacterizationAverageVelocity());
-                            voltageSamples.add(voltage);
+                            double velocity = drive.getCharacterizationAverageVelocity();
+                            
+                            // Only record samples after velocity stabilizes (> 50 rad/s motor speed)
+                            // and voltage is reasonable (< 11V to leave headroom)
+                            if (velocity > 50.0 && voltage < 11.0) {
+                                velocitySamples.add(velocity);
+                                voltageSamples.add(voltage);
+                            }
                         },
                         drive)
 
@@ -58,6 +65,13 @@ public class SystemIdCommands {
                         .finallyDo(
                                 () -> {
                                     int n = velocitySamples.size();
+                                    if (n < 10) {
+                                        System.out.println("********** Drive FF Characterization FAILED **********");
+                                        System.out.println("\tNot enough samples collected: " + n);
+                                        System.out.println("\tRun the command for at least 8 seconds");
+                                        return;
+                                    }
+                                    
                                     double sumX = 0.0;
                                     double sumY = 0.0;
                                     double sumXY = 0.0;
@@ -73,8 +87,16 @@ public class SystemIdCommands {
 
                                     NumberFormat formatter = new DecimalFormat("#0.00000");
                                     System.out.println("********** Drive FF Characterization Results **********");
-                                    System.out.println("\tkS: " + formatter.format(kS));
-                                    System.out.println("\tkV: " + formatter.format(kV));
+                                    System.out.println("\tSamples collected: " + n);
+                                    System.out.println("\tVelocity range: " + 
+                                        formatter.format(velocitySamples.stream().min(Double::compare).orElse(0.0)) + 
+                                        " to " + 
+                                        formatter.format(velocitySamples.stream().max(Double::compare).orElse(0.0)) + 
+                                        " rad/s (MOTOR)");
+                                    System.out.println("\tkS: " + formatter.format(kS) + " V");
+                                    System.out.println("\tkV: " + formatter.format(kV) + " V/(rad/s) at MOTOR shaft");
+                                    System.out.println("\t** NOTE: These values are for MOTOR velocity, not wheel velocity **");
+                                    System.out.println("\t** Expected kV range: 0.020 to 0.030 for Kraken X60 **");
                                 }));
     }
 

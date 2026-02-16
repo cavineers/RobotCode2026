@@ -38,10 +38,10 @@ public class SwerveDriveConstants {
 
         public static final double kOdometryFrequency = 100.0;
 
-        public static final double kPhysicalMaxSpeedMetersPerSecond = 4.07; 
-        public static final double kPhysicalMaxAngularSpeedRadiansPerSecond = Units.degreesToRadians(720);
+        public static final double kPhysicalMaxAngularSpeedRadiansPerSecond = 10.0;
         public static final double kWheelRadiusMeters = Units.inchesToMeters(2.0);
         public static final double kSpeedAt12Volts = 5800 * ModuleConstants.kDriveEncoderRPM2RadPerSec * kWheelRadiusMeters; // 5,800RPM freespeed 
+        public static final double kPhysicalMaxSpeedMetersPerSecond = 4.51; 
         public static final CANBus kCANBus = new CANBus("canivore"); // NEEDS TO BE CANIVORE NAME OR SERIAL NUMBER
 
         public static final int kFrontLeftTurningCanID = 1;
@@ -73,7 +73,7 @@ public class SwerveDriveConstants {
 
         public static final double kTeleDriveMaxSpeedMetersPerSecond = kPhysicalMaxSpeedMetersPerSecond;
         public static final double kTeleDriveMaxAngularSpeedRadiansPerSecond = kPhysicalMaxAngularSpeedRadiansPerSecond
-                / 2.0;
+                / 1.0;
         
         // Linear acceleration limit (m/s²)
         public static final double kTeleDriveMaxAccelerationMetersPerSecSq = 4.5;
@@ -107,16 +107,10 @@ public class SwerveDriveConstants {
         public static final DCMotor kDriveGearbox = DCMotor.getNEO(1);
 
         // Drive PID configuration
-        // NOTE: These are for MOTOR velocity (rad/s at motor shaft)
-        // Velocity is multiplied by gear ratio in Module.runSetpoint()
-        public static final double kDriveKp = 0.1; // Start low, was 2.5 (way too high for velocity control)
+        public static final double kDriveKp = 0.1;
         public static final double kDriveKd = 0.0;
-        // Theoretical kV calculation:
-        // Max speed: 4.07 m/s = 80.1 rad/s (wheel) = 483 rad/s (motor)
-        // At 12V: kV = 12V / 483 rad/s = 0.02485 V/(rad/s)
-        // With kS overhead: (12 - 0.12) / 483 = 0.02456
-        public static final double kDriveKs = 0.12; // Static friction voltage
-        public static final double kDriveKv = 0.0246; // V per (rad/s) at motor shaft
+        public static final double kDriveKs = 0.15728; // Static friction voltage
+        public static final double kDriveKv = 0.01806; // V per (rad/s) at motor shaft
         
         public static final double kDriveSimP = 0;
         public static final double kDriveSimD = 0.0;

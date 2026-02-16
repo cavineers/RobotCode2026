@@ -122,12 +122,16 @@ public class Module {
         return inputs.odometryTimestamps;
     }
 
-    /** Returns the module position in radians. */
+    /** Returns the module position in radians (at the wheel, for wheel radius characterization). */
     public double getWheelRadiusCharacterizationPosition() {
         return inputs.drivePositionRad;
     }
 
-    /** Returns the module velocity in rad/sec. */
+    /** 
+     * Returns the module velocity in rad/sec at the MOTOR SHAFT.
+     * Used for feedforward characterization - multiplied by gear ratio to get motor velocity.
+     * This ensures FF constants (kS, kV) match the motor velocity used in runSetpoint().
+     */
     public double getFFCharacterizationVelocity() {
         // Return motor velocity for feedforward characterization
         return inputs.driveVelocityRadPerSec * SwerveDriveConstants.ModuleConstants.kDriveMotorGearRatio;
