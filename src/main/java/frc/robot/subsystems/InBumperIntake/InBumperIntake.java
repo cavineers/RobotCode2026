@@ -3,7 +3,6 @@ package frc.robot.subsystems.InBumperIntake;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 
@@ -34,11 +33,11 @@ public class InBumperIntake extends SubsystemBase {
     }
 
     public Command runGroundToShooter(double outsideVolts, double bottomVolts, double topVolts) {
-        return Commands.run(() -> {
+        return this.run(() -> {
             io.setOutsideVoltage(-outsideVolts);
             io.setBottomVoltage(bottomVolts);
-            io.setTopVoltage(topVolts);})
-        .finallyDo(interrupted -> {
+            io.setTopVoltage(topVolts);
+        }).finallyDo(interrupted -> {
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
@@ -46,11 +45,11 @@ public class InBumperIntake extends SubsystemBase {
     }
 
     public Command runGroundToHopper(double outsideVolts, double bottomVolts, double topVolts) {
-        return Commands.run(() -> {
+        return this.run(() -> {
             io.setOutsideVoltage(-outsideVolts);
             io.setBottomVoltage(bottomVolts);
-            io.setTopVoltage(-topVolts);})
-        .finallyDo(interrupted -> {
+            io.setTopVoltage(-topVolts);
+        }).finallyDo(interrupted -> {
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
@@ -58,11 +57,11 @@ public class InBumperIntake extends SubsystemBase {
     }
 
     public Command runHopperToShooter(double outsideVolts, double bottomVolts, double topVolts) {
-        return Commands.run(() -> {
+        return this.run(() -> {
             io.setOutsideVoltage(-outsideVolts);
             io.setBottomVoltage(-bottomVolts);
-            io.setTopVoltage(topVolts);})
-        .finallyDo(interrupted -> {
+            io.setTopVoltage(topVolts);
+        }).finallyDo(interrupted -> {
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
