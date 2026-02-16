@@ -107,10 +107,16 @@ public class SwerveDriveConstants {
         public static final DCMotor kDriveGearbox = DCMotor.getNEO(1);
 
         // Drive PID configuration
-        public static final double kDriveKp = 2.5;
+        // NOTE: These are for MOTOR velocity (rad/s at motor shaft)
+        // Velocity is multiplied by gear ratio in Module.runSetpoint()
+        public static final double kDriveKp = 0.1; // Start low, was 2.5 (way too high for velocity control)
         public static final double kDriveKd = 0.0;
-        public static final double kDriveKs = 0.11960;
-        public static final double kDriveKv = 0.10529;
+        // Theoretical kV calculation:
+        // Max speed: 4.07 m/s = 80.1 rad/s (wheel) = 483 rad/s (motor)
+        // At 12V: kV = 12V / 483 rad/s = 0.02485 V/(rad/s)
+        // With kS overhead: (12 - 0.12) / 483 = 0.02456
+        public static final double kDriveKs = 0.12; // Static friction voltage
+        public static final double kDriveKv = 0.0246; // V per (rad/s) at motor shaft
         
         public static final double kDriveSimP = 0;
         public static final double kDriveSimD = 0.0;
