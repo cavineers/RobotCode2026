@@ -164,6 +164,26 @@ public class Turret extends SubsystemBase {
         return commandedTurretAngleRad - inputs.positionRad;
     }
 
+    @AutoLogOutput(key = "Turret/TargetLocked")
+    public boolean isTargetLocked() {
+        if (!homed || controlMode != ControlMode.POSITION || !hasValidTarget()) {
+            return false;
+        }
+        
+        // Check if the commanded target had to be clamped
+        double robotHeading = wrapAngle(robotPoseSupplier.get().getRotation().getZ());
+        double desiredRobotRelative = wrapAngle(commandedFieldAngleRad - robotHeading - TurretConstants.kTurretZeroOffsetRad);
+        
+        // If desired angle is within our physical limits, we can lock on
+        boolean targetReachable = desiredRobotRelative >= TurretConstants.kMinAngleRad && 
+                                  desiredRobotRelative <= TurretConstants.kMaxAngleRad;
+        
+        // And we're close enough to the (possibly clamped) position
+        boolean atPosition = isAtTarget();
+        
+        return targetReachable && atPosition;
+    }
+
     private void runClosedLoop() {
         if (!hasValidTarget()) {
             holdCurrentPosition();
