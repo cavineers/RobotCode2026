@@ -13,13 +13,14 @@ public class OverBumperIntakeConstants {
     
     public static final double kIntakeVoltage = 0.1;
     public static final double kDeployVoltage = 0.1;
-    public static final double kCutOffAmps = 5.5; //TODO: set value
+    public static final double kCutOffAmps = 7.05; //TODO: set value
 
     public static final double kDeployedRotations = 5.0;
     public static final double kRetractedRotations = 0.0; //TODO: set values
+    public static final double kHomingSwitchZeroPositionRot = 5.0;
 
     //PID Gains (Slot 0)
-    public static final double kProportionalGainSpark = 0.1; //TODO: tune
+    public static final double kProportionalGainSpark = 1.7; //TODO: tune
     public static final double kIntegralTermSpark = 0.0;
     public static final double kDerivativeTermSpark = 0.0;
 

@@ -36,16 +36,16 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         deployMotor.setInputVoltage(appliedVolts);
         deployMotor.update(0.02);
 
-        inputs.deployPositionRad = deployMotor.getAngularPositionRad();
-        inputs.deployVelocityRadPerSec = deployMotor.getAngularVelocityRadPerSec();
+        inputs.deployPositionRotations = deployMotor.getAngularPositionRotations();
+        inputs.deployVelocityRotationsPerSec = deployMotor.getAngularVelocityRadPerSec()/(2*Math.PI);
         inputs.deployAppliedVolts = appliedVolts;
         inputs.deployCurrentAmps = deployMotor.getCurrentDrawAmps();
 
         intakeMotor.setInputVoltage(appliedVolts);
         intakeMotor.update(0.02);
 
-        inputs.intakePositionRad = intakeMotor.getAngularPositionRad();
-        inputs.intakeVelocityRadPerSec = intakeMotor.getAngularVelocityRadPerSec();
+        inputs.intakePositionRotations = intakeMotor.getAngularPositionRotations();
+        inputs.intakeVelocityRotationsPerSec = intakeMotor.getAngularVelocityRadPerSec()/(2*Math.PI);
         inputs.intakeAppliedVolts = appliedVolts;
         inputs.intakeCurrentAmps = intakeMotor.getCurrentDrawAmps();
 
@@ -55,7 +55,7 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         // Set the last element to currentAmps
         inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.deployCurrentAmps;
 
-        double desiredVoltage = this.simPID.calculate(inputs.deployPositionRad);
+        double desiredVoltage = this.simPID.calculate(inputs.deployPositionRotations);
 
         Logger.recordOutput("OverBumperIntake/PIDRequestedVoltage", desiredVoltage);
 

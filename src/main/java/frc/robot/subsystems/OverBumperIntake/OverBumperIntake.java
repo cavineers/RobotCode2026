@@ -4,9 +4,11 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 import static frc.robot.subsystems.OverBumperIntake.OverBumperIntakeConstants.*;
+import static frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSpark.*;
 
 
 public class OverBumperIntake extends SubsystemBase {
@@ -29,18 +31,6 @@ public class OverBumperIntake extends SubsystemBase {
     public void periodic() {
         io.updateInputs(inputs);
 
-        double sum = 0;
-        for (double value : inputs.recentAmpsHistory) {
-            sum += value;
-        }
-        Logger.recordOutput("OverBumperIntake/AverageAmps", sum / inputs.recentAmpsHistory.length);
-        if (sum / inputs.recentAmpsHistory.length > kCutOffAmps) {
-            io.setDeployVoltage(0.0);
-            Logger.recordOutput("OverBumperIntake/CutOff", true);
-        } else {
-            Logger.recordOutput("OverBumperIntake/CutOff", false);
-        }
-
         if (kProportionalGainSpark != tuningP.get() || kIntegralTermSpark != tuningI.get() || kDerivativeTermSpark != tuningD.get()) {
             kP = tuningP.get();
             kI = tuningI.get();
@@ -48,6 +38,10 @@ public class OverBumperIntake extends SubsystemBase {
             io.setPID(kP, kI, kD);
         }
         Logger.processInputs("OverBumperIntake", inputs);
+
+        if (inputs.cutoff && inputs.deployed && inputs.isClosed) {
+            io.resetEncoder(OverBumperIntakeConstants.kHomingSwitchZeroPositionRot);
+        }
     }
 
     public void setIntakeVoltage(double volts) {

@@ -3,8 +3,8 @@
 
 package frc.robot.subsystems.OverBumperIntake;
 
-import static frc.lib.SparkUtil.*;
-
+import static frc.lib.SparkUtil.ifOk;
+import static frc.lib.SparkUtil.tryUntilOk;
 import static frc.robot.subsystems.OverBumperIntake.OverBumperIntakeConstants.*;
 
 import java.util.function.DoubleSupplier;
@@ -21,7 +21,6 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.controller.PIDController;
-
 public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     private final SparkMax intakeMotor = new SparkMax(kIntakeMotorCanID, MotorType.kBrushless);
     private final RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
@@ -41,7 +40,10 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     public boolean deployed = false;
 
     @AutoLogOutput(key="OverBumperIntake/IsClosed")
-    private boolean isClosed = false;
+    public boolean isClosed = false;
+    
+    @AutoLogOutput(key="OverBumperIntake/cutoff")
+    public boolean cutoff = false;
 
     public OverBumperIntakeIOSpark() {
         deployConfig = new SparkMaxConfig();
@@ -72,16 +74,16 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
 
     @Override
     public void updateInputs(OverBumperIntakeIOInputs inputs) {
-        ifOk(intakeMotor, intakeEncoder::getPosition, (value) -> inputs.intakePositionRad = value); //only updates the value if the output is valid
-        ifOk(intakeMotor, intakeEncoder::getVelocity, (value) -> inputs.intakeVelocityRadPerSec = value);
+        ifOk(intakeMotor, intakeEncoder::getPosition, (value) -> inputs.intakePositionRotations = value); //only updates the value if the output is valid
+        ifOk(intakeMotor, intakeEncoder::getVelocity, (value) -> inputs.intakeVelocityRotationsPerSec = value);
         ifOk(
             intakeMotor,
             new DoubleSupplier[] {intakeMotor::getAppliedOutput, intakeMotor::getBusVoltage},
             (values) -> inputs.intakeAppliedVolts = values[0] * values[1]);
         ifOk(intakeMotor, intakeMotor::getOutputCurrent, (value) -> inputs.intakeCurrentAmps = value);
 
-        ifOk(deployMotor, deployEncoder::getPosition, (value) -> inputs.deployPositionRad = value); //only updates the value if the output is valid
-        ifOk(deployMotor, deployEncoder::getVelocity, (value) -> inputs.deployVelocityRadPerSec = value);
+        ifOk(deployMotor, deployEncoder::getPosition, (value) -> inputs.deployPositionRotations = value); //only updates the value if the output is valid
+        ifOk(deployMotor, deployEncoder::getVelocity, (value) -> inputs.deployVelocityRotationsPerSec = value);
         ifOk(
             deployMotor,
             new DoubleSupplier[] {deployMotor::getAppliedOutput, deployMotor::getBusVoltage},
@@ -94,7 +96,18 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
         // Set the last element to currentAmps
         inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.deployCurrentAmps;
 
-        double desiredVoltage = this.controller.calculate(inputs.deployPositionRad);
+        double sum = 0;
+        for (double value : inputs.recentAmpsHistory) {
+            sum += value;
+        }
+        Logger.recordOutput("OverBumperIntake/AverageAmps", sum / inputs.recentAmpsHistory.length);
+        if (sum / inputs.recentAmpsHistory.length > kCutOffAmps) {
+            cutoff = true;
+        } else {
+            cutoff = false;
+        }
+
+        double desiredVoltage = this.controller.calculate(inputs.deployPositionRotations);
 
         Logger.recordOutput("OverBumperIntake/PIDRequestedVoltage", desiredVoltage);
 
@@ -102,7 +115,14 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
             this.setDeployVoltage(desiredVoltage);
         }
 
-        inputs.deployed = this.deployed;
+        inputs.deployed = this.deployed; 
+        inputs.cutoff = this.cutoff;
+        inputs.isClosed = this.isClosed;
+    }
+
+    @Override
+    public void resetEncoder(double positionRad) {
+        deployEncoder.setPosition(positionRad);
     }
         
     @Override

@@ -106,8 +106,10 @@ public class RobotContainer {
             );
         
         primaryDriverController.a().onTrue(overBumperIntake.deployCommand());
-        primaryDriverController.povUp().whileTrue(overBumperIntake.setDeployVoltageCommand(1));
-        primaryDriverController.povDown().whileTrue(overBumperIntake.setDeployVoltageCommand(-1));
+        primaryDriverController.povUp().onTrue(overBumperIntake.setDeployVoltageCommand(1));
+        primaryDriverController.povUp().onFalse(overBumperIntake.setDeployVoltageCommand(0));
+        primaryDriverController.povDown().onTrue(overBumperIntake.setDeployVoltageCommand(-1));
+        primaryDriverController.povDown().onFalse(overBumperIntake.setDeployVoltageCommand(0));
         primaryDriverController.leftBumper().whileTrue(overBumperIntake.outtakeCommand());
         primaryDriverController.rightBumper().whileTrue(overBumperIntake.intakeCommand());
     }
