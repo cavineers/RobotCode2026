@@ -45,16 +45,16 @@ public class SystemIdCommands {
                 Commands.runOnce(timer::restart),
 
                 // Accelerate and gather data
-                // Ramp at 1.0 V/s (reaches 12V in 12 seconds, much faster than 0.1 V/s)
+                // Ramp at 0.1 V/s (reaches 12V in 120 seconds)
                 Commands.run(
                         () -> {
-                            double voltage = timer.get() * 1.0; // Changed from 0.1 to 1.0
+                            double voltage = timer.get() * 0.1;
                             drive.runCharacterization(voltage);
                             double velocity = drive.getCharacterizationAverageVelocity();
                             
                             // Only record samples after velocity stabilizes (> 50 rad/s motor speed)
                             // and voltage is reasonable (< 11V to leave headroom)
-                            if (velocity > 50.0 && voltage < 11.0) {
+                            if (velocity > 1.0 && voltage < 11.0) {
                                 velocitySamples.add(velocity);
                                 voltageSamples.add(voltage);
                             }

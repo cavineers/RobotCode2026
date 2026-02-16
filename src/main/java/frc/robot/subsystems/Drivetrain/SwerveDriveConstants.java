@@ -107,15 +107,15 @@ public class SwerveDriveConstants {
         public static final DCMotor kDriveGearbox = DCMotor.getNEO(1);
 
         // Drive PID configuration
-        public static final double kDriveKp = 0.1;
+        public static final double kDriveKp = 0.0;
         public static final double kDriveKd = 0.0;
-        public static final double kDriveKs = 0.04946; // Static friction voltage
-        public static final double kDriveKv = 0.1228; // V per (rad/s) at motor shaft
+        public static final double kDriveKs = 0.08877; // Static friction voltage
+        public static final double kDriveKv = 0.10606 ; // V per (rad/s) at motor shaft
         
         public static final double kDriveSimP = 0;
         public static final double kDriveSimD = 0.0;
-        public static final double kDriveSimKs = 0.01624;
-        public static final double kDriveSimKv = 0.01987;
+        public static final double kDriveSimKs = 0.16999 ;
+        public static final double kDriveSimKv = 0.11965;
 
         // Turn motor configuration
         public static final int kTurnMotorCurrentLimit = 40;
@@ -138,11 +138,11 @@ public class SwerveDriveConstants {
                         kWheelRadiusMeters,
                         kPhysicalMaxSpeedMetersPerSecond,
                         kWheelCOF,
-                        kDriveGearbox.withReduction(1 / ModuleConstants.kDriveMotorGearRatio),
+                        kDriveGearbox.withReduction(ModuleConstants.kDriveMotorGearRatio),
                         kDriveMotorCurrentLimit,
                         1),
                 moduleTranslations);
-        public static final double PathPlannerDriveP = 3.0;
+        public static final double PathPlannerDriveP = 1.0;
         public static final double PathPlannerTurnP = 5.0;
         
     }
