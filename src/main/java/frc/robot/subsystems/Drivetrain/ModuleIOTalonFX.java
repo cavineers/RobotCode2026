@@ -113,7 +113,8 @@ public class ModuleIOTalonFX implements ModuleIO {
     driveConfig.Slot0.kS = kDriveKs;
     driveConfig.Slot0.kV = kDriveKv;
     
-    driveConfig.Feedback.SensorToMechanismRatio = kDriveMotorGearRatio;
+    // SensorToMechanismRatio set to 1.0 because Module.java handles gear ratio conversion
+    driveConfig.Feedback.SensorToMechanismRatio = 1.0;
     
     driveConfig.TorqueCurrent.PeakForwardTorqueCurrent = kDriveMotorCurrentLimit;
     driveConfig.TorqueCurrent.PeakReverseTorqueCurrent = -kDriveMotorCurrentLimit;
@@ -233,8 +234,9 @@ public class ModuleIOTalonFX implements ModuleIO {
     inputs.turnConnected = turnConnectedDebounce.calculate(turnStatus.isOK());
     inputs.turnEncoderConnected = turnEncoderConnectedDebounce.calculate(turnEncoderStatus.isOK());
 
-    inputs.drivePositionRad = Units.rotationsToRadians(drivePosition.getValueAsDouble());
-    inputs.driveVelocityRadPerSec = Units.rotationsToRadians(driveVelocity.getValueAsDouble());
+    // Convert motor shaft rotations to wheel radians (divide by gear ratio since SensorToMechanismRatio = 1.0)
+    inputs.drivePositionRad = Units.rotationsToRadians(drivePosition.getValueAsDouble()) / kDriveMotorGearRatio;
+    inputs.driveVelocityRadPerSec = Units.rotationsToRadians(driveVelocity.getValueAsDouble()) / kDriveMotorGearRatio;
     inputs.driveAppliedVolts = driveAppliedVolts.getValueAsDouble();
     inputs.driveCurrentAmps = driveCurrent.getValueAsDouble();
 
@@ -248,7 +250,7 @@ public class ModuleIOTalonFX implements ModuleIO {
         timestampQueue.stream().mapToDouble((Double value) -> value).toArray();
     inputs.odometryDrivePositionsRad =
         drivePositionQueue.stream()
-            .mapToDouble((Double value) -> Units.rotationsToRadians(value))
+            .mapToDouble((Double value) -> Units.rotationsToRadians(value) / kDriveMotorGearRatio)
             .toArray();
     inputs.odometryTurnPositions =
         turnPositionQueue.stream()

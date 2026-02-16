@@ -32,6 +32,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.pathfinding.Pathfinding;
+import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.PathPlannerLogging;
 
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -108,13 +109,11 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 this::getPose, // Robot pose supplier
                 this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
                 this::getChassisSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-                (speeds, feedforwards) -> driveVelocity(speeds), // Method that will drive the robot given ROBOT
-                                                                 // RELATIVE ChassisSpeeds
-                new PPHolonomicDriveController( // HolonomicPathFollowerConfig, this should likely live in your
-                                                // Constants class
+                (speeds, feedforwards) -> driveVelocity(speeds), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
+                new PPHolonomicDriveController(
                         new PIDConstants(DriveConstants.PathPlannerDriveP, 0.0, 0.0), // Translation PID constants
-                        new PIDConstants(DriveConstants.PathPlannerTurnP, 0.0, 0.0) // Rotation PID constants idk why
-                                                                                    // the default is 5
+                        new PIDConstants(DriveConstants.PathPlannerTurnP, 0.0, 0.0), // Rotation PID constants
+                        0.02 // Period in seconds (20ms for standard robot loop)
                 ),
                 DriveConstants.robotConfig, // ROBOT CONFIGURATION
                 this::shouldFlipPose, // Method to determine if the path should be flipped
@@ -194,9 +193,14 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     /**
      * Runs the drivetrain given a velocity
      * 
-     * @param speeds
+     * @param speeds ChassisSpeeds to drive at
      */
     public void driveVelocity(ChassisSpeeds speeds) {
+        // Log commanded speeds
+        Logger.recordOutput("Drive/CommandedVx", speeds.vxMetersPerSecond);
+        Logger.recordOutput("Drive/CommandedVy", speeds.vyMetersPerSecond);
+        Logger.recordOutput("Drive/CommandedOmega", speeds.omegaRadiansPerSecond);
+        
         // Calculate module setpoints
         ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
         SwerveModuleState[] moduleStates = kinematics.toSwerveModuleStates(discreteSpeeds);

@@ -74,9 +74,10 @@ public class RobotContainer {
         configureButtonBindings();
         configureNamedCommands();
 
-        // // // Set up auto routines for SysIds
+        // Set up auto routines
         autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
-        // // Set up SysId routines
+        
+        // Set up SysId routines
         autoChooser.addOption(
         "Drive Wheel Radius Characterization",
         SystemIdCommands.wheelRadiusCharacterization(drivetrain));

@@ -109,8 +109,8 @@ public class SwerveDriveConstants {
         // Drive PID configuration
         public static final double kDriveKp = 0.1;
         public static final double kDriveKd = 0.0;
-        public static final double kDriveKs = 0.15728; // Static friction voltage
-        public static final double kDriveKv = 0.01806; // V per (rad/s) at motor shaft
+        public static final double kDriveKs = 0.04946; // Static friction voltage
+        public static final double kDriveKv = 0.1228; // V per (rad/s) at motor shaft
         
         public static final double kDriveSimP = 0;
         public static final double kDriveSimD = 0.0;
