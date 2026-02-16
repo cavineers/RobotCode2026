@@ -103,7 +103,7 @@ public class SwerveDriveConstants {
         public static final SwerveDriveKinematics kSwerveKinematics = new SwerveDriveKinematics(moduleTranslations);
 
         // Drive motor configuration
-        public static final int kDriveMotorCurrentLimit = 30;
+        public static final int kDriveMotorCurrentLimit = 20;
         public static final DCMotor kDriveGearbox = DCMotor.getNEO(1);
 
         // Drive PID configuration
@@ -126,6 +126,8 @@ public class SwerveDriveConstants {
         public static final double kTurnKd = 0.0;
         public static final double kTurnSimP = 9.0;
         public static final double kTurnSimD = 0.0;
+        public static final double kTurnPIDMinInput = 0; // Radians
+        public static final double kTurnPIDMaxInput = 2 * Math.PI; // Radians
 
         // PathPlanner configuration
         public static final double kRobotMassKg = 56.7;
