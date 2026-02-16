@@ -32,16 +32,14 @@ public class ShooterSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // Update inputs from hardware
         io.updateInputs(inputs);
         Logger.processInputs("Shooter", inputs);
         
-        // Log additional info
         Logger.recordOutput("Shooter/TargetVelocityRPM", targetVelocityRPM);
         Logger.recordOutput("Shooter/VelocityMode", velocityMode);
         Logger.recordOutput("Shooter/AtTarget", isAtTarget());
-        Logger.recordOutput("Shooter/VelocityErrorRPM", 
-            targetVelocityRPM - inputs.flywheelVelocityRPM);
+        Logger.recordOutput("Shooter/VelocityErrorRPM", targetVelocityRPM - inputs.flywheelVelocityRPM);
+        Logger.recordOutput("Shooter/FollowerErrorRPM", inputs.flywheelVelocityRPM - inputs.followerVelocityRPM);
     }
 
     /**
@@ -81,7 +79,6 @@ public class ShooterSubsystem extends SubsystemBase {
         if (!velocityMode) {
             return false;
         }
-        
         double error = Math.abs(targetVelocityRPM - inputs.flywheelVelocityRPM);
         return atTargetDebouncer.calculate(error < kVelocityToleranceRPM);
     }
@@ -137,4 +134,19 @@ public class ShooterSubsystem extends SubsystemBase {
     public void setFF(double kS, double kV, double kA) {
         io.setFF(kS, kV, kA);
     }
+
+    /**
+     * Run characterization with specified voltage.
+     */
+    public void runCharacterization(double volts) {
+        setVoltage(volts);
+    }
+
+    /**
+     * Get current velocity in rotations/second at motor shaft for characterization.
+     */
+    public double getCharacterizationVelocity() {
+        return (inputs.flywheelVelocityRPM / 60.0) * kGearRatio;
+    }
 }
+

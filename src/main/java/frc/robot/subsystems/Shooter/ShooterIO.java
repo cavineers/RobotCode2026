@@ -13,6 +13,13 @@ public interface ShooterIO {
         public double flywheelAppliedVolts = 0.0;
         public double flywheelCurrentAmps = 0.0;
         public double flywheelTempCelsius = 0.0;
+        
+        // Follower motor telemetry
+        public double followerVelocityRPM = 0.0;
+        public double followerAppliedVolts = 0.0;
+        public double followerCurrentAmps = 0.0;
+        public double followerTempCelsius = 0.0;
+        
         public boolean connected = false;
     }
 
