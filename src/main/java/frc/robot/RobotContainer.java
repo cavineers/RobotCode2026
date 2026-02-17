@@ -99,6 +99,20 @@ public class RobotContainer {
         autoChooser.addOption(
         "Drive SysId (Dynamic Reverse)",
         drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+        
+        // Rotation SysId for trackwidth characterization
+        autoChooser.addOption(
+        "Rotation SysId (Quasistatic Forward)",
+        drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Rotation SysId (Quasistatic Reverse)",
+        drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kReverse));
+        autoChooser.addOption(
+        "Rotation SysId (Dynamic Forward)",
+        drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Rotation SysId (Dynamic Reverse)",
+        drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kReverse));
     }
 
     private void configureButtonBindings() {

@@ -49,6 +49,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     public AutoBuilder autoBuilder;
 
     private SysIdRoutine sysId;
+    private SysIdRoutine sysIdRotation;
 
     // April Tag layout
     public static AprilTagFieldLayout aprilTagLayout = AprilTagFieldLayout
@@ -103,6 +104,27 @@ public class SwerveDriveSubsystem extends SubsystemBase {
                 (state) -> Logger.recordOutput("Drivetrain/SysIdState", state.toString())),
                 new SysIdRoutine.Mechanism(
                         (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
+        
+        // Configure SysId for rotation (trackwidth characterization)
+        this.sysIdRotation = new SysIdRoutine(
+                new SysIdRoutine.Config(
+                        null, // Use default ramp rate
+                        null, // Use default step voltage  
+                        null, // Use default timeout
+                        (state) -> {
+                            Logger.recordOutput("Drivetrain/SysIdRotationState", state.toString());
+                            System.out.println("Rotation SysId State: " + state.toString());
+                        }),
+                new SysIdRoutine.Mechanism(
+                        (voltage) -> {
+                            // Apply voltage to rotation only
+                            runCharacterization(0.0); // Point wheels forward first
+                            // Convert voltage to angular velocity command
+                            // This is approximate - actual characterization happens in SysId tool
+                            driveVelocity(new ChassisSpeeds(0.0, 0.0, voltage.in(Volts) * 0.1));
+                        },
+                        null,
+                        this));
 
         // Configure the AutoBuilder last
         AutoBuilder.configure(
@@ -387,6 +409,20 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     /** Returns a command to run a dynamic test in the specified direction. */
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
         return run(() -> runCharacterization(0.0)).withTimeout(1.0).andThen(sysId.dynamic(direction));
+    }
+
+    /** Returns a command to run a rotation quasistatic test for trackwidth characterization. */
+    public Command sysIdRotationQuasistatic(SysIdRoutine.Direction direction) {
+        return run(() -> runCharacterization(0.0))
+                .withTimeout(1.0)
+                .andThen(sysIdRotation.quasistatic(direction));
+    }
+
+    /** Returns a command to run a rotation dynamic test for trackwidth characterization. */
+    public Command sysIdRotationDynamic(SysIdRoutine.Direction direction) {
+        return run(() -> runCharacterization(0.0))
+                .withTimeout(1.0)
+                .andThen(sysIdRotation.dynamic(direction));
     }
 
 }
