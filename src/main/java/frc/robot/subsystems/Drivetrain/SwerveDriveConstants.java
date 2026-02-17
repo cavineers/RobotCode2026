@@ -39,7 +39,7 @@ public class SwerveDriveConstants {
         public static final double kOdometryFrequency = 100.0;
 
         public static final double kPhysicalMaxAngularSpeedRadiansPerSecond = 10.0;
-        public static final double kWheelRadiusMeters = Units.inchesToMeters(2.0);
+        public static final double kWheelRadiusMeters = 0.051; // 1.97 in
         public static final double kSpeedAt12Volts = 5800 * ModuleConstants.kDriveEncoderRPM2RadPerSec * kWheelRadiusMeters; // 5,800RPM freespeed 
         public static final double kPhysicalMaxSpeedMetersPerSecond = 4.51; 
         public static final CANBus kCANBus = new CANBus("canivore"); // NEEDS TO BE CANIVORE NAME OR SERIAL NUMBER
@@ -86,10 +86,15 @@ public class SwerveDriveConstants {
         public static final double kFrontRightAbsoluteEncoderOffset = -.3166;
         public static final double kBackRightAbsoluteEncoderOffset = -0.3027;
 
-        // Distance between right and left wheefls
-        public static final double kTrackWidth = Units.inchesToMeters(21.589);
-        // Distance between front and back wheels
-        public static final double kWheelBase = Units.inchesToMeters(21.589);
+        // Characterized from drive base radius: driveBaseRadius × 2 / √2 = 21.81 inches
+        // Physical measurement: 21.65 inches
+        // Using characterized value for better rotation odometry accuracy
+        public static final double kTrackWidth = Units.inchesToMeters(21.8);
+        public static final double kWheelBase = Units.inchesToMeters(21.8);
+        
+        // Drive base radius - distance from center to module
+        // This is calculated from trackWidth/wheelBase for reference
+        // Characterized value: 15.423 inches (from spin test)
         public static final double kDriveBaseRadius = Math.hypot(kTrackWidth / 2.0, kWheelBase / 2.0);
 
 
@@ -130,7 +135,7 @@ public class SwerveDriveConstants {
         public static final double kTurnPIDMaxInput = 2 * Math.PI; // Radians
 
         // PathPlanner configuration
-        public static final double kRobotMassKg = 56.7;
+        public static final double kRobotMassKg = 15.88;
         public static final double kRobotMOI = 6.883;
         public static final double kWheelCOF = 1.0;
         public static final RobotConfig robotConfig = new RobotConfig(
@@ -144,8 +149,8 @@ public class SwerveDriveConstants {
                         kDriveMotorCurrentLimit,
                         1),
                 moduleTranslations);
-        public static final double PathPlannerDriveP = 1.0;
-        public static final double PathPlannerTurnP = 5.0;
+        public static final double PathPlannerDriveP = 3.0;
+        public static final double PathPlannerTurnP = 3.0;
         
     }
 }
