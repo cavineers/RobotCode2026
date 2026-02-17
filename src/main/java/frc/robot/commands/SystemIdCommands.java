@@ -175,4 +175,99 @@ public class SystemIdCommands {
                                 + " inches");
                         })));
     }
+
+    // Class to hold state for drive base radius characterization
+    private static class DriveBaseRadiusCharacterizationState {
+        double[] positions = new double[4];
+        Rotation2d lastAngle = new Rotation2d();
+        double gyroDelta = 0.0;
+    }
+
+    /**
+     * Characterizes the drive base radius (effective track width) by spinning in place.
+     * Assumes wheel radius is already known and accurate.
+     * Formula: driveBaseRadius = (wheelDelta × wheelRadius) / gyroDelta
+     */
+    public static Command driveBaseRadiusCharacterization(SwerveDriveSubsystem drive) {
+        SlewRateLimiter limiter = new SlewRateLimiter(0.05);
+        DriveBaseRadiusCharacterizationState state = new DriveBaseRadiusCharacterizationState();
+
+        return Commands.parallel(
+            // Drive control sequence
+            Commands.sequence(
+                // Reset acceleration limiter
+                Commands.runOnce(() -> limiter.reset(0.0)),
+
+                // Turn in place, accelerating up to moderate speed
+                Commands.run(
+                    () -> {
+                        double speed = limiter.calculate(0.25); // rad/s angular velocity
+                        drive.driveVelocity(new ChassisSpeeds(0.0, 0.0, speed));
+                    },
+                    drive)),
+
+            // Measurement sequence
+            Commands.sequence(
+                // Wait for modules to fully orient before starting measurement
+                Commands.waitSeconds(1.0),
+
+                // Record starting measurement
+                Commands.runOnce(
+                    () -> {
+                        state.positions = drive.getWheelRadiusCharacterizationPositions();
+                        state.lastAngle = drive.getRotation();
+                        state.gyroDelta = 0.0;
+                    }),
+
+                // Update gyro delta
+                Commands.run(
+                        () -> {
+                            var rotation = drive.getRotation();
+                            state.gyroDelta += Math.abs(rotation.minus(state.lastAngle).getRadians());
+                            state.lastAngle = rotation;
+                        })
+
+                    // When cancelled, calculate and print results
+                    .finallyDo(
+                        () -> {
+                            double[] positions = drive.getWheelRadiusCharacterizationPositions();
+                            double wheelDelta = 0.0;
+                            for (int i = 0; i < 4; i++) {
+                                wheelDelta += Math.abs(positions[i] - state.positions[i]) / 4.0;
+                            }
+                            
+                            // Calculate drive base radius using KNOWN wheel radius
+                            // driveBaseRadius = (wheelDelta × wheelRadius) / gyroDelta
+                            double driveBaseRadius = 
+                                (wheelDelta * DriveConstants.kWheelRadiusMeters) / state.gyroDelta;
+                            
+                            // Calculate effective track width (diameter of rotation circle)
+                            double effectiveTrackWidth = driveBaseRadius * 2.0;
+
+                            NumberFormat formatter = new DecimalFormat("#0.000");
+                            System.out.println(
+                                "********** Drive Base Radius Characterization Results **********");
+                            System.out.println(
+                                "\tWheel Delta: " + formatter.format(wheelDelta) + " radians");
+                            System.out.println(
+                                "\tGyro Delta: " + formatter.format(state.gyroDelta) + " radians");
+                            System.out.println(
+                                "\tUsing Wheel Radius: " + 
+                                    formatter.format(DriveConstants.kWheelRadiusMeters) + " meters");
+                            System.out.println(
+                                "\tDrive Base Radius: "
+                                    + formatter.format(driveBaseRadius)
+                                    + " meters, "
+                                    + formatter.format(Units.metersToInches(driveBaseRadius))
+                                    + " inches");
+                            System.out.println(
+                                "\tEffective Track Width: "
+                                    + formatter.format(effectiveTrackWidth)
+                                    + " meters, "
+                                    + formatter.format(Units.metersToInches(effectiveTrackWidth))
+                                    + " inches");
+                            System.out.println(
+                                "\t** Update kDriveBaseRadius in SwerveDriveConstants.java **");
+                        })));
+    }
 }

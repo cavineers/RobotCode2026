@@ -82,6 +82,9 @@ public class RobotContainer {
         "Drive Wheel Radius Characterization",
         SystemIdCommands.wheelRadiusCharacterization(drivetrain));
         autoChooser.addOption(
+        "Drive Base Radius Characterization",
+        SystemIdCommands.driveBaseRadiusCharacterization(drivetrain));
+        autoChooser.addOption(
         "Drive Simple FF Characterization",
         SystemIdCommands.feedforwardCharacterization(drivetrain));
         autoChooser.addOption(
