@@ -35,12 +35,20 @@ public interface ClimberIO {
 
     }
 
-    public default void setDeployVoltage(double volts) {
-    
+    public default void engage(){
+        
     }
 
-    public default void setRetractVoltage(double volts) {
+    public default void setClimberVoltage(double volts) {
     
+    }
+    
+    public default void setPID(double kS, double kV, double kA) {
+
+    }
+    
+    public default void setFF(double kS, double kV, double kA) {
+
     }
 }
 

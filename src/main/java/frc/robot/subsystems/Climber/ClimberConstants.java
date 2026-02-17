@@ -1,11 +1,22 @@
 package frc.robot.subsystems.Climber;
 
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+
 public class ClimberConstants {
     public static final boolean kTuningMode = true;
 
     public static final int kClimberCanID = 51; //TODO: Update
 
     public static final int kLimitSwitchID = 0; //TODO: Update
+
+    public static final boolean kEnableFOC = false;
+    // Motor configuration Kraken X60
+    public static final NeutralModeValue kClimberNeutralMode = NeutralModeValue.Coast;
+    public static final InvertedValue kClimberMotorInverted = InvertedValue.Clockwise_Positive;
+
+    public static final double kSupplyCurrentLimit = 20.0; // Amps
+    public static final double kStatorCurrentLimit = 40.0; // Amps
 
     public static final double kRestAbsoluteRotations = 0.0; //TODO: Update
     public static final double kDeployedAbsoluteRotations = 5.0; //TODO: Update
@@ -16,12 +27,15 @@ public class ClimberConstants {
     public static final double kDeployedMotorRotations = kClimberGearRatio * kDeployedAbsoluteRotations;
     public static final double kEngagedMotorRotations = kClimberGearRatio * kEngagedAbsoluteRotations;
 
-    public static final double kProportionalGainSpark = 1.0; //TODO: Update
-    public static final double kIntegralTermSpark = 0.0; //TODO: Update
-    public static final double kDerivativeTermSpark = 0.0; //TODO: Update
-    public static final double kGravityTermSpark = 0.0; //TODO: Update
+    public static final double kP = 1.0; //TODO: Update
+    public static final double kI = 0.0; //TODO: Update
+    public static final double kD = 0.0; //TODO: Update
+    public static final double kS = 1.0; //TODO: Update
+    public static final double kV = 0.0; //TODO: Update
+    public static final double kA = 0.0; //TODO: Update
 
     public static final double kProportionalTermSim = 0.1;
+    public static final double kIntegralTermSim = 0.0;
     public static final double kDerivativeTermSim = 0.0;
 
     public static final boolean kInverted = false;

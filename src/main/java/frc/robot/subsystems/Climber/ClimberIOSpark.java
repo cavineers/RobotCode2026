@@ -28,9 +28,9 @@ public class ClimberIOSpark implements ClimberIO {
     final SparkMax deployMotor = new SparkMax(kClimberCanID, MotorType.kBrushless);
     private final RelativeEncoder deployEncoder = deployMotor.getEncoder();
 
-    private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Climber/P", ClimberConstants.kProportionalGainSpark);
-    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Climber/D", ClimberConstants.kDerivativeTermSpark);
-    private LoggedNetworkNumber tuningG = new LoggedNetworkNumber("/Tuning/Climber/G", ClimberConstants.kGravityTermSpark); 
+    private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Climber/P", ClimberConstants.kP);
+    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Climber/D", ClimberConstants.kD);
+    private LoggedNetworkNumber tuningI = new LoggedNetworkNumber("/Tuning/Climber/I", ClimberConstants.kI); 
 
     @AutoLogOutput(key="Climber/Setpoint")
     private double absSetpoint;
@@ -38,7 +38,7 @@ public class ClimberIOSpark implements ClimberIO {
     @AutoLogOutput(key="Climber/IsClosed")
     private boolean isClosed = true;
 
-    private PIDController controller = new PIDController(kProportionalGainSpark, kIntegralTermSpark, kDerivativeTermSpark);
+    private PIDController controller = new PIDController(kP, kI, kD);
 
     private SparkMaxConfig deployConfig;
 
@@ -85,7 +85,7 @@ public class ClimberIOSpark implements ClimberIO {
         Logger.recordOutput("Climber/limitSwitchPressed", this.limitSwitchPressed());
         
         if (this.isClosed){
-            this.setDeployVoltage(desiredVoltage);
+            this.setClimberVoltage(desiredVoltage);
         }
 
         if (this.limitSwitchPressed()){
@@ -100,7 +100,7 @@ public class ClimberIOSpark implements ClimberIO {
     }
     
     @Override
-    public void setDeployVoltage(double volts) {
+    public void setClimberVoltage(double volts) {
         deployMotor.setVoltage(volts);
     }
 
@@ -127,7 +127,7 @@ public class ClimberIOSpark implements ClimberIO {
 
 
     private double calculateFeedforward() {
-        double feedforward = ClimberConstants.kTuningMode ? this.tuningG.get() : ClimberConstants.kGravityTermSpark;
+        double feedforward = 0;//ClimberConstants.kTuningMode ? this.tuningG.get() : ClimberConstants.kGravityTermSpark;
         return feedforward;
     }
 

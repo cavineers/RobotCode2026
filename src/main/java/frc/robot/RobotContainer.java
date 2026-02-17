@@ -109,13 +109,11 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
-        primaryDriverController.a().onTrue(climber.goToPresetCommand(ClimberConstants.kRestMotorRotations));
-        primaryDriverController.x().onTrue(climber.goToPresetCommand(ClimberConstants.kDeployedMotorRotations));
-        primaryDriverController.y().onTrue(climber.goToPresetCommand(ClimberConstants.kEngagedMotorRotations));
-        primaryDriverController.povUp().onTrue(climber.setVoltageCommand(1));
-        primaryDriverController.povUp().onFalse(climber.setVoltageCommand(0));
-        primaryDriverController.povDown().onTrue(climber.setVoltageCommand(-1));
-        primaryDriverController.povDown().onFalse(climber.setVoltageCommand(0));
+        primaryDriverController.a().onTrue(climber.deployCommand());
+        primaryDriverController.x().onTrue(climber.retractCommand());
+        primaryDriverController.y().onTrue(climber.engageCommand());
+        primaryDriverController.povUp().whileTrue(climber.setVoltageCommand(1));
+        primaryDriverController.povDown().whileTrue(climber.setVoltageCommand(-1));
     }
 
     public void configureNamedCommands() {
