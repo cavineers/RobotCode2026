@@ -208,7 +208,7 @@ public class ModuleIOTalonFX implements ModuleIO {
 
     // Configure periodic status signals
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
+        100.0,
         drivePosition,
         driveVelocity,
         driveAppliedVolts,

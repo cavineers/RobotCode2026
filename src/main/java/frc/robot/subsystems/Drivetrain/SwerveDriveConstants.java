@@ -73,7 +73,7 @@ public class SwerveDriveConstants {
 
         public static final double kTeleDriveMaxSpeedMetersPerSecond = kPhysicalMaxSpeedMetersPerSecond;
         public static final double kTeleDriveMaxAngularSpeedRadiansPerSecond = kPhysicalMaxAngularSpeedRadiansPerSecond
-                / 1.0;
+                / 2.0;
         
         // Linear acceleration limit (m/s²)
         public static final double kTeleDriveMaxAccelerationMetersPerSecSq = 4.5;
@@ -81,10 +81,10 @@ public class SwerveDriveConstants {
         // Angular acceleration limit (rad/s²)
         public static final double kTeleDriveMaxAngularAccelerationRadPerSecSq = 12.0;
 
-        public static final double kFrontLeftAbsoluteEncoderOffset = -0.1255; 
-        public static final double kBackLeftAbsoluteEncoderOffset = 0.1618; 
-        public static final double kFrontRightAbsoluteEncoderOffset = -.3166;
-        public static final double kBackRightAbsoluteEncoderOffset = -0.3027;
+        public static final double kFrontLeftAbsoluteEncoderOffset = -0.1289; 
+        public static final double kBackLeftAbsoluteEncoderOffset = 0.163; 
+        public static final double kFrontRightAbsoluteEncoderOffset = -.318;
+        public static final double kBackRightAbsoluteEncoderOffset = -0.3;
 
         // Characterized from drive base radius: driveBaseRadius × 2 / √2 = 21.81 inches
         // Physical measurement: 21.65 inches
