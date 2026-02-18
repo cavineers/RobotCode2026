@@ -73,7 +73,7 @@ public class Module {
         double wheelVelocityRadPerSec = state.speedMetersPerSecond / kWheelRadiusMeters;
         
         // Log the velocity being commanded
-        Logger.recordOutput("Drivetrain/Module" + index + "/VelocityCommand", wheelVelocityRadPerSec);
+        Logger.recordOutput("Drivetrain/Module" + index + "/WheelVelocityCommandRadPerSec", wheelVelocityRadPerSec);
         Logger.recordOutput("Drivetrain/Module" + index + "/SpeedMPS", state.speedMetersPerSecond);
         
         io.setDriveVelocity(wheelVelocityRadPerSec);
