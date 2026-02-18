@@ -113,8 +113,8 @@ public class ModuleIOTalonFX implements ModuleIO {
     driveConfig.Slot0.kS = kDriveKs;
     driveConfig.Slot0.kV = kDriveKv;
     
-    // SensorToMechanismRatio set to 1.0 because Module.java handles gear ratio conversion
-    driveConfig.Feedback.SensorToMechanismRatio = 1.0;
+    // Set SensorToMechanismRatio to gear ratio to convert motor rotations to wheel rotations
+    driveConfig.Feedback.SensorToMechanismRatio = kDriveMotorGearRatio;
     
     driveConfig.TorqueCurrent.PeakForwardTorqueCurrent = kDriveMotorCurrentLimit;
     driveConfig.TorqueCurrent.PeakReverseTorqueCurrent = -kDriveMotorCurrentLimit;
@@ -234,9 +234,9 @@ public class ModuleIOTalonFX implements ModuleIO {
     inputs.turnConnected = turnConnectedDebounce.calculate(turnStatus.isOK());
     inputs.turnEncoderConnected = turnEncoderConnectedDebounce.calculate(turnEncoderStatus.isOK());
 
-    // Convert motor shaft rotations to wheel radians (divide by gear ratio since SensorToMechanismRatio = 1.0)
-    inputs.drivePositionRad = Units.rotationsToRadians(drivePosition.getValueAsDouble()) / kDriveMotorGearRatio;
-    inputs.driveVelocityRadPerSec = Units.rotationsToRadians(driveVelocity.getValueAsDouble()) / kDriveMotorGearRatio;
+    // Update inputs - SensorToMechanismRatio handles gear ratio conversion to wheel rotations
+    inputs.drivePositionRad = Units.rotationsToRadians(drivePosition.getValueAsDouble());
+    inputs.driveVelocityRadPerSec = Units.rotationsToRadians(driveVelocity.getValueAsDouble());
     inputs.driveAppliedVolts = driveAppliedVolts.getValueAsDouble();
     inputs.driveCurrentAmps = driveCurrent.getValueAsDouble();
 
@@ -250,7 +250,7 @@ public class ModuleIOTalonFX implements ModuleIO {
         timestampQueue.stream().mapToDouble((Double value) -> value).toArray();
     inputs.odometryDrivePositionsRad =
         drivePositionQueue.stream()
-            .mapToDouble((Double value) -> Units.rotationsToRadians(value) / kDriveMotorGearRatio)
+            .mapToDouble((Double value) -> Units.rotationsToRadians(value))
             .toArray();
     inputs.odometryTurnPositions =
         turnPositionQueue.stream()

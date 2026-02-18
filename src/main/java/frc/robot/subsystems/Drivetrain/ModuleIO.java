@@ -37,7 +37,7 @@ public interface ModuleIO {
     public default void setTurnOpenLoop(double output) {
     }
 
-    /** Run the drive motor at the specified velocity. */
+    /** Run the drive motor at the specified velocity in wheel rad/s. */
     public default void setDriveVelocity(double velocityRadPerSec) {
     }
 

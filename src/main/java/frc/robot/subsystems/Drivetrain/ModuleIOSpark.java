@@ -99,8 +99,8 @@ public class ModuleIOSpark implements ModuleIO {
                 .smartCurrentLimit(kDriveMotorCurrentLimit)
                 .voltageCompensation(12.0);
         driveConfig.encoder
-                // Configure encoder to report MOTOR SHAFT position/velocity (like TalonFX SensorToMechanismRatio = 1.0)
-                // This way our units are consistent: motor rotations -> motor radians
+                // Configure encoder to report MOTOR SHAFT position/velocity
+                // Conversion: NEO rotations -> motor shaft radians
                 .positionConversionFactor(2 * Math.PI)  // NEO rotations to radians (at motor shaft)
                 .velocityConversionFactor(2 * Math.PI / 60.0)  // NEO RPM to rad/s (at motor shaft)
                 .uvwMeasurementPeriod(10)
@@ -206,11 +206,15 @@ public class ModuleIOSpark implements ModuleIO {
 
     @Override
     public void setDriveVelocity(double velocityRadPerSec) {
+        // Convert wheel rad/s to motor shaft rad/s
+        double motorVelocityRadPerSec = velocityRadPerSec * kDriveMotorGearRatio;
+        
+        // Calculate feedforward based on wheel velocity (kDriveKs and kDriveKv are for wheel-level)
         double ffVolts = kDriveKs * Math.signum(velocityRadPerSec) + kDriveKv * velocityRadPerSec;
         
         // Command motor shaft velocity to Spark Max
         driveController.setSetpoint(
-                velocityRadPerSec, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ffVolts, ArbFFUnits.kVoltage);
+                motorVelocityRadPerSec, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ffVolts, ArbFFUnits.kVoltage);
     }
 
     @Override

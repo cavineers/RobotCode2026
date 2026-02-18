@@ -69,14 +69,14 @@ public class Module {
         state.optimize(getAngle());
         state.cosineScale(inputs.turnPosition);
 
-        // Convert m/s to motor shaft rad/s: (wheel rad/s) * gear_ratio = (motor rad/s)
-        double velocityCommand = state.speedMetersPerSecond / kWheelRadiusMeters * SwerveDriveConstants.ModuleConstants.kDriveMotorGearRatio;
+        // Convert m/s to wheel rad/s
+        double wheelVelocityRadPerSec = state.speedMetersPerSecond / kWheelRadiusMeters;
         
         // Log the velocity being commanded
-        Logger.recordOutput("Drivetrain/Module" + index + "/VelocityCommand", velocityCommand);
+        Logger.recordOutput("Drivetrain/Module" + index + "/WheelVelocityCommandRadPerSec", wheelVelocityRadPerSec);
         Logger.recordOutput("Drivetrain/Module" + index + "/SpeedMPS", state.speedMetersPerSecond);
         
-        io.setDriveVelocity(velocityCommand);
+        io.setDriveVelocity(wheelVelocityRadPerSec);
         io.setTurnPosition(state.angle);
     }
 
@@ -135,12 +135,10 @@ public class Module {
     }
 
     /** 
-     * Returns the module velocity in rad/sec at the WHEEL (mechanism).
-     * Used for feedforward characterization - matches the velocity units commanded in runSetpoint().
-     * SensorToMechanismRatio in TalonFX already handles gear ratio conversion.
+     * Returns the module velocity in rad/sec at the WHEEL.
+     * Used for feedforward characterization - matches the velocity units commanded in runSetpoint() (wheel rad/s).
      */
     public double getFFCharacterizationVelocity() {
-        // Return wheel velocity for feedforward characterization (already in mechanism rad/s)
         return inputs.driveVelocityRadPerSec;
     }
 }
