@@ -281,7 +281,8 @@ public class ModuleIOTalonFX implements ModuleIO {
 
   @Override
   public void setDriveVelocity(double velocityRadPerSec) {
-    double velocityRotPerSec = Units.radiansToRotations(velocityRadPerSec);
+    // Convert wheel rad/s to motor rotations/sec (multiply by gear ratio since SensorToMechanismRatio = 1.0)
+    double velocityRotPerSec = Units.radiansToRotations(velocityRadPerSec) * kDriveMotorGearRatio;
     driveTalon.setControl(
         switch (kDriveClosedLoopOutput) {
           case Voltage -> velocityVoltageRequest.withVelocity(velocityRotPerSec);
