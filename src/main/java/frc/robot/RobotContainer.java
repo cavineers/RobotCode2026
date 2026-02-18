@@ -1,5 +1,7 @@
 package frc.robot;
 
+import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.kOutsideVoltage;
+
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -19,10 +21,17 @@ import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
 import frc.robot.subsystems.Drivetrain.ModuleIOTalonFX;
 import frc.robot.commands.SystemIdCommands;
 
+import frc.robot.subsystems.InBumperIntake.InBumperIntake;
+import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO;
+import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSim;
+import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSpark;
+import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
+
 public class RobotContainer {
 
     // Subsystems
     public final SwerveDriveSubsystem drivetrain;
+    public final InBumperIntake inBumperIntake;
     // public final ShooterSubsystem shooter;
 
     // Controllers
@@ -38,6 +47,11 @@ public class RobotContainer {
             case REAL:
                 drivetrain = new SwerveDriveSubsystem(
                         new GyroPigeonIO(),
+                        new ModuleIOSpark(0),
+                        new ModuleIOSpark(1),
+                        new ModuleIOSpark(2),
+                        new ModuleIOSpark(3));
+                inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
                         new ModuleIOTalonFX(0),
                         new ModuleIOTalonFX(1),
                         new ModuleIOTalonFX(2),
@@ -55,6 +69,7 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
+                inBumperIntake = new InBumperIntake(new InBumperIntakeIOSim());
                 // shooter = new ShooterSubsystem(
                 //         new ShooterIOSim());
                 break;
@@ -65,6 +80,9 @@ public class RobotContainer {
                         new ModuleIO() {},
                         new ModuleIO() {},
                         new ModuleIO() {},
+                        new ModuleIO() {}
+                    );
+                inBumperIntake = new InBumperIntake(new InBumperIntakeIO() {});
                         new ModuleIO() {});
                 // shooter = new ShooterSubsystem(
                 //         new ShooterIO(){});
@@ -122,6 +140,10 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
+
+        primaryDriverController.leftTrigger().whileTrue(inBumperIntake.runGroundToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
+        primaryDriverController.rightBumper().whileTrue(inBumperIntake.runGroundToHopper(kOutsideVoltage, kBottomVoltage, kTopVoltage));
+        primaryDriverController.rightTrigger().whileTrue(inBumperIntake.runHopperToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
         
         // Set the shooter default command to continuously calculate shots and aim
         // This command controls rotation (auto-aim) while driver controls translation (left stick)
