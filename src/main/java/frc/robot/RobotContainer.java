@@ -47,16 +47,11 @@ public class RobotContainer {
             case REAL:
                 drivetrain = new SwerveDriveSubsystem(
                         new GyroPigeonIO(),
-                        new ModuleIOSpark(0),
-                        new ModuleIOSpark(1),
-                        new ModuleIOSpark(2),
-                        new ModuleIOSpark(3));
-                inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
                         new ModuleIOTalonFX(0),
                         new ModuleIOTalonFX(1),
                         new ModuleIOTalonFX(2),
                         new ModuleIOTalonFX(3));
-
+                inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
                 // shooter = new ShooterSubsystem(
                 //         new ShooterIOKraken()
                 // );
@@ -83,7 +78,6 @@ public class RobotContainer {
                         new ModuleIO() {}
                     );
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIO() {});
-                        new ModuleIO() {});
                 // shooter = new ShooterSubsystem(
                 //         new ShooterIO(){});
                 break;
