@@ -109,7 +109,7 @@ public class SwerveDriveConstants {
 
         // Drive motor configuration
         public static final int kDriveMotorCurrentLimit = 20;
-        public static final DCMotor kDriveGearbox = DCMotor.getNEO(1);
+        public static final DCMotor kDriveGearbox = DCMotor.getKrakenX60(1);
 
         // Drive PID configuration
         public static final double kDriveKp = 0.0;
