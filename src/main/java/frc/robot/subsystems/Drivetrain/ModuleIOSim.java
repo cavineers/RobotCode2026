@@ -25,10 +25,10 @@ public class ModuleIOSim implements ModuleIO {
     public ModuleIOSim() {
         // Create drive and turn sim models
         driveSim = new DCMotorSim(
-                LinearSystemId.createDCMotorSystem(kDriveGearbox, 0.025, 1 / ModuleConstants.kDriveMotorGearRatio),
+                LinearSystemId.createDCMotorSystem(kDriveGearbox, 0.025, ModuleConstants.kDriveMotorGearRatio),
                 kDriveGearbox);
         turnSim = new DCMotorSim(
-                LinearSystemId.createDCMotorSystem(kTurnGearbox, 0.025, 1 / ModuleConstants.kTurningMotorGearRatio),
+                LinearSystemId.createDCMotorSystem(kTurnGearbox, 0.025, ModuleConstants.kTurningMotorGearRatio),
                 kTurnGearbox);
 
         // Enable wrapping for turn PID
