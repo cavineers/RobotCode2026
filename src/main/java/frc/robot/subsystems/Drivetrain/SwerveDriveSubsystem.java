@@ -32,6 +32,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.pathfinding.Pathfinding;
+import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.PathPlannerLogging;
 
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -48,6 +49,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     public AutoBuilder autoBuilder;
 
     private SysIdRoutine sysId;
+    private SysIdRoutine sysIdRotation;
 
     // April Tag layout
     public static AprilTagFieldLayout aprilTagLayout = AprilTagFieldLayout
@@ -95,26 +97,45 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_AdvantageKit);
 
         // Start odometry thread
-        OdometryThreadSparkMax.getInstance().start();
+        PhoenixOdometryThread.getInstance().start();
 
         // Configure the System Identification routine
         this.sysId = new SysIdRoutine(new SysIdRoutine.Config(null, null, null,
                 (state) -> Logger.recordOutput("Drivetrain/SysIdState", state.toString())),
                 new SysIdRoutine.Mechanism(
                         (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
+        
+        // Configure SysId for rotation (trackwidth characterization)
+        this.sysIdRotation = new SysIdRoutine(
+                new SysIdRoutine.Config(
+                        null, // Use default ramp rate
+                        null, // Use default step voltage  
+                        null, // Use default timeout
+                        (state) -> {
+                            Logger.recordOutput("Drivetrain/SysIdRotationState", state.toString());
+                            System.out.println("Rotation SysId State: " + state.toString());
+                        }),
+                new SysIdRoutine.Mechanism(
+                        (voltage) -> {
+                            // Apply voltage to rotation only
+                            runCharacterization(0.0); // Point wheels forward first
+                            // Convert voltage to angular velocity command
+                            // This is approximate - actual characterization happens in SysId tool
+                            driveVelocity(new ChassisSpeeds(0.0, 0.0, voltage.in(Volts) * 0.1));
+                        },
+                        null,
+                        this));
 
         // Configure the AutoBuilder last
         AutoBuilder.configure(
                 this::getPose, // Robot pose supplier
                 this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
                 this::getChassisSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-                (speeds, feedforwards) -> driveVelocity(speeds), // Method that will drive the robot given ROBOT
-                                                                 // RELATIVE ChassisSpeeds
-                new PPHolonomicDriveController( // HolonomicPathFollowerConfig, this should likely live in your
-                                                // Constants class
+                (speeds, feedforwards) -> driveVelocity(speeds), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
+                new PPHolonomicDriveController(
                         new PIDConstants(DriveConstants.PathPlannerDriveP, 0.0, 0.0), // Translation PID constants
-                        new PIDConstants(DriveConstants.PathPlannerTurnP, 0.0, 0.0) // Rotation PID constants idk why
-                                                                                    // the default is 5
+                        new PIDConstants(DriveConstants.PathPlannerTurnP, 0.0, 0.0), // Rotation PID constants
+                        0.02 // Period in seconds (20ms for standard robot loop)
                 ),
                 DriveConstants.robotConfig, // ROBOT CONFIGURATION
                 this::shouldFlipPose, // Method to determine if the path should be flipped
@@ -194,9 +215,14 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     /**
      * Runs the drivetrain given a velocity
      * 
-     * @param speeds
+     * @param speeds ChassisSpeeds to drive at
      */
     public void driveVelocity(ChassisSpeeds speeds) {
+        // Log commanded speeds
+        Logger.recordOutput("Drive/CommandedVx", speeds.vxMetersPerSecond);
+        Logger.recordOutput("Drive/CommandedVy", speeds.vyMetersPerSecond);
+        Logger.recordOutput("Drive/CommandedOmega", speeds.omegaRadiansPerSecond);
+        
         // Calculate module setpoints
         ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
         SwerveModuleState[] moduleStates = kinematics.toSwerveModuleStates(discreteSpeeds);
@@ -383,6 +409,20 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     /** Returns a command to run a dynamic test in the specified direction. */
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
         return run(() -> runCharacterization(0.0)).withTimeout(1.0).andThen(sysId.dynamic(direction));
+    }
+
+    /** Returns a command to run a rotation quasistatic test for trackwidth characterization. */
+    public Command sysIdRotationQuasistatic(SysIdRoutine.Direction direction) {
+        return run(() -> runCharacterization(0.0))
+                .withTimeout(1.0)
+                .andThen(sysIdRotation.quasistatic(direction));
+    }
+
+    /** Returns a command to run a rotation dynamic test for trackwidth characterization. */
+    public Command sysIdRotationDynamic(SysIdRoutine.Direction direction) {
+        return run(() -> runCharacterization(0.0))
+                .withTimeout(1.0)
+                .andThen(sysIdRotation.dynamic(direction));
     }
 
 }

@@ -20,7 +20,6 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
-import java.util.Queue;
 import java.util.function.DoubleSupplier;
 import com.ctre.phoenix6.hardware.CANcoder;
 
@@ -50,11 +49,6 @@ public class ModuleIOSpark implements ModuleIO {
     // Connection debouncers
     private final Debouncer driveConnectedDebounce = new Debouncer(0.5);
     private final Debouncer turnConnectedDebounce = new Debouncer(0.5);
-
-    // Odometry queues
-    private final Queue<Double> timestampQueue;
-    private final Queue<Double> drivePositionQueue;
-    private final Queue<Double> turnPositionQueue;
 
     public ModuleIOSpark(int module) {
         zeroRotation = switch (module) {
@@ -105,8 +99,10 @@ public class ModuleIOSpark implements ModuleIO {
                 .smartCurrentLimit(kDriveMotorCurrentLimit)
                 .voltageCompensation(12.0);
         driveConfig.encoder
-                .positionConversionFactor(kDriveEncoderRot2Rad)
-                .velocityConversionFactor(kDriveEncoderRPM2RadPerSec)
+                // Configure encoder to report MOTOR SHAFT position/velocity (like TalonFX SensorToMechanismRatio = 1.0)
+                // This way our units are consistent: motor rotations -> motor radians
+                .positionConversionFactor(2 * Math.PI)  // NEO rotations to radians (at motor shaft)
+                .velocityConversionFactor(2 * Math.PI / 60.0)  // NEO RPM to rad/s (at motor shaft)
                 .uvwMeasurementPeriod(10)
                 .uvwAverageDepth(2);
         driveConfig.closedLoop
@@ -116,7 +112,6 @@ public class ModuleIOSpark implements ModuleIO {
                         kDriveKd);
         driveConfig.signals
                 .primaryEncoderPositionAlwaysOn(true)
-                .primaryEncoderPositionPeriodMs((int) (1000.0 / kOdometryFrequency))
                 .primaryEncoderVelocityAlwaysOn(true)
                 .primaryEncoderVelocityPeriodMs(20)
                 .appliedOutputPeriodMs(20)
@@ -135,8 +130,7 @@ public class ModuleIOSpark implements ModuleIO {
         turnConfig
                 .idleMode(IdleMode.kBrake)
                 .smartCurrentLimit(kTurnMotorCurrentLimit)
-                .voltageCompensation(12.0)
-                .inverted(true);
+                .voltageCompensation(12.0);
         turnConfig.encoder
                 .positionConversionFactor(kTurningEncoderRot2Rad)
                 .velocityConversionFactor(kTurningEncoderRPM2RadPerSec)
@@ -151,13 +145,11 @@ public class ModuleIOSpark implements ModuleIO {
                         kTurnKd);
         turnConfig.signals
                 .primaryEncoderPositionAlwaysOn(true)
-                .primaryEncoderPositionPeriodMs((int) (1000.0 / kOdometryFrequency))
                 .primaryEncoderVelocityAlwaysOn(true)
                 .primaryEncoderVelocityPeriodMs(20)
                 .appliedOutputPeriodMs(20)
                 .busVoltagePeriodMs(20)
                 .outputCurrentPeriodMs(20);
-                
         tryUntilOk(
                 turnSpark,
                 5,
@@ -168,19 +160,18 @@ public class ModuleIOSpark implements ModuleIO {
         tryUntilOk(turnSpark,
                 5,
                 () -> turnEncoder.setPosition(turnAbsoluteEncoder.getAbsolutePosition().getValueAsDouble() * 2 * Math.PI)); // Rotations of out to radians of input (AV*Out/InGearRatio*2pi)
-        
-        // Register odometry signals
-        timestampQueue = OdometryThreadSparkMax.getInstance().makeTimestampQueue();
-        drivePositionQueue = OdometryThreadSparkMax.getInstance().registerSignal(driveSpark, driveEncoder::getPosition);
-        turnPositionQueue = OdometryThreadSparkMax.getInstance().registerSignal(turnSpark, turnEncoder::getPosition);
     }
 
     @Override
     public void updateInputs(ModuleIOInputs inputs) {
         // Update drive inputs
         sparkStickyFault = false; // controlled by the sparkUtil class
-        ifOk(driveSpark, driveEncoder::getPosition, (value) -> inputs.drivePositionRad = value);
-        ifOk(driveSpark, driveEncoder::getVelocity, (value) -> inputs.driveVelocityRadPerSec = value);
+        
+        // Drive encoder now reports motor shaft rad and rad/s, need to convert to wheel units
+        // wheel_position = motor_position / gear_ratio
+        // wheel_velocity = motor_velocity / gear_ratio
+        ifOk(driveSpark, driveEncoder::getPosition, (value) -> inputs.drivePositionRad = value / kDriveMotorGearRatio);
+        ifOk(driveSpark, driveEncoder::getVelocity, (value) -> inputs.driveVelocityRadPerSec = value / kDriveMotorGearRatio);
         ifOk(
                 driveSpark,
                 new DoubleSupplier[] { driveSpark::getAppliedOutput, driveSpark::getBusVoltage },
@@ -201,19 +192,6 @@ public class ModuleIOSpark implements ModuleIO {
                 (values) -> inputs.turnAppliedVolts = values[0] * values[1]);
         ifOk(turnSpark, turnSpark::getOutputCurrent, (value) -> inputs.turnCurrentAmps = value);
         inputs.turnConnected = turnConnectedDebounce.calculate(!sparkStickyFault);
-        
-        // Update odometry inputs
-        inputs.odometryTimestamps =
-                timestampQueue.stream().mapToDouble((Double value) -> value).toArray();
-        inputs.odometryDrivePositionsRad =
-                drivePositionQueue.stream().mapToDouble((Double value) -> value).toArray();
-        inputs.odometryTurnPositions =
-                turnPositionQueue.stream()
-                        .map((Double value) -> Rotation2d.fromRadians(value))
-                        .toArray(Rotation2d[]::new);
-        timestampQueue.clear();
-        drivePositionQueue.clear();
-        turnPositionQueue.clear();
     }
 
     @Override
@@ -229,6 +207,8 @@ public class ModuleIOSpark implements ModuleIO {
     @Override
     public void setDriveVelocity(double velocityRadPerSec) {
         double ffVolts = kDriveKs * Math.signum(velocityRadPerSec) + kDriveKv * velocityRadPerSec;
+        
+        // Command motor shaft velocity to Spark Max
         driveController.setSetpoint(
                 velocityRadPerSec, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ffVolts, ArbFFUnits.kVoltage);
     }
