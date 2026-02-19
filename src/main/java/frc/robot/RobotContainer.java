@@ -86,8 +86,8 @@ public class RobotContainer {
                 break;
         }
 
-        // turret.setDefaultCommand(
-        //         new ManualTurretVoltageCommand(turret, () -> secondaryDriverController.getHID().getRawAxis(0)));
+        turret.setDefaultCommand(
+                new ManualTurretVoltageCommand(turret, () -> secondaryDriverController.getHID().getRawAxis(0)));
 
         configureButtonBindings();
         configureNamedCommands();

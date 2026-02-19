@@ -10,7 +10,7 @@ import edu.wpi.first.math.util.Units;
 public final class TurretConstants {
 
     // CAN IDs / hardware
-    public static final int kTurretMotorId = 52; // TODO: Update with real CAN ID
+    public static final int kTurretMotorId = 51; // TODO: Update with real CAN ID
     public static final boolean kMotorInverted = true;
 
     // Gearbox and conversion factors
@@ -25,8 +25,8 @@ public final class TurretConstants {
     // Mechanical limits
     // Defined as Robot-Relative angles (0 is Front/North)
     // Range: -90 degrees (Right) to +90 degrees (Left)
-    public static final double kMinAngleRad = Units.degreesToRadians(-150.0);
-    public static final double kMaxAngleRad = Units.degreesToRadians(150.0);
+    public static final double kMinAngleRad = Units.degreesToRadians(-175.0);
+    public static final double kMaxAngleRad = Units.degreesToRadians(175.0);
     
     // Offset from the robot's front (0 degrees) to the turret's "Mechanical Zero"
     // Since we defined 0 as Front/North, the offset is 0.0
@@ -51,10 +51,10 @@ public final class TurretConstants {
     public static final double kVelocityToleranceRadPerSec = Math.toRadians(5.0);
 
     // Homing / limit switch
-    public static final boolean kUseHomingSwitch = false;
-    public static final boolean kHomingSwitchNormallyOpen = true;
+    public static final boolean kUseHomingSwitch = true;
+    public static final boolean kHomingSwitchNormallyOpen = false;
     public static final int kHomingSwitchDioPort = 0; // TODO: Update with actual DIO port
-    public static final double kHomingSwitchZeroPositionRad = 0.0;
+    public static final double kHomingSwitchZeroPositionRad = Math.PI;
     public static final double kHomingSearchMaxVoltage = 3.0; // Reduced voltage when not homed for safety
 
     // Simulation parameters
