@@ -4,9 +4,9 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 public class InBumperIntakeConstants {
 
-    public static final int kBottomMotorCanID = 1; //TODO: set actual ids
-    public static final int kTopMotorCanID = 2;
-    public static final int kOutsideMotorCanID = 3;
+    public static final int kBottomMotorCanID = 14; //TODO: set actual ids
+    public static final int kTopMotorCanID = 15;
+    public static final int kOutsideMotorCanID = 16;
 
     // Motor Configuration
     public static final boolean kTopInverted = true;
