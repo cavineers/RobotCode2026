@@ -26,7 +26,7 @@ import frc.robot.subsystems.Shooter.ShooterSubsystem;
 public class RobotContainer {
 
     // Subsystems
-    public final SwerveDriveSubsystem drivetrain;
+    // public final SwerveDriveSubsystem drivetrain;
     public final ShooterSubsystem shooter;
 
     // Controllers
@@ -40,36 +40,36 @@ public class RobotContainer {
         switch (Constants.currentMode) {
             // Instantiate input/output for their respective modes
             case REAL:
-                drivetrain = new SwerveDriveSubsystem(
-                        new GyroPigeonIO(),
-                        new ModuleIOSpark(0),
-                        new ModuleIOSpark(1),
-                        new ModuleIOSpark(2),
-                        new ModuleIOSpark(3));
+                // drivetrain = new SwerveDriveSubsystem(
+                //         new GyroPigeonIO(),
+                //         new ModuleIOSpark(0),
+                //         new ModuleIOSpark(1),
+                //         new ModuleIOSpark(2),
+                //         new ModuleIOSpark(3));
 
                 shooter = new ShooterSubsystem(
                         new ShooterIOKraken()
                 );
                 break;
             case SIM:
-                drivetrain = new SwerveDriveSubsystem(
-                        new GyroIO() {
-                        },
-                        new ModuleIOSim(),
-                        new ModuleIOSim(),
-                        new ModuleIOSim(),
-                        new ModuleIOSim());
+                // drivetrain = new SwerveDriveSubsystem(
+                //         new GyroIO() {
+                //         },
+                //         new ModuleIOSim(),
+                //         new ModuleIOSim(),
+                //         new ModuleIOSim(),
+                //         new ModuleIOSim());
                 shooter = new ShooterSubsystem(
                         new ShooterIOSim());
                 break;
             default:
                 // Replay
-                drivetrain = new SwerveDriveSubsystem(
-                        new GyroIO() {},
-                        new ModuleIO() {},
-                        new ModuleIO() {},
-                        new ModuleIO() {},
-                        new ModuleIO() {});
+                // drivetrain = new SwerveDriveSubsystem(
+                //         new GyroIO() {},
+                //         new ModuleIO() {},
+                //         new ModuleIO() {},
+                //         new ModuleIO() {},
+                //         new ModuleIO() {});
                 shooter = new ShooterSubsystem(
                         new ShooterIO(){});
                 break;
@@ -122,29 +122,9 @@ public class RobotContainer {
         //     primaryDriverController::getLeftX
         // ));
         
-      
-        
-        // A button: Test velocity - 2000 RPM (slow test)
-        primaryDriverController.a().whileTrue(
-            Commands.run(() -> shooter.setVelocity(2000), shooter)
-                .finallyDo(() -> shooter.stop())
-        );
-        
-        // B button: Test velocity - 3500 RPM (medium test)
-        primaryDriverController.b().whileTrue(
-            Commands.run(() -> shooter.setVelocity(3500), shooter)
-                .finallyDo(() -> shooter.stop())
-        );
-        
-        // X button: Test velocity - 5000 RPM (high speed test)
-        primaryDriverController.x().whileTrue(
-            Commands.run(() -> shooter.setVelocity(5000), shooter)
-                .finallyDo(() -> shooter.stop())
-        );
-        
-        // Y button: Test voltage - 6V (open loop test)
+        // Y button: Use tunable RPM from /Tuning/Shooter/TargetRPM
         primaryDriverController.y().whileTrue(
-            Commands.run(() -> shooter.setVoltage(6.0), shooter)
+            Commands.run(() -> shooter.setTunableVelocity(), shooter)
                 .finallyDo(() -> shooter.stop())
         );
         
