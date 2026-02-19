@@ -131,10 +131,6 @@ public class RobotContainer {
         //         new TurretPresetCommand(turret, TurretConstants.kPresetTwoRad, "Two"));
         // secondaryDriverController.y().whileTrue(
         //         new TurretPresetCommand(turret, TurretConstants.kPresetThreeRad, "Three"));
-<<<<<<< Updated upstream
-=======
-       
->>>>>>> Stashed changes
         
         // Y button: Use tunable RPM from /Tuning/Shooter/TargetRPM
         primaryDriverController.y().whileTrue(
@@ -143,10 +139,10 @@ public class RobotContainer {
         );
         
         // Right Bumper: Test voltage - 12V (full power open loop)
-        primaryDriverController.rightBumper().whileTrue(
-            Commands.run(() -> shooter.setVoltage(12.0), shooter)
-                .finallyDo(() -> shooter.stop())
-        );
+        // primaryDriverController.rightBumper().whileTrue(
+        //     Commands.run(() -> shooter.setVoltage(12.0), shooter)
+        //         .finallyDo(() -> shooter.stop())
+        // );
         
         // Left Bumper: Stop shooter manually
         primaryDriverController.leftBumper().onTrue(
