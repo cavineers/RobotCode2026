@@ -143,13 +143,12 @@ public class RobotContainer {
         primaryDriverController.rightTrigger().whileTrue(inBumperIntake.runHopperToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
 
         // Turret button bindings
-        secondaryDriverController.a().whileTrue(
-                new TurretPresetCommand(turret, TurretConstants.kPresetOneRad, "One"));
-        secondaryDriverController.b().whileTrue(
-                new TurretPresetCommand(turret, TurretConstants.kPresetTwoRad, "Two"));
-        secondaryDriverController.y().whileTrue(
-                new TurretPresetCommand(turret, TurretConstants.kPresetThreeRad, "Three"));
-       
+        // secondaryDriverController.a().whileTrue(
+        //         new TurretPresetCommand(turret, TurretConstants.kPresetOneRad, "One"));
+        // secondaryDriverController.b().whileTrue(
+        //         new TurretPresetCommand(turret, TurretConstants.kPresetTwoRad, "Two"));
+        // secondaryDriverController.y().whileTrue(
+        //         new TurretPresetCommand(turret, TurretConstants.kPresetThreeRad, "Three"));
         
         // Y button: Use tunable RPM from /Tuning/Shooter/TargetRPM
         primaryDriverController.y().whileTrue(
