@@ -3,6 +3,7 @@ package frc.robot.subsystems.Shooter;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 import static frc.robot.subsystems.Shooter.ShooterConstants.*;
 
@@ -21,6 +22,33 @@ public class ShooterSubsystem extends SubsystemBase {
     private boolean velocityMode = false;
     
     private final Debouncer atTargetDebouncer = new Debouncer(kAtTargetDebounceTime);
+    
+    // Tunable shooter RPM value that can be adjusted from NetworkTables/AdvantageScope
+    private final LoggedNetworkNumber tunableShooterRPM = 
+        new LoggedNetworkNumber("/Tuning/Shooter/TargetRPM", 3500.0);
+    
+    // Tunable PID values
+    private final LoggedNetworkNumber tunableKP = 
+        new LoggedNetworkNumber("/Tuning/Shooter/kP", kP);
+    private final LoggedNetworkNumber tunableKI = 
+        new LoggedNetworkNumber("/Tuning/Shooter/kI", kI);
+    private final LoggedNetworkNumber tunableKD = 
+        new LoggedNetworkNumber("/Tuning/Shooter/kD", kD);
+    
+    // Tunable feedforward values
+    private final LoggedNetworkNumber tunableKS = 
+        new LoggedNetworkNumber("/Tuning/Shooter/kS", kS);
+    private final LoggedNetworkNumber tunableKV = 
+        new LoggedNetworkNumber("/Tuning/Shooter/kV", kV);
+    private final LoggedNetworkNumber tunableKA = 
+        new LoggedNetworkNumber("/Tuning/Shooter/kA", kA);
+    
+    private double lastKP = kP;
+    private double lastKI = kI;
+    private double lastKD = kD;
+    private double lastKS = kS;
+    private double lastKV = kV;
+    private double lastKA = kA;
 
     /**
      * @brief Create a shooter subsystem.
@@ -34,6 +62,30 @@ public class ShooterSubsystem extends SubsystemBase {
     public void periodic() {
         io.updateInputs(inputs);
         Logger.processInputs("Shooter", inputs);
+        
+        // Check if PID values have changed and update if needed
+        double currentKP = tunableKP.get();
+        double currentKI = tunableKI.get();
+        double currentKD = tunableKD.get();
+        if (currentKP != lastKP || currentKI != lastKI || currentKD != lastKD) {
+            io.setPID(currentKP, currentKI, currentKD);
+            lastKP = currentKP;
+            lastKI = currentKI;
+            lastKD = currentKD;
+            Logger.recordOutput("Shooter/PIDUpdated", true);
+        }
+        
+        // Check if FF values have changed and update if needed
+        double currentKS = tunableKS.get();
+        double currentKV = tunableKV.get();
+        double currentKA = tunableKA.get();
+        if (currentKS != lastKS || currentKV != lastKV || currentKA != lastKA) {
+            io.setFF(currentKS, currentKV, currentKA);
+            lastKS = currentKS;
+            lastKV = currentKV;
+            lastKA = currentKA;
+            Logger.recordOutput("Shooter/FFUpdated", true);
+        }
         
         Logger.recordOutput("Shooter/TargetVelocityRPM", targetVelocityRPM);
         Logger.recordOutput("Shooter/VelocityMode", velocityMode);
@@ -100,6 +152,21 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     /**
+     * @brief Get the tunable shooter RPM from NetworkTables.
+     * @return Tunable RPM value
+     */
+    public double getTunableRPM() {
+        return tunableShooterRPM.get();
+    }
+
+    /**
+     * @brief Set shooter to the tunable RPM value from NetworkTables.
+     */
+    public void setTunableVelocity() {
+        setVelocity(tunableShooterRPM.get());
+    }
+
+    /**
      * @brief Check if shooter is running in velocity mode.
      * @return true if velocity control is active
      */
@@ -134,7 +201,7 @@ public class ShooterSubsystem extends SubsystemBase {
     public void setFF(double kS, double kV, double kA) {
         io.setFF(kS, kV, kA);
     }
-
+     
     /**
      * Run characterization with specified voltage.
      */
