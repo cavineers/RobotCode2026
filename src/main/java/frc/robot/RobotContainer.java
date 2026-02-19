@@ -4,13 +4,19 @@ import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.kOutsi
 
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.math.geometry.Pose3d;
+
+import frc.robot.commands.ManualTurretVoltageCommand;
+import frc.robot.commands.TurretPresetCommand;
+import frc.robot.subsystems.Turret.Turret;
+import frc.robot.subsystems.Turret.TurretIO;
+import frc.robot.subsystems.Turret.TurretIOSim;
+import frc.robot.subsystems.Turret.TurretIOSpark;
+import frc.robot.subsystems.Turret.TurretConstants;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.commands.ContinuousShotCalculationCommand;
 import frc.robot.commands.SwerveCommand;
 
 import frc.robot.subsystems.Drivetrain.GyroIO;
@@ -30,6 +36,9 @@ import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
 public class RobotContainer {
 
     // Subsystems
+    private final Turret turret;
+    // private final SparkMax testGyro; 
+    // private final RelativeEncoder testGyroEncoder;
     public final SwerveDriveSubsystem drivetrain;
     public final InBumperIntake inBumperIntake;
     // public final ShooterSubsystem shooter;
@@ -39,18 +48,23 @@ public class RobotContainer {
     private final CommandXboxController secondaryDriverController = new CommandXboxController(1);
 
     // Auto chooser
-    private final LoggedDashboardChooser<Command> autoChooser;
+    private LoggedDashboardChooser<Command> autoChooser;
 
     public RobotContainer() {
+        // testGyro = new SparkMax(50, MotorType.kBrushless);
+        // testGyroEncoder = testGyro.getEncoder();
+
         switch (Constants.currentMode) {
             // Instantiate input/output for their respective modes
             case REAL:
                 drivetrain = new SwerveDriveSubsystem(
                         new GyroPigeonIO(),
-                        new ModuleIOTalonFX(0),
-                        new ModuleIOTalonFX(1),
-                        new ModuleIOTalonFX(2),
-                        new ModuleIOTalonFX(3));
+                        new ModuleIOSpark(0),
+                        new ModuleIOSpark(1),
+                        new ModuleIOSpark(2),
+                        new ModuleIOSpark(3));
+
+                turret = new Turret(new TurretIOSpark(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
                 // shooter = new ShooterSubsystem(
                 //         new ShooterIOKraken()
@@ -64,31 +78,47 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
+
+                turret = new Turret(new TurretIOSim(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSim());
                 // shooter = new ShooterSubsystem(
                 //         new ShooterIOSim());
                 break;
             default:
-                // Replay
                 drivetrain = new SwerveDriveSubsystem(
                         new GyroIO() {},
                         new ModuleIO() {},
                         new ModuleIO() {},
                         new ModuleIO() {},
-                        new ModuleIO() {}
-                    );
+                        new ModuleIO() {});
+            
+                turret = new Turret(new TurretIO() {}, () -> new Pose3d());
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIO() {});
                 // shooter = new ShooterSubsystem(
                 //         new ShooterIO(){});
                 break;
         }
-       
+
+        turret.setDefaultCommand(
+                new ManualTurretVoltageCommand(turret, () -> secondaryDriverController.getHID().getRawAxis(0)));
+
         configureButtonBindings();
         configureNamedCommands();
 
-        // Set up auto routines
-        autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
         
+    }
+
+    private void configureButtonBindings() {
+        secondaryDriverController.a().whileTrue(
+                new TurretPresetCommand(turret, TurretConstants.kPresetOneRad, "One"));
+        secondaryDriverController.b().whileTrue(
+                new TurretPresetCommand(turret, TurretConstants.kPresetTwoRad, "Two"));
+        secondaryDriverController.y().whileTrue(
+                new TurretPresetCommand(turret, TurretConstants.kPresetThreeRad, "Three"));
+        
+        
+        // Set up auto routines for SysIds
+        autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
         // Set up SysId routines
         autoChooser.addOption(
         "Drive Wheel Radius Characterization",
@@ -139,21 +169,19 @@ public class RobotContainer {
         primaryDriverController.rightBumper().whileTrue(inBumperIntake.runGroundToHopper(kOutsideVoltage, kBottomVoltage, kTopVoltage));
         primaryDriverController.rightTrigger().whileTrue(inBumperIntake.runHopperToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
         
-        // Set the shooter default command to continuously calculate shots and aim
-        // This command controls rotation (auto-aim) while driver controls translation (left stick)
-        // shooter.setDefaultCommand(new ContinuousShotCalculationCommand(
-        //     drivetrain, 
-        //     shooter,
-        //     primaryDriverController::getLeftY,
-        //     primaryDriverController::getLeftX
-        // ));
+        drivetrain.setDefaultCommand(new SwerveCommand(
+            drivetrain,
+            primaryDriverController::getLeftY,
+            primaryDriverController::getLeftX,
+            primaryDriverController::getRightX)
+        );
     }
-
+    
     public void configureNamedCommands() {
         // Register Named Commands
     }
 
     public Command getAutonomousCommand() {
-        return autoChooser.get();
+        return null;
     }
 }
