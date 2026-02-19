@@ -42,6 +42,7 @@ public class RobotContainer {
     private final LoggedDashboardChooser<Command> autoChooser;
 
     public RobotContainer() {
+
         switch (Constants.currentMode) {
             // Instantiate input/output for their respective modes
             case REAL:
@@ -51,6 +52,8 @@ public class RobotContainer {
                         new ModuleIOTalonFX(1),
                         new ModuleIOTalonFX(2),
                         new ModuleIOTalonFX(3));
+
+                turret = new Turret(new TurretIOSpark(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
                 // shooter = new ShooterSubsystem(
                 //         new ShooterIOKraken()
@@ -82,11 +85,43 @@ public class RobotContainer {
                 //         new ShooterIO(){});
                 break;
         }
-       
+
+
         configureButtonBindings();
         configureNamedCommands();
 
-        // Set up auto routines
+        
+    }
+
+    private void configureButtonBindings() {
+        // Set default drivetrain command
+        drivetrain.setDefaultCommand(new SwerveCommand(
+                drivetrain,
+                primaryDriverController::getLeftY,
+                primaryDriverController::getLeftX,
+                primaryDriverController::getRightX)
+            );
+
+        // Intake button bindings
+        primaryDriverController.leftTrigger().whileTrue(inBumperIntake.runGroundToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
+        primaryDriverController.rightBumper().whileTrue(inBumperIntake.runGroundToHopper(kOutsideVoltage, kBottomVoltage, kTopVoltage));
+        primaryDriverController.rightTrigger().whileTrue(inBumperIntake.runHopperToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
+
+        // Turret button bindings
+        secondaryDriverController.a().whileTrue(
+                new TurretPresetCommand(turret, TurretConstants.kPresetOneRad, "One"));
+        secondaryDriverController.b().whileTrue(
+                new TurretPresetCommand(turret, TurretConstants.kPresetTwoRad, "Two"));
+        secondaryDriverController.y().whileTrue(
+                new TurretPresetCommand(turret, TurretConstants.kPresetThreeRad, "Three"));
+        
+        // turret.setDefaultCommand(
+        //         new ManualTurretVoltageCommand(turret, () -> secondaryDriverController.getHID().getRawAxis(0)));
+        
+    }
+    
+    public void configureAutoChooser() {
+        // Set up auto routines for SysIds
         autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
         
         // Set up SysId routines
@@ -125,28 +160,6 @@ public class RobotContainer {
         autoChooser.addOption(
         "Rotation SysId (Dynamic Reverse)",
         drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kReverse));
-    }
-
-    private void configureButtonBindings() {
-        drivetrain.setDefaultCommand(new SwerveCommand(
-                drivetrain,
-                primaryDriverController::getLeftY,
-                primaryDriverController::getLeftX,
-                primaryDriverController::getRightX)
-            );
-
-        primaryDriverController.leftTrigger().whileTrue(inBumperIntake.runGroundToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
-        primaryDriverController.rightBumper().whileTrue(inBumperIntake.runGroundToHopper(kOutsideVoltage, kBottomVoltage, kTopVoltage));
-        primaryDriverController.rightTrigger().whileTrue(inBumperIntake.runHopperToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
-        
-        // Set the shooter default command to continuously calculate shots and aim
-        // This command controls rotation (auto-aim) while driver controls translation (left stick)
-        // shooter.setDefaultCommand(new ContinuousShotCalculationCommand(
-        //     drivetrain, 
-        //     shooter,
-        //     primaryDriverController::getLeftY,
-        //     primaryDriverController::getLeftX
-        // ));
     }
 
     public void configureNamedCommands() {
