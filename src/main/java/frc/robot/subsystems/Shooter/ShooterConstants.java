@@ -7,9 +7,9 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 public final class ShooterConstants {
     
     // Hardware
-    public static final int kFlywheelLeaderMotorCanID = 1; // TODO: Set actual CAN ID
-    public static final int kFlywheelFollowerMotorCanID = 67; // TODO: Set actual CAN ID
-    public static final String kFlywheelCanBus = ""; // Empty for RIO CAN, or "canivore" etc.
+    public static final int kFlywheelLeaderMotorCanID = 31; // TODO: Set actual CAN ID
+    public static final int kFlywheelFollowerMotorCanID = 32; // TODO: Set actual CAN ID
+    public static final String kFlywheelCanBus = "canivore"; // Empty for RIO CAN, or "canivore" etc.
     
     // Mechanical
     public static final double kGearRatio = 1.0; // Motor rotations per flywheel rotation
@@ -31,8 +31,8 @@ public final class ShooterConstants {
     public static final double kD = 0.0;
     
     // Kraken x44: ~5800 RPM free speed = ~97 RPS @ 12V → kV ≈ 0.12
-    public static final double kS = 0.07996; // Static friction - TODO: Characterize with SysId
-    public static final double kV = 0.11358; // Velocity feedforward
+    public static final double kS = 0.0; // Static friction - TODO: Characterize with SysId
+    public static final double kV = 0.0; // Velocity feedforward
     public static final double kA = 0.0; // Acceleration feedforward - TODO: Tune if needed
     
     // Control
