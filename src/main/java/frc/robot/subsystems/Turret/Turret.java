@@ -84,7 +84,7 @@ public class Turret extends SubsystemBase {
         
       
         Pose3d turretPose = new Pose3d(
-            robotPose.getTranslation().plus(new Translation3d(0.0, .0, 0.5
+            robotPose.getTranslation().plus(new Translation3d(0.0, 0.0, 0.5
             )), 
             new Rotation3d(0.0, 0.0, getCurrentFieldAngleRad())
         );
@@ -220,7 +220,7 @@ public class Turret extends SubsystemBase {
             io.resetEncoder(TurretConstants.kHomingSwitchZeroPositionRad);
             homed = true;
             commandedFieldAngleRad = getCurrentFieldAngleRad();
-            commandedTurretAngleRad = wrapAngle(0.0);
+            commandedTurretAngleRad = 0.0;
         }
 
         lastHomeSwitchState = pressed;
@@ -264,9 +264,9 @@ public class Turret extends SubsystemBase {
     }
 
     private static double wrapAngle(double angleRad) {
-        // Range is -90 to +90 (approx -1.57 to +1.57 rad)
-        // angleModulus wraps to -PI to +PI.
-        // Since -90 to +90 is within -PI to +PI, we don't need custom wrapping logic for 0-360 range anymore.
+        // Normalize angle to the standard (-PI, +PI] range.
+        // Mechanical/allowed turret limits are enforced separately using kMinAngleRad and kMaxAngleRad.
+        // Using angleModulus avoids needing custom wrapping logic for 0-2PI (0-360 deg) ranges.
         return MathUtil.angleModulus(angleRad);
     }
 

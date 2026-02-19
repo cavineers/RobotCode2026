@@ -125,10 +125,6 @@ public class TurretIOSpark implements TurretIO {
         encoder.setPosition(positionRad);
     }
 
-    // Overload that provides a default value of 0.0
-    public void resetEncoder() {
-        resetEncoder(0.0);
-    }
 
     @Override
     public void setBrakeMode(boolean enable) {
@@ -147,7 +143,7 @@ public class TurretIOSpark implements TurretIO {
     }
 
     @Override
-    public void configureClosedLoop(double kp, double ki, double kd){
+    public void configureClosedLoop(double kp, double ki, double kd) {
         ClosedLoopConfig closedLoopConfig = new ClosedLoopConfig(); // Only closed loop settings
         closedLoopConfig
                 .pid(kp, ki, kd)

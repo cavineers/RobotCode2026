@@ -146,9 +146,9 @@ public class TurretIOSim implements TurretIO {
 
 	private static double clampToRange(double angleRad) {
 		double wrapped = MathUtil.angleModulus(angleRad); // Wraps to -PI to PI
-        // Since our range is -PI/2 to PI/2, we don't need to add 2PI if it's below Min
-        // because MathUtil.angleModulus already centers it correctly for this range.
-        // However, we should just clamp directly.
+        // After wrapping to [-PI, PI], the turret limits are enforced by clamping
+        // to [TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad].
+        // This keeps the angle within the configured mechanical range.
 		return MathUtil.clamp(wrapped, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
 	}
 }
