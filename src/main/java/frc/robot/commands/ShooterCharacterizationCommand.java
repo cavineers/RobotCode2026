@@ -40,13 +40,13 @@ public class ShooterCharacterizationCommand {
                 // Accelerate and gather data
                 Commands.run(
                         () -> {
-                            double voltage = timer.get() * 1.0; // Ramp 1V per second
+                            double voltage = timer.get() * 0.5; // Ramp 1V per second
                             shooter.runCharacterization(voltage);
                             velocitySamples.add(shooter.getCharacterizationVelocity());
                             voltageSamples.add(voltage);
                         },
                         shooter)
-                        .withTimeout(12.0) // Run for 12 seconds (0-12V)
+                        .withTimeout(18.0) // Run for 12 seconds (0-12V)
 
                         // When finished or cancelled, calculate and print results
                         .finallyDo(

@@ -139,15 +139,17 @@ public class RobotContainer {
         );
         
         // Right Bumper: Test voltage - 12V (full power open loop)
-        // primaryDriverController.rightBumper().whileTrue(
-        //     Commands.run(() -> shooter.setVoltage(12.0), shooter)
+        // primaryDriverController.x().whileTrue(
+        //     Commands.run(() -> shooter.setVoltage(3.0), shooter)
         //         .finallyDo(() -> shooter.stop())
         // );
+
+        primaryDriverController.leftBumper().whileTrue(ShooterCharacterizationCommand.feedforwardCharacterization(shooter));
         
         // Left Bumper: Stop shooter manually
-        primaryDriverController.leftBumper().onTrue(
-            Commands.runOnce(() -> shooter.stop(), shooter)
-        );
+        // primaryDriverController.leftBumper().onTrue(
+        //     Commands.runOnce(() -> shooter.stop(), shooter)
+        // );
         // turret.setDefaultCommand(
         //         new ManualTurretVoltageCommand(turret, () -> secondaryDriverController.getHID().getRawAxis(0)));
         
@@ -155,7 +157,7 @@ public class RobotContainer {
     
     public void configureAutoChooser() {    
         // Set up auto routines for SysIds
-        autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
+        autoChooser = new LoggedDashboardChooser<>("Auto Choices");//AutoBuilder.buildAutoChooser()
         // Set up SysId routines
         autoChooser.addOption("Shooter Characterization", ShooterCharacterizationCommand.feedforwardCharacterization(shooter));
 

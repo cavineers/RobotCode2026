@@ -9,7 +9,7 @@ public class InBumperIntakeConstants {
     public static final int kOutsideMotorCanID = 52;
 
     // Motor Configuration
-    public static final boolean kTopInverted = true;
+    public static final boolean kTopInverted = false;
     public static final IdleMode kTopIdleMode = IdleMode.kBrake;
     public static final int kTopCurrentLimit = 40;
 
