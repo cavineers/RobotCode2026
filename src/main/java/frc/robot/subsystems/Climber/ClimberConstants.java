@@ -6,9 +6,9 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 public class ClimberConstants {
     public static final boolean kTuningMode = true;
 
-    public static final int kClimberCanID = 51; //TODO: Update
+    public static final int kClimberCanID = 30; //TODO: Update
 
-    public static final int kLimitSwitchID = 0; //TODO: Update
+    public static final int kLimitSwitchID = 4; //TODO: Update
 
     public static final boolean kEnableFOC = false;
     // Motor configuration Kraken X60
@@ -17,6 +17,9 @@ public class ClimberConstants {
 
     public static final double kSupplyCurrentLimit = 20.0; // Amps
     public static final double kStatorCurrentLimit = 40.0; // Amps
+
+    public static final double kManualDeployVoltage = 2.0; //TODO: Update
+    public static final double kManualRetractVoltage = -2.0; //TODO: Update
 
     public static final double kRestAbsoluteRotations = 0.0; //TODO: Update
     public static final double kDeployedAbsoluteRotations = 5.0; //TODO: Update

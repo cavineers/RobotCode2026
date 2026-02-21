@@ -1,5 +1,8 @@
 package frc.robot;
 
+import static frc.robot.subsystems.Climber.ClimberConstants.kManualDeployVoltage;
+import static frc.robot.subsystems.Climber.ClimberConstants.kManualRetractVoltage;
+
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -20,6 +23,7 @@ import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
 import frc.robot.subsystems.Climber.Climber;
 import frc.robot.subsystems.Climber.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberIO;
+import frc.robot.subsystems.Climber.ClimberIOKraken;
 import frc.robot.subsystems.Climber.ClimberIOSim;
 import frc.robot.subsystems.Climber.ClimberIOSpark;
 
@@ -47,7 +51,7 @@ public class RobotContainer {
                         new ModuleIOSpark(2),
                         new ModuleIOSpark(3));
                 climber = new Climber(
-                        new ClimberIOSpark());
+                        new ClimberIOKraken());
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -112,8 +116,11 @@ public class RobotContainer {
         primaryDriverController.a().onTrue(climber.deployCommand());
         primaryDriverController.x().onTrue(climber.retractCommand());
         primaryDriverController.y().onTrue(climber.engageCommand());
-        primaryDriverController.povUp().whileTrue(climber.setVoltageCommand(1));
-        primaryDriverController.povDown().whileTrue(climber.setVoltageCommand(-1));
+        primaryDriverController.povUp().onTrue(climber.setVoltageCommand(kManualDeployVoltage));
+        primaryDriverController.povUp().onFalse(climber.setVoltageCommand(0));
+        primaryDriverController.povDown().onTrue(climber.setVoltageCommand(kManualRetractVoltage));
+        primaryDriverController.povDown().onFalse(climber.setVoltageCommand(0));
+
     }
 
     public void configureNamedCommands() {

@@ -29,6 +29,7 @@ public class ClimberIOKraken implements ClimberIO {
         DEPLOYED,
         ENGAGED
     }
+    
     @AutoLogOutput(key="Climber/ClimbState")
     private ClimbState climbState = ClimbState.RESTING;
 
@@ -41,7 +42,6 @@ public class ClimberIOKraken implements ClimberIO {
     // WPILib Alerts for error handling
     private final Alert climberConfigAlert = new Alert("Climber motor config failed", AlertType.kError);
     private final Alert setPIDAlert = new Alert("Climber setPID failed", AlertType.kWarning);
-    private final Alert setFFAlert = new Alert("Climber setFF failed", AlertType.kWarning);
 
     public ClimberIOKraken() {
         climberMotor = new TalonFX(kClimberCanID);
@@ -60,13 +60,10 @@ public class ClimberIOKraken implements ClimberIO {
         climberConfig.CurrentLimits.StatorCurrentLimit = kStatorCurrentLimit;
         climberConfig.CurrentLimits.StatorCurrentLimitEnable = true;
         
-        // PID + Feedforward (kV is V/(rot/s) at motor shaft)
+        // PID
         climberConfig.Slot0.kP = kP;
         climberConfig.Slot0.kI = kI;
         climberConfig.Slot0.kD = kD;
-        climberConfig.Slot0.kS = kS;
-        climberConfig.Slot0.kV = kV;
-        climberConfig.Slot0.kA = kA;
                 
         // Apply configurations with error checking
         StatusCode climberStatus = climberMotor.getConfigurator().apply(climberConfig);
@@ -103,7 +100,7 @@ public class ClimberIOKraken implements ClimberIO {
 
         if (this.limitSwitchPressed()){
             climbState = ClimbState.RESTING;
-            inputs.climberPositionRotations = 0;
+            climberMotor.setPosition(kRestMotorRotations);
         }
 
     }
@@ -132,20 +129,16 @@ public class ClimberIOKraken implements ClimberIO {
     @Override
     public void deploy() {
         updateClimberSetpoint(kDeployedMotorRotations);
-        climbState = ClimbState.DEPLOYED;
     }
 
     @Override
     public void retract() {
         updateClimberSetpoint(kRestMotorRotations);
-        climbState = ClimbState.RESTING;
     }
 
     @Override
     public void engage() {
         updateClimberSetpoint(kEngagedMotorRotations);
-        climbState = ClimbState.ENGAGED;
-        
     }
 
     public boolean limitSwitchPressed() {
@@ -165,18 +158,5 @@ public class ClimberIOKraken implements ClimberIO {
         climberConfig.Slot0.kI = kI;
         climberConfig.Slot0.kD = kD;
         climberMotor.getConfigurator().apply(climberConfig.Slot0);
-    }
-
-    @Override
-    public void setFF(double kS, double kV, double kA) {
-        // Read current configuration, modify only FF values, then reapply
-        var climberConfig = new TalonFXConfiguration();
-        climberMotor.getConfigurator().refresh(climberConfig);
-        climberConfig.Slot0.kS = kS;
-        climberConfig.Slot0.kV = kV;
-        climberConfig.Slot0.kA = kA;
-        
-        StatusCode status = climberMotor.getConfigurator().apply(climberConfig.Slot0);
-        setFFAlert.set(!status.isOK());
     }
 }

@@ -21,9 +21,18 @@ public class Climber extends SubsystemBase {
     private double kI;
     private double kD;
 
-    private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Shooter/kP", ClimberConstants.kP);
-    private LoggedNetworkNumber tuningI = new LoggedNetworkNumber("/Tuning/Shooter/kI", ClimberConstants.kI);
-    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Shooter/kD", ClimberConstants.kD);
+    public enum ClimbState{
+        RESTING,
+        DEPLOYED,
+        ENGAGED
+    }
+    
+    @AutoLogOutput(key="Climber/ClimbState")
+    public ClimbState climbState = ClimbState.RESTING;
+
+    private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Climber/kP", ClimberConstants.kP);
+    private LoggedNetworkNumber tuningI = new LoggedNetworkNumber("/Tuning/Climber/kI", ClimberConstants.kI);
+    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Climber/kD", ClimberConstants.kD);
     
     public Climber(ClimberIO io) {
         this.io = io;
@@ -62,15 +71,27 @@ public class Climber extends SubsystemBase {
     }
 
     public Command deployCommand() {
-        return Commands.run(() -> io.deploy(), this).finallyDo(interrupted -> io.setClimberVoltage(0));
+        return Commands.run(() -> {
+            climbState = ClimbState.DEPLOYED;
+            io.deploy();
+            }, this).finallyDo(interrupted ->
+            io.setClimberVoltage(0));
     }
 
     public Command retractCommand() {
-        return Commands.run(() -> io.retract(), this).finallyDo(interrupted -> io.setClimberVoltage(0));
+        return Commands.run(() -> {
+            climbState = ClimbState.RESTING;
+            io.retract();
+            }, this).finallyDo(interrupted ->
+            io.setClimberVoltage(0));
     }
 
     public Command engageCommand() {
-        return Commands.run(() -> io.engage(), this).finallyDo(interrupted -> io.setClimberVoltage(0));
+        return Commands.run(() -> {
+            climbState = ClimbState.ENGAGED;
+            io.engage();
+            }, this).finallyDo(interrupted ->
+            io.setClimberVoltage(0));
     }
 
 }
