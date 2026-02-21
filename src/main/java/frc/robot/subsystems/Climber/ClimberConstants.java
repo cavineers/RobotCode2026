@@ -6,25 +6,25 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 public class ClimberConstants {
     public static final boolean kTuningMode = true;
 
-    public static final int kClimberCanID = 30; //TODO: Update
+    public static final int kClimberCanID = 35; //TODO: Update
 
     public static final int kLimitSwitchID = 4; //TODO: Update
 
     public static final boolean kEnableFOC = false;
     // Motor configuration Kraken X60
-    public static final NeutralModeValue kClimberNeutralMode = NeutralModeValue.Coast;
+    public static final NeutralModeValue kClimberNeutralMode = NeutralModeValue.Brake;
     public static final InvertedValue kClimberMotorInverted = InvertedValue.Clockwise_Positive;
 
     public static final double kSupplyCurrentLimit = 20.0; // Amps
     public static final double kStatorCurrentLimit = 40.0; // Amps
 
-    public static final double kManualDeployVoltage = 2.0; //TODO: Update
-    public static final double kManualRetractVoltage = -2.0; //TODO: Update
+    public static final double kManualDeployVoltage = 6.0; //TODO: Update
+    public static final double kManualRetractVoltage = -5.0; //TODO: Update
 
     public static final double kRestAbsoluteRotations = 0.0; //TODO: Update
-    public static final double kDeployedAbsoluteRotations = 5.0; //TODO: Update
-    public static final double kEngagedAbsoluteRotations = 2.5; //TODO: Update
-    public static final double kClimberGearRatio = 5.0; //TODO: Update
+    public static final double kDeployedAbsoluteRotations = 2.8; //TODO: Update
+    public static final double kEngagedAbsoluteRotations = 1.5; //TODO: Update
+    public static final double kClimberGearRatio = 12.0; //TODO: Update
 
     public static final double kRestMotorRotations = kClimberGearRatio * kRestAbsoluteRotations;
     public static final double kDeployedMotorRotations = kClimberGearRatio * kDeployedAbsoluteRotations;
@@ -33,7 +33,7 @@ public class ClimberConstants {
     public static final double kP = 1.0; //TODO: Update
     public static final double kI = 0.0; //TODO: Update
     public static final double kD = 0.0; //TODO: Update
-    public static final double kS = 1.0; //TODO: Update
+    public static final double kS = 0.0; //TODO: Update
     public static final double kV = 0.0; //TODO: Update
     public static final double kA = 0.0; //TODO: Update
 

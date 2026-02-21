@@ -98,10 +98,10 @@ public class ClimberIOKraken implements ClimberIO {
             climberMotor.setControl(m_request.withPosition(absSetpoint));
         }
 
-        if (this.limitSwitchPressed()){
+        /*if (this.limitSwitchPressed()){
             climbState = ClimbState.RESTING;
             climberMotor.setPosition(kRestMotorRotations);
-        }
+        }*/
 
     }
 

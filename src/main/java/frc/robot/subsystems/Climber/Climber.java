@@ -52,11 +52,11 @@ public class Climber extends SubsystemBase {
 
     public Command setVoltageCommand(double volts) {
         if (Constants.currentMode != Constants.simMode){
-            return Commands.runOnce(() -> {
+            return Commands.run(() -> {
                 io.setClimberVoltage(volts);
             }, this);
         }
-        return Commands.runOnce(() -> {
+        return Commands.run(() -> {
             io.setClimberVoltage(volts);
         }, this);
     } 
