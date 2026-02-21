@@ -28,25 +28,26 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
     @AutoLogOutput(key="OverBumperIntake/IsClosed")
     private boolean isClosed = false;
 
-    private double appliedVolts = 0.0;
+    private double intakeAppliedVolts = 0.0;
+    private double deployAppliedVolts = 0.0; 
     private PIDController simPID = new PIDController (OverBumperIntakeConstants.kSimP, OverBumperIntakeConstants.kSimI, OverBumperIntakeConstants.kSimD);
    
     @Override
     public void updateInputs(OverBumperIntakeIOInputs inputs) {
-        deployMotor.setInputVoltage(appliedVolts);
+        deployMotor.setInputVoltage(deployAppliedVolts);
         deployMotor.update(0.02);
 
         inputs.deployPositionRotations = deployMotor.getAngularPositionRotations();
         inputs.deployVelocityRotationsPerSec = deployMotor.getAngularVelocityRadPerSec()/(2*Math.PI);
-        inputs.deployAppliedVolts = appliedVolts;
+        inputs.deployAppliedVolts = deployAppliedVolts;
         inputs.deployCurrentAmps = deployMotor.getCurrentDrawAmps();
 
-        intakeMotor.setInputVoltage(appliedVolts);
+        intakeMotor.setInputVoltage(intakeAppliedVolts);
         intakeMotor.update(0.02);
 
         inputs.intakePositionRotations = intakeMotor.getAngularPositionRotations();
         inputs.intakeVelocityRotationsPerSec = intakeMotor.getAngularVelocityRadPerSec()/(2*Math.PI);
-        inputs.intakeAppliedVolts = appliedVolts;
+        inputs.intakeAppliedVolts = intakeAppliedVolts;
         inputs.intakeCurrentAmps = intakeMotor.getCurrentDrawAmps();
 
         for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
@@ -66,12 +67,12 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
 
     @Override
     public void setDeployVoltage(double volts) {
-        appliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
+        deployAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
     }
 
     @Override
     public void setIntakeVoltage(double volts) {
-        appliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
+        intakeAppliedVolts = MathUtil.clamp(volts, -12.0, 12.0);
     }
 
     @Override

@@ -8,7 +8,6 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 import static frc.robot.subsystems.OverBumperIntake.OverBumperIntakeConstants.*;
-import static frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSpark.*;
 
 
 public class OverBumperIntake extends SubsystemBase {
@@ -18,7 +17,7 @@ public class OverBumperIntake extends SubsystemBase {
     private double kP;
     private double kI;
     private double kD;
-
+    
     private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/OverBumperIntake/kP", OverBumperIntakeConstants.kProportionalGainSpark);  
     private LoggedNetworkNumber tuningI = new LoggedNetworkNumber ("/Tuning/OverBumperIntake/kI", OverBumperIntakeConstants.kIntegralTermSpark);  
     private LoggedNetworkNumber tuningD = new LoggedNetworkNumber ("/Tuning/OverBumperIntake/kD", OverBumperIntakeConstants.kDerivativeTermSpark); 
@@ -31,7 +30,7 @@ public class OverBumperIntake extends SubsystemBase {
     public void periodic() {
         io.updateInputs(inputs);
 
-        if (kProportionalGainSpark != tuningP.get() || kIntegralTermSpark != tuningI.get() || kDerivativeTermSpark != tuningD.get()) {
+        if (kP != tuningP.get() || kI != tuningI.get() || kD != tuningD.get()) {
             kP = tuningP.get();
             kI = tuningI.get();
             kD = tuningD.get();
@@ -39,9 +38,9 @@ public class OverBumperIntake extends SubsystemBase {
         }
         Logger.processInputs("OverBumperIntake", inputs);
 
-        if (inputs.cutoff && inputs.deployed && inputs.isClosed) {
-            io.resetEncoder(OverBumperIntakeConstants.kHomingSwitchZeroPositionRot);
-        }
+        // if (inputs.cutoff && inputs.deployed && inputs.isClosed) {
+        //     io.resetEncoder(OverBumperIntakeConstants.kHomingSwitchZeroPositionRot);
+        // }
     }
 
     public void setIntakeVoltage(double volts) {
@@ -52,12 +51,7 @@ public class OverBumperIntake extends SubsystemBase {
         io.setDeployVoltage(volts);
     }
 
-    public void setPID(double kp, double ki, double kd) {
-        io.setPID(kp, ki, kd);
-    }
-
     public Command setDeployVoltageCommand(double volts) {
-        this.io.setClosedLoop(false);
         return Commands.run(() -> {
             io.setClosedLoop(false);
             io.setDeployVoltage(volts);

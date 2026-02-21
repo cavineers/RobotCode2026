@@ -13,7 +13,7 @@ public class OverBumperIntakeConstants {
     
     public static final double kIntakeVoltage = 0.1;
     public static final double kDeployVoltage = 0.1;
-    public static final double kCutOffAmps = 7.05; //TODO: set value
+    public static final double kCutOffAmps = 27.05; //TODO: set value
 
     public static final double kDeployedRotations = 5.0;
     public static final double kRetractedRotations = 0.0; //TODO: set values
@@ -25,7 +25,7 @@ public class OverBumperIntakeConstants {
     public static final double kDerivativeTermSpark = 0.0;
 
     //Simulation Constants
-    public static final double kSimP = 0.047; //TODO: tune
+    public static final double kSimP = 0.55; //TODO: tune
     public static final double kSimI = 0.0;
-    public static final double kSimD = 0.1;
+    public static final double kSimD = 0.3;
 }
