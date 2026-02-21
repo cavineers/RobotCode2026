@@ -17,12 +17,14 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.controller.PIDController;
 public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
-    private final SparkMax intakeMotor = new SparkMax(kIntakeMotorCanID, MotorType.kBrushless);
+    private final SparkFlex intakeMotor = new SparkFlex(kIntakeMotorCanID, MotorType.kBrushless);
     private final RelativeEncoder intakeEncoder = intakeMotor.getEncoder();
 
     private final SparkMax deployMotor = new SparkMax(kDeployMotorCanID, MotorType.kBrushless);
@@ -32,7 +34,7 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     private double motorSetpoint = 0;
 
     private SparkMaxConfig deployConfig;
-    private SparkMaxConfig intakeConfig;
+    private SparkFlexConfig intakeConfig;
 
     PIDController controller = new PIDController(kProportionalGainSpark, kIntegralTermSpark, kDerivativeTermSpark);
 
@@ -58,7 +60,7 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
             () -> deployMotor.configure(deployConfig, ResetMode.kResetSafeParameters,
                     PersistMode.kPersistParameters));
         
-        intakeConfig = new SparkMaxConfig();
+        intakeConfig = new SparkFlexConfig();
         intakeConfig
             .idleMode(IdleMode.kBrake)
             .smartCurrentLimit(OverBumperIntakeConstants.kCurrentLimit)    
