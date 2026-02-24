@@ -6,8 +6,12 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
+import static frc.robot.subsystems.Climber.ClimberConstants.kDeployedMotorRotations;
+import static frc.robot.subsystems.Climber.ClimberConstants.kRestMotorRotations;
+
+import java.util.HashMap;
+
 import org.littletonrobotics.junction.AutoLogOutput;
-import frc.robot.Constants;
 
 public class Climber extends SubsystemBase {
     private final ClimberIO io;
@@ -22,6 +26,8 @@ public class Climber extends SubsystemBase {
         DEPLOYED,
         ENGAGED
     }
+
+    HashMap<Double, ClimbState> climbStater = new HashMap<>();
     
     @AutoLogOutput(key="Climber/ClimbState")
     public ClimbState climbState = ClimbState.RESTING;
@@ -32,6 +38,9 @@ public class Climber extends SubsystemBase {
     
     public Climber(ClimberIO io) {
         this.io = io;
+        climbStater.put(ClimberConstants.kRestMotorRotations, ClimbState.RESTING);
+        climbStater.put(ClimberConstants.kDeployedMotorRotations, ClimbState.DEPLOYED);
+        climbStater.put(ClimberConstants.kEngagedMotorRotations, ClimbState.ENGAGED);
     }
 
     @Override
@@ -43,27 +52,41 @@ public class Climber extends SubsystemBase {
             kD = tuningD.get();
             this.io.setPID(kP, kI, kD);
         }
+
+        climbState = climbStater.get(getSetpoint());
         Logger.processInputs("Climber", inputs);
 
-        if (inputs.cutoff) {
+        if (inputs.cutoff && climbState == ClimbState.RESTING) {
             io.resetEncoder(ClimberConstants.kRestMotorRotations);
-            climbState = ClimbState.RESTING;
         }
     }
 
     public Command setVoltageCommand(double volts) {
-        if (Constants.currentMode != Constants.simMode){
-            return Commands.run(() -> {
-                io.setClimberVoltage(volts);
-            }, this);
-        }
         return Commands.run(() -> {
             io.setClimberVoltage(volts);
         }, this);
     } 
-    public Command goToPresetCommand(double rotations) {
-         return Commands.runOnce(() -> {
-            io.updateClimberSetpoint(rotations);
+    public Command goToPresetCommand() {
+        if (climbState == ClimbState.RESTING) {
+            return Commands.runOnce(() -> {
+            io.updateClimberSetpoint(ClimberConstants.kDeployedMotorRotations);
+            }, this);
+        }
+        else if (climbState == ClimbState.DEPLOYED) {
+            return Commands.runOnce(() -> {
+            io.updateClimberSetpoint(ClimberConstants.kEngagedMotorRotations);
+            }, this);
+        }
+        else {
+            return Commands.runOnce(() -> {
+            io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
+            }, this);
+        }
+    }
+
+    public Command releaseAutoCommand() {
+        return Commands.runOnce(() -> {
+        io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
         }, this);
     }
 
@@ -71,28 +94,8 @@ public class Climber extends SubsystemBase {
         return inputs.climberPositionRotations;
     }
 
-    public Command deployCommand() {
-        return Commands.run(() -> {
-            climbState = ClimbState.DEPLOYED;
-            io.deploy();
-            }, this).finallyDo(interrupted ->
-            io.setClimberVoltage(0));
-    }
-
-    public Command retractCommand() {
-        return Commands.run(() -> {
-            climbState = ClimbState.RESTING;
-            io.retract();
-            }, this).finallyDo(interrupted ->
-            io.setClimberVoltage(0));
-    }
-
-    public Command engageCommand() {
-        return Commands.run(() -> {
-            climbState = ClimbState.ENGAGED;
-            io.engage();
-            }, this).finallyDo(interrupted ->
-            io.setClimberVoltage(0));
-    }
-
+	public double getSetpoint() {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'getSetpoint'");
+	}
 }

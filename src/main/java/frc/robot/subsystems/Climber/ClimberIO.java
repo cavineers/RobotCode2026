@@ -10,6 +10,8 @@ public interface ClimberIO {
         public double climberAppliedVoltage = 0.0;
         public double climberCurrentAmps = 0.0;
 
+        public double setpoint = 0.0;
+
         public double[] recentAmpsHistory = new double[20];
         public boolean cutoff = false;
     }
@@ -28,18 +30,6 @@ public interface ClimberIO {
 
     public default void updateClimberSetpoint(double rotations){
 
-    }
-
-    public default void deploy() {
-
-    }
-
-    public default void retract() {
-
-    }
-
-    public default void engage(){
-        
     }
 
     public default void setClimberVoltage(double volts) {

@@ -8,6 +8,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -112,9 +113,8 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
-        primaryDriverController.a().onTrue(climber.deployCommand());
-        primaryDriverController.x().onTrue(climber.retractCommand());
-        primaryDriverController.y().onTrue(climber.engageCommand());
+            
+        primaryDriverController.y().onTrue(climber.goToPresetCommand());
         primaryDriverController.povUp().onTrue(climber.setVoltageCommand(kManualDeployVoltage));
         primaryDriverController.povUp().onFalse(climber.setVoltageCommand(0));
         primaryDriverController.povDown().onTrue(climber.setVoltageCommand(kManualRetractVoltage));
@@ -129,7 +129,14 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         return autoChooser.get();
     }
-    public Command getRetractCommand() {
-        return climber.retractCommand();
+    
+    /**
+     * @brief Releases the climber to the extended position 
+     * @Note Climber must have the setpoint set to kDeploy
+     */
+    public void releaseAutoClimb() {
+        if (climber.getSetpoint() == ClimberConstants.kEngagedMotorRotations){
+            CommandScheduler.getInstance().schedule(climber.releaseAutoCommand());
+        } 
     }
 }

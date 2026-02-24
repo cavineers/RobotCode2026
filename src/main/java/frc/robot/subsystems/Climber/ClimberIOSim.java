@@ -5,14 +5,11 @@ import static frc.robot.subsystems.Climber.ClimberConstants.*;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
-import edu.wpi.first.wpilibj.simulation.DIOSim;
 import edu.wpi.first.math.controller.PIDController;
 
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
-
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 
 import edu.wpi.first.math.MathUtil;
 
@@ -111,20 +108,6 @@ public class ClimberIOSim implements ClimberIO {
         this.isClosed = val;
     }
 
-    @Override
-    public void deploy() {
-        updateClimberSetpoint(kDeployedMotorRotations);
-    }
-
-    @Override
-    public void retract() {
-        updateClimberSetpoint(kRestMotorRotations);
-    }
-
-    @Override
-    public void engage() {
-        updateClimberSetpoint(kEngagedMotorRotations);
-    }
 
     @Override
     public void setClimberVoltage(double volts) {

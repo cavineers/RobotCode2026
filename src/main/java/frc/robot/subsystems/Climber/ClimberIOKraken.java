@@ -18,21 +18,12 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 
 public class ClimberIOKraken implements ClimberIO {
     @AutoLogOutput(key="Climber/Setpoint")
-    private double absSetpoint = 0;
+    public double absSetpoint = 0;
 
     @AutoLogOutput(key="Climber/IsClosed")
     private boolean isClosed = false;
 
     private boolean tempCutoff = false;
-    
-    public enum ClimbState{
-        RESTING,
-        DEPLOYED,
-        ENGAGED
-    }
-    
-    @AutoLogOutput(key="Climber/ClimbState")
-    private ClimbState climbState = ClimbState.RESTING;
 
     private final TalonFX climberMotor;
     private final VelocityVoltage velocityControl;
@@ -92,6 +83,7 @@ public class ClimberIOKraken implements ClimberIO {
         inputs.climberCurrentAmps = climberMotor.getSupplyCurrent().getValueAsDouble();
         inputs.climberPositionRotations = climberMotor.getPosition().getValueAsDouble();
         inputs.cutoff = this.tempCutoff;
+        inputs.setpoint = this.absSetpoint;
         
         Logger.recordOutput("Climber/climberPositionRotations", inputs.climberPositionRotations);
         if (this.isClosed){
@@ -113,7 +105,6 @@ public class ClimberIOKraken implements ClimberIO {
         } else {
             tempCutoff = false;
         }
-
     }
 
     @Override
@@ -140,21 +131,6 @@ public class ClimberIOKraken implements ClimberIO {
     @Override
     public void setClosedLoop(boolean val) {
         this.isClosed = val;
-    }
-
-    @Override
-    public void deploy() {
-        updateClimberSetpoint(kDeployedMotorRotations);
-    }
-
-    @Override
-    public void retract() {
-        updateClimberSetpoint(kRestMotorRotations);
-    }
-
-    @Override
-    public void engage() {
-        updateClimberSetpoint(kEngagedMotorRotations);
     }
 
     @Override
