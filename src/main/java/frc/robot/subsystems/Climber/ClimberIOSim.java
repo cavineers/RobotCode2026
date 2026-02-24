@@ -9,70 +9,133 @@ import edu.wpi.first.wpilibj.simulation.DIOSim;
 import edu.wpi.first.math.controller.PIDController;
 
 import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
+
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 
 import edu.wpi.first.math.MathUtil;
 
 public class ClimberIOSim implements ClimberIO {
+    @AutoLogOutput(key="Climber/Setpoint")
+    private double absSetpoint = 0;
 
-    private DCMotorSim motor = new DCMotorSim(
+    @AutoLogOutput(key="Climber/IsClosed")
+    private boolean isClosed = false;
+
+    private boolean tempCutoff = false;
+    
+    public enum ClimbState{
+        RESTING,
+        DEPLOYED,
+        ENGAGED
+    }
+    
+    @AutoLogOutput(key="Climber/ClimbState")
+    private ClimbState climbState = ClimbState.RESTING;
+
+    private DCMotorSim climberMotor = new DCMotorSim(
             LinearSystemId.createDCMotorSystem(DCMotor.getNEO(1), 0.004, 1), 
             DCMotor.getNEO(1));
 
-
-    private double appliedVolts = 0.0;
     @AutoLogOutput(key="Climber/Setpoint")
     private double climberSetpoint = 0.0;
 
     private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("Tuning/Dealgaefier/P", kProportionalTermSim);
     private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("Tuning/Dealgaefier/I", kDerivativeTermSim);
 
-    private static DIOSim limitSwitch = new DIOSim(kLimitSwitchID);
-
-    private PIDController climberController = new PIDController(tuningP.get(), 0.0, tuningD.get());
+    private double climberAppliedVoltage = 0.0;
+    private PIDController simPID = new PIDController(tuningP.get(), 0.0, tuningD.get());
 
     @Override
     public void updateInputs(ClimberIOInputs inputs) {
-            
-        if (tuningP.get() != climberController.getP() || tuningD.get() != climberController.getD()) {
-            climberController.setPID(tuningP.get(), 0.0, tuningD.get());
+        climberMotor.setInputVoltage(climberAppliedVoltage);
+        climberMotor.update(0.02); // Update simulation with a timestep of 20ms
 
-            double absoluteRotations = this.motor.getAngularPositionRotations() * kClimberGearRatio;
+        inputs.climberVelocityRotationsPerSec = climberMotor.getAngularVelocityRadPerSec()/(2*Math.PI);;
+        inputs.climberAppliedVoltage = climberAppliedVoltage;
+        inputs.climberCurrentAmps = climberMotor.getCurrentDrawAmps();
+        inputs.climberPositionRotations = climberMotor.getAngularPositionRotations();
+        inputs.cutoff = this.tempCutoff;
+        
+        Logger.recordOutput("Climber/climberPositionRotations", inputs.climberPositionRotations);
+        
+        if (this.isClosed){
+            this.simPID.setSetpoint(absSetpoint);
+            climberAppliedVoltage =
+            MathUtil.clamp(simPID.calculate(climberMotor.getAngularPositionRotations()), -12.0, 12.0);    
+        }
 
-            motor.setInputVoltage(climberController.calculate(absoluteRotations));
+        for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
+            inputs.recentAmpsHistory[i] = inputs.recentAmpsHistory[i + 1];
+        }
+        // Set the last element to currentAmps
+        inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.climberCurrentAmps;
 
-            motor.update(0.2);
-
-           motor.setInputVoltage(appliedVolts);
-           motor.update(0.02); // Update simulation with a timestep of 20ms
-
-           inputs.climberPositionRotations = motor.getAngularPositionRad();
-           inputs.climberVelocityRotationsPerSec = motor.getAngularVelocityRadPerSec();
-           inputs.climberAppliedVoltage = appliedVolts;
-           inputs.climberCurrentAmps = motor.getCurrentDrawAmps();
-
+        double sum = 0;
+        for (double value : inputs.recentAmpsHistory) {
+            sum += value;
+        }
+        Logger.recordOutput("OverBumperIntake/AverageAmps", sum / inputs.recentAmpsHistory.length);
+        if (sum / inputs.recentAmpsHistory.length > kCutOffAmps) {
+            tempCutoff = true;
+        } else {
+            tempCutoff = false;
         }
 
     }
 
-    public void setClimberVolts(double volts) {
-        appliedVolts = MathUtil.clamp(volts, -12, 12);
-    }
-
-    public boolean getLimitSwitch() {
-        return limitSwitch.getValue();
-    }
-    
     @Override
-    public void updateClimberSetpoint(double positionRad){
-        this.climberSetpoint = positionRad;
-        climberController.setSetpoint(this.climberSetpoint);
+    public void resetEncoder(double rotations) {
+        climberMotor.setAngle(rotations);
     }
-            
 
+    @Override
+    public void updateClimberSetpoint(double setpoint) {
+        this.absSetpoint = this.clipSetpoint(setpoint);
+        this.setClosedLoop(true);
+    }
+
+    public double clipSetpoint(double setpoint) {
+        if (setpoint > ClimberConstants.kDeployedMotorRotations) {
+            return ClimberConstants.kDeployedMotorRotations;
+        }
+        else if (setpoint < ClimberConstants.kRestMotorRotations) {
+             return ClimberConstants.kRestMotorRotations;
+        }
+        return setpoint;
+    }
+
+    @Override
+    public void setClosedLoop(boolean val) {
+        this.isClosed = val;
+    }
+
+    @Override
+    public void deploy() {
+        updateClimberSetpoint(kDeployedMotorRotations);
+    }
+
+    @Override
+    public void retract() {
+        updateClimberSetpoint(kRestMotorRotations);
+    }
+
+    @Override
+    public void engage() {
+        updateClimberSetpoint(kEngagedMotorRotations);
+    }
+
+    @Override
+    public void setClimberVoltage(double volts) {
+        this.setClosedLoop(false);
+        climberAppliedVoltage = MathUtil.clamp(volts, -12.0, 12.0);
+    }
+
+    @Override
+    public void setPID(double kP, double kI, double kD) {
+        simPID.setP(kP);
+        simPID.setI(kI);
+        simPID.setD(kD);
+    }
 }
-
-       
-
-       
-    

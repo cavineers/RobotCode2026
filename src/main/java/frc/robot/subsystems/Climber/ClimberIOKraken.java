@@ -15,7 +15,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import edu.wpi.first.wpilibj.DigitalInput;
 
 public class ClimberIOKraken implements ClimberIO {
     @AutoLogOutput(key="Climber/Setpoint")
@@ -23,6 +22,8 @@ public class ClimberIOKraken implements ClimberIO {
 
     @AutoLogOutput(key="Climber/IsClosed")
     private boolean isClosed = false;
+
+    private boolean tempCutoff = false;
     
     public enum ClimbState{
         RESTING,
@@ -33,7 +34,6 @@ public class ClimberIOKraken implements ClimberIO {
     @AutoLogOutput(key="Climber/ClimbState")
     private ClimbState climbState = ClimbState.RESTING;
 
-    private DigitalInput limitSwitch = new DigitalInput(kLimitSwitchID);
     private final TalonFX climberMotor;
     private final VelocityVoltage velocityControl;
     private final VoltageOut voltageControl = new VoltageOut(0);
@@ -91,18 +91,34 @@ public class ClimberIOKraken implements ClimberIO {
         inputs.climberAppliedVoltage = climberMotor.getMotorVoltage().getValueAsDouble();
         inputs.climberCurrentAmps = climberMotor.getSupplyCurrent().getValueAsDouble();
         inputs.climberPositionRotations = climberMotor.getPosition().getValueAsDouble();
+        inputs.cutoff = this.tempCutoff;
         
         Logger.recordOutput("Climber/climberPositionRotations", inputs.climberPositionRotations);
-        Logger.recordOutput("Climber/limitSwitchPressed", this.limitSwitchPressed());
         if (this.isClosed){
             climberMotor.setControl(m_request.withPosition(absSetpoint));
         }
+        for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
+            inputs.recentAmpsHistory[i] = inputs.recentAmpsHistory[i + 1];
+        }
+        // Set the last element to currentAmps
+        inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.climberCurrentAmps;
 
-        /*if (this.limitSwitchPressed()){
-            climbState = ClimbState.RESTING;
-            climberMotor.setPosition(kRestMotorRotations);
-        }*/
+        double sum = 0;
+        for (double value : inputs.recentAmpsHistory) {
+            sum += value;
+        }
+        Logger.recordOutput("OverBumperIntake/AverageAmps", sum / inputs.recentAmpsHistory.length);
+        if (sum / inputs.recentAmpsHistory.length > kCutOffAmps) {
+            tempCutoff = true;
+        } else {
+            tempCutoff = false;
+        }
 
+    }
+
+    @Override
+    public void resetEncoder(double rotations) {
+        climberMotor.setPosition(rotations);
     }
 
     @Override
@@ -112,10 +128,10 @@ public class ClimberIOKraken implements ClimberIO {
     }
 
     public double clipSetpoint(double setpoint) {
-        if (absSetpoint > ClimberConstants.kDeployedMotorRotations) {
+        if (setpoint > ClimberConstants.kDeployedMotorRotations) {
             return ClimberConstants.kDeployedMotorRotations;
         }
-        else if (absSetpoint < ClimberConstants.kRestMotorRotations) {
+        else if (setpoint < ClimberConstants.kRestMotorRotations) {
              return ClimberConstants.kRestMotorRotations;
         }
         return setpoint;
@@ -139,10 +155,6 @@ public class ClimberIOKraken implements ClimberIO {
     @Override
     public void engage() {
         updateClimberSetpoint(kEngagedMotorRotations);
-    }
-
-    public boolean limitSwitchPressed() {
-        return limitSwitch.get();
     }
 
     @Override

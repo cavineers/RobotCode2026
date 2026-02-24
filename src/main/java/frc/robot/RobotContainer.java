@@ -25,7 +25,6 @@ import frc.robot.subsystems.Climber.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberIO;
 import frc.robot.subsystems.Climber.ClimberIOKraken;
 import frc.robot.subsystems.Climber.ClimberIOSim;
-import frc.robot.subsystems.Climber.ClimberIOSpark;
 
 public class RobotContainer {
 
@@ -129,5 +128,8 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return autoChooser.get();
+    }
+    public Command getRetractCommand() {
+        return climber.retractCommand();
     }
 }

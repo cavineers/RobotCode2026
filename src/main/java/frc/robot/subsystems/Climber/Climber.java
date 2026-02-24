@@ -6,12 +6,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
-import static frc.robot.subsystems.Climber.ClimberConstants.*;
-import frc.robot.subsystems.Climber.ClimberIOKraken;
-
 import org.littletonrobotics.junction.AutoLogOutput;
 import frc.robot.Constants;
-import frc.robot.subsystems.Climber.ClimberConstants;
 
 public class Climber extends SubsystemBase {
     private final ClimberIO io;
@@ -48,6 +44,11 @@ public class Climber extends SubsystemBase {
             this.io.setPID(kP, kI, kD);
         }
         Logger.processInputs("Climber", inputs);
+
+        if (inputs.cutoff) {
+            io.resetEncoder(ClimberConstants.kRestMotorRotations);
+            climbState = ClimbState.RESTING;
+        }
     }
 
     public Command setVoltageCommand(double volts) {

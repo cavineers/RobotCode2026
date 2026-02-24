@@ -1,6 +1,5 @@
 package frc.robot.subsystems.Climber;
 
-import frc.robot.subsystems.Climber.*;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface ClimberIO {
@@ -11,12 +10,16 @@ public interface ClimberIO {
         public double climberAppliedVoltage = 0.0;
         public double climberCurrentAmps = 0.0;
 
-        public boolean deployed = false;
-        public boolean limitSwitch;
+        public double[] recentAmpsHistory = new double[20];
+        public boolean cutoff = false;
     }
     
     default void updateInputs(ClimberIOInputs inputs) {
 
+    }
+
+    public default void resetEncoder(double rotations) {
+        
     }
 
     public default void setClosedLoop(boolean isClosed){
