@@ -15,7 +15,7 @@ import edu.wpi.first.math.MathUtil;
 
 public class ClimberIOSim implements ClimberIO {
     @AutoLogOutput(key="Climber/Setpoint")
-    private double absSetpoint = 0;
+    private double setpoint = 0;
 
     private boolean tempCutoff = false;
     
@@ -78,21 +78,21 @@ public class ClimberIOSim implements ClimberIO {
     }
 
     @Override
-    public void updateClimberSetpoint(double setpoint) {
-        this.absSetpoint = this.clipSetpoint(setpoint);
-        this.simPID.setSetpoint(absSetpoint);
+    public void updateClimberSetpoint(double rotations) {
+        this.setpoint = this.clipSetpoint(rotations);
+        this.simPID.setSetpoint(rotations);
         climberAppliedVoltage =
         MathUtil.clamp(simPID.calculate(climberMotor.getAngularPositionRotations()), -12.0, 12.0);
     }
 
-    public double clipSetpoint(double setpoint) {
-        if (setpoint > ClimberConstants.kDeployedMotorRotations) {
+    public double clipSetpoint(double rotations) {
+        if (rotations > ClimberConstants.kDeployedMotorRotations) {
             return ClimberConstants.kDeployedMotorRotations;
         }
-        else if (setpoint < ClimberConstants.kRestMotorRotations) {
+        else if (rotations < ClimberConstants.kRestMotorRotations) {
              return ClimberConstants.kRestMotorRotations;
         }
-        return setpoint;
+        return rotations;
     }
 
     @Override

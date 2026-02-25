@@ -77,6 +77,21 @@ public class Climber extends SubsystemBase {
         }
     }, this);
 }
+    public Command undoCommand() {
+        return Commands.runOnce(() -> {
+        switch (climbState) {
+            case RESTING:
+                io.updateClimberSetpoint(ClimberConstants.kEngagedMotorRotations);
+                break;
+            case DEPLOYED:
+                io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
+                break;
+            case ENGAGED:
+                io.updateClimberSetpoint(ClimberConstants.kDeployedMotorRotations);
+                break;
+        }
+    }, this);
+}
 
     public Command releaseAutoCommand() {
         return Commands.runOnce(() -> {

@@ -18,9 +18,9 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 
 public class ClimberIOKraken implements ClimberIO {
     @AutoLogOutput(key="Climber/Setpoint")
-    public double absSetpoint = 0;
+    public double setpoint = 0;
 
-    private boolean tempCutoff = false;
+    private boolean cutoff = false;
 
     private final TalonFX climberMotor;
     private final VelocityVoltage velocityControl;
@@ -71,6 +71,9 @@ public class ClimberIOKraken implements ClimberIO {
         
         // Optimize CAN bus utilization by reducing unused signals
         climberMotor.optimizeBusUtilization();
+
+        //If we're starting with no tension on climber
+        climberMotor.setPosition(kDeployedMotorRotations);
     }
 
     @Override
@@ -79,8 +82,8 @@ public class ClimberIOKraken implements ClimberIO {
         inputs.climberAppliedVoltage = climberMotor.getMotorVoltage().getValueAsDouble();
         inputs.climberCurrentAmps = climberMotor.getSupplyCurrent().getValueAsDouble();
         inputs.climberPositionRotations = climberMotor.getPosition().getValueAsDouble();
-        inputs.cutoff = this.tempCutoff;
-        inputs.setpoint = this.absSetpoint;
+        inputs.cutoff = this.cutoff;
+        inputs.setpoint = this.setpoint;
         
         Logger.recordOutput("Climber/climberPositionRotations", inputs.climberPositionRotations);
 
@@ -96,9 +99,9 @@ public class ClimberIOKraken implements ClimberIO {
         }
         Logger.recordOutput("Climber/AverageAmps", sum / inputs.recentAmpsHistory.length);
         if (sum / inputs.recentAmpsHistory.length > kCutOffAmps) {
-            tempCutoff = true;
+            cutoff = true;
         } else {
-            tempCutoff = false;
+            cutoff = false;
         }
     }
 
@@ -108,19 +111,19 @@ public class ClimberIOKraken implements ClimberIO {
     }
 
     @Override
-    public void updateClimberSetpoint(double setpoint) {
-        this.absSetpoint = this.clipSetpoint(setpoint);
-        climberMotor.setControl(m_request.withPosition(absSetpoint));
+    public void updateClimberSetpoint(double rotations) {
+        setpoint = this.clipSetpoint(rotations);
+        climberMotor.setControl(m_request.withPosition(setpoint));
     }
 
-    public double clipSetpoint(double setpoint) {
-        if (setpoint > ClimberConstants.kDeployedMotorRotations) {
+    public double clipSetpoint(double rotations) {
+        if (rotations > ClimberConstants.kDeployedMotorRotations) {
             return ClimberConstants.kDeployedMotorRotations;
         }
-        else if (setpoint < ClimberConstants.kRestMotorRotations) {
+        else if (rotations < ClimberConstants.kRestMotorRotations) {
              return ClimberConstants.kRestMotorRotations;
         }
-        return setpoint;
+        return rotations;
     }
 
     @Override

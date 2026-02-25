@@ -20,10 +20,9 @@ public class ClimberConstants {
     public static final double kManualDeployVoltage = 6.0; //TODO: Update
     public static final double kManualRetractVoltage = -6.0; //TODO: Update
 
-    public static final double kClimberGearRatio = 12.0; //TODO: Update
-    public static final double kRestMotorRotations = 0 * kClimberGearRatio;
-    public static final double kDeployedMotorRotations = 2.8 * kClimberGearRatio;
-    public static final double kEngagedMotorRotations = 1.5 * kClimberGearRatio;
+    public static final double kRestMotorRotations = 0;
+    public static final double kDeployedMotorRotations = 33.5;
+    public static final double kEngagedMotorRotations = 18;
 
     public static final double kP = 1.0; //TODO: Update
     public static final double kI = 0.0; //TODO: Update

@@ -115,6 +115,7 @@ public class RobotContainer {
             );
             
         primaryDriverController.y().onTrue(climber.goToPresetCommand());
+        primaryDriverController.x().onTrue(climber.undoCommand());
         primaryDriverController.povUp().onTrue(climber.setVoltageCommand(kManualDeployVoltage));
         primaryDriverController.povUp().onFalse(climber.setVoltageCommand(0));
         primaryDriverController.povDown().onTrue(climber.setVoltageCommand(kManualRetractVoltage));
