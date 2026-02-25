@@ -20,9 +20,6 @@ public class ClimberIOKraken implements ClimberIO {
     @AutoLogOutput(key="Climber/Setpoint")
     public double absSetpoint = 0;
 
-    @AutoLogOutput(key="Climber/IsClosed")
-    private boolean isClosed = false;
-
     private boolean tempCutoff = false;
 
     private final TalonFX climberMotor;
@@ -86,9 +83,7 @@ public class ClimberIOKraken implements ClimberIO {
         inputs.setpoint = this.absSetpoint;
         
         Logger.recordOutput("Climber/climberPositionRotations", inputs.climberPositionRotations);
-        if (this.isClosed){
-            climberMotor.setControl(m_request.withPosition(absSetpoint));
-        }
+
         for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
             inputs.recentAmpsHistory[i] = inputs.recentAmpsHistory[i + 1];
         }
@@ -99,7 +94,7 @@ public class ClimberIOKraken implements ClimberIO {
         for (double value : inputs.recentAmpsHistory) {
             sum += value;
         }
-        Logger.recordOutput("OverBumperIntake/AverageAmps", sum / inputs.recentAmpsHistory.length);
+        Logger.recordOutput("Climber/AverageAmps", sum / inputs.recentAmpsHistory.length);
         if (sum / inputs.recentAmpsHistory.length > kCutOffAmps) {
             tempCutoff = true;
         } else {
@@ -115,7 +110,7 @@ public class ClimberIOKraken implements ClimberIO {
     @Override
     public void updateClimberSetpoint(double setpoint) {
         this.absSetpoint = this.clipSetpoint(setpoint);
-        this.setClosedLoop(true);
+        climberMotor.setControl(m_request.withPosition(absSetpoint));
     }
 
     public double clipSetpoint(double setpoint) {
@@ -129,13 +124,7 @@ public class ClimberIOKraken implements ClimberIO {
     }
 
     @Override
-    public void setClosedLoop(boolean val) {
-        this.isClosed = val;
-    }
-
-    @Override
     public void setClimberVoltage(double volts) {
-        this.setClosedLoop(false);
         climberMotor.setControl(voltageControl.withOutput(volts));
     }
 

@@ -17,9 +17,6 @@ public class ClimberIOSim implements ClimberIO {
     @AutoLogOutput(key="Climber/Setpoint")
     private double absSetpoint = 0;
 
-    @AutoLogOutput(key="Climber/IsClosed")
-    private boolean isClosed = false;
-
     private boolean tempCutoff = false;
     
     public enum ClimbState{
@@ -56,12 +53,6 @@ public class ClimberIOSim implements ClimberIO {
         inputs.cutoff = this.tempCutoff;
         
         Logger.recordOutput("Climber/climberPositionRotations", inputs.climberPositionRotations);
-        
-        if (this.isClosed){
-            this.simPID.setSetpoint(absSetpoint);
-            climberAppliedVoltage =
-            MathUtil.clamp(simPID.calculate(climberMotor.getAngularPositionRotations()), -12.0, 12.0);    
-        }
 
         for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
             inputs.recentAmpsHistory[i] = inputs.recentAmpsHistory[i + 1];
@@ -79,7 +70,6 @@ public class ClimberIOSim implements ClimberIO {
         } else {
             tempCutoff = false;
         }
-
     }
 
     @Override
@@ -90,7 +80,9 @@ public class ClimberIOSim implements ClimberIO {
     @Override
     public void updateClimberSetpoint(double setpoint) {
         this.absSetpoint = this.clipSetpoint(setpoint);
-        this.setClosedLoop(true);
+        this.simPID.setSetpoint(absSetpoint);
+        climberAppliedVoltage =
+        MathUtil.clamp(simPID.calculate(climberMotor.getAngularPositionRotations()), -12.0, 12.0);
     }
 
     public double clipSetpoint(double setpoint) {
@@ -104,14 +96,7 @@ public class ClimberIOSim implements ClimberIO {
     }
 
     @Override
-    public void setClosedLoop(boolean val) {
-        this.isClosed = val;
-    }
-
-
-    @Override
     public void setClimberVoltage(double volts) {
-        this.setClosedLoop(false);
         climberAppliedVoltage = MathUtil.clamp(volts, -12.0, 12.0);
     }
 

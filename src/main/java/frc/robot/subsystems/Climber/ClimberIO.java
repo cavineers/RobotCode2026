@@ -24,10 +24,6 @@ public interface ClimberIO {
         
     }
 
-    public default void setClosedLoop(boolean isClosed){
-
-    }
-
     public default void updateClimberSetpoint(double rotations){
 
     }
@@ -38,11 +34,7 @@ public interface ClimberIO {
     
     public default void setPID(double kS, double kV, double kA) {
 
-    }
-    
-    public default void setFF(double kS, double kV, double kA) {
-
-    }
+    } 
 }
 
 

@@ -5,10 +5,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
-
-import static frc.robot.subsystems.Climber.ClimberConstants.kDeployedMotorRotations;
-import static frc.robot.subsystems.Climber.ClimberConstants.kRestMotorRotations;
-
 import java.util.HashMap;
 
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -67,22 +63,20 @@ public class Climber extends SubsystemBase {
         }, this);
     } 
     public Command goToPresetCommand() {
-        if (climbState == ClimbState.RESTING) {
-            return Commands.runOnce(() -> {
-            io.updateClimberSetpoint(ClimberConstants.kDeployedMotorRotations);
-            }, this);
+        return Commands.runOnce(() -> {
+        switch (climbState) {
+            case RESTING:
+                io.updateClimberSetpoint(ClimberConstants.kDeployedMotorRotations);
+                break;
+            case DEPLOYED:
+                io.updateClimberSetpoint(ClimberConstants.kEngagedMotorRotations);
+                break;
+            case ENGAGED:
+                io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
+                break;
         }
-        else if (climbState == ClimbState.DEPLOYED) {
-            return Commands.runOnce(() -> {
-            io.updateClimberSetpoint(ClimberConstants.kEngagedMotorRotations);
-            }, this);
-        }
-        else {
-            return Commands.runOnce(() -> {
-            io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
-            }, this);
-        }
-    }
+    }, this);
+}
 
     public Command releaseAutoCommand() {
         return Commands.runOnce(() -> {
@@ -94,8 +88,7 @@ public class Climber extends SubsystemBase {
         return inputs.climberPositionRotations;
     }
 
-	public double getSetpoint() {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'getSetpoint'");
-	}
+    public double getSetpoint(){
+        return inputs.setpoint;
+    }
 }
