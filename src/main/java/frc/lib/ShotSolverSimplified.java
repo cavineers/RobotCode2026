@@ -23,6 +23,12 @@ public final class ShotSolverSimplified {
     // Lookup tables: distance (meters) -> parameter
     private static final InterpolatingDoubleTreeMap distanceToRPM = new InterpolatingDoubleTreeMap();
     private static final InterpolatingDoubleTreeMap distanceToPitch = new InterpolatingDoubleTreeMap();
+    private static final InterpolatingDoubleTreeMap distanceToTOF = new InterpolatingDoubleTreeMap();
+
+    // Newton's method parameters
+    private static final double EPSILON = 0.001; // Small value for derivative approximation
+    private static final int MAX_ITERATIONS = 10; // Max iterations for Newton's method
+    private static final double CONVERGENCE_THRESHOLD = 0.005; // Velocity convergence threshold (m/s)
 
     static {
         // TODO: Fill with real characterization data
@@ -37,7 +43,15 @@ public final class ShotSolverSimplified {
         distanceToPitch.put(2.0, 35.0);  
         distanceToPitch.put(3.0, 40.0);  
         distanceToPitch.put(4.0, 45.0);  
-        distanceToPitch.put(5.0, 50.0);  
+        distanceToPitch.put(5.0, 50.0);
+        
+        // Time of flight (seconds) for each distance
+        // TODO: Characterize these values - they depend on shooter RPM, pitch, and projectile ballistics
+        distanceToTOF.put(1.0, 0.3);
+        distanceToTOF.put(2.0, 0.5);
+        distanceToTOF.put(3.0, 0.7);
+        distanceToTOF.put(4.0, 0.9);
+        distanceToTOF.put(5.0, 1.1);
     }
 
     /**
@@ -111,7 +125,7 @@ public final class ShotSolverSimplified {
     }
 
     /**
-     * Get lead target position for visualization.
+     * Get lead target position
      * 
      * @param robotVelocity       Robot field-relative velocity
      * @param targetPose          Original target position
@@ -130,5 +144,95 @@ public final class ShotSolverSimplified {
         double leadY = targetPose.getY() - robotVelocity.vyMetersPerSecond * estimatedFlightTime;
 
         return new Pose2d(leadX, leadY, targetPose.getRotation());
+    }
+
+    /**
+     * Get time of flight for a given distance using linear interpolation.
+     * 
+     * @param distanceMeters Distance to target in meters
+     * @return Time of flight in seconds
+     */
+    public static double getTOFForDistance(double distanceMeters) {
+        return distanceToTOF.get(distanceMeters);
+    }
+
+    /**
+     * Calculate horizontal velocity for a given distance.
+     * Vel(d) = d / TOF(d)
+     * 
+     * @param distanceMeters Distance to target in meters
+     * @return Required horizontal velocity in m/s
+     */
+    private static double getVelocityForDistance(double distanceMeters) {
+        double tof = distanceToTOF.get(distanceMeters);
+        return distanceMeters / tof;
+    }
+
+    /**
+     * Approximate the derivative of velocity with respect to distance.
+     * Uses central difference method: Vel'(d) ≈ (Vel(d+ε) - Vel(d-ε)) / (2ε)
+     * 
+     * @param distanceMeters Distance to evaluate derivative at
+     * @return Approximate derivative of velocity
+     */
+    private static double getVelocityDerivative(double distanceMeters) {
+        double lowVel = getVelocityForDistance(distanceMeters - EPSILON);
+        double highVel = getVelocityForDistance(distanceMeters + EPSILON);
+        return (highVel - lowVel) / (2.0 * EPSILON);
+    }
+
+    /**
+     * Uses Newton's method to solve: f(d) = Vel(d) - v_c = 0
+     * Iteration: d_(n+1) = d_n - f(d_n) / f'(d_n)
+     * 
+     * @param robotPose     Current robot position
+     * @param robotVelocity Robot field-relative velocity
+     * @param targetPose    Target position
+     * @return Shot parameters compensated for robot velocity
+     */
+    public static ShotParameters getShotParametersWithNewton(
+            Pose2d robotPose,
+            ChassisSpeeds robotVelocity,
+            Pose2d targetPose) {
+
+        // Calculate raw distance from robot to target
+        double robotDistance = getDistanceToTarget(robotPose, targetPose);
+        
+        // Get baseline shot velocity from lookup table
+        double shotVelocity = getVelocityForDistance(robotDistance);
+        
+        // Calculate robot velocity component in direction of target
+        double dx = targetPose.getX() - robotPose.getX();
+        double dy = targetPose.getY() - robotPose.getY();
+        double angleToTarget = Math.atan2(dy, dx);
+        
+        // Project robot velocity onto shot direction
+        double robotVelX = robotVelocity.vxMetersPerSecond;
+        double robotVelY = robotVelocity.vyMetersPerSecond;
+        double robotVelMagnitude = Math.hypot(robotVelX, robotVelY);
+        double robotVelAngle = Math.atan2(robotVelY, robotVelX);
+        double robotVelInShotDirection = robotVelMagnitude * Math.cos(robotVelAngle - angleToTarget);
+        
+        // Calculate compensated velocity: v_c = v_s - v_r
+        // This is the velocity the ball needs to leave the shooter at
+        double compensatedVelocity = shotVelocity - robotVelInShotDirection;
+        
+        // Use Newton's method to find distance d* such that Vel(d*) = compensatedVelocity
+        double currentDistance = robotDistance; // Start with robot's actual distance
+        double currentVelocity = getVelocityForDistance(currentDistance);
+        
+        for (int i = 0; i < MAX_ITERATIONS && Math.abs(currentVelocity - compensatedVelocity) > CONVERGENCE_THRESHOLD; i++) {
+            double velocityError = currentVelocity - compensatedVelocity;
+            double velocityDerivative = getVelocityDerivative(currentDistance);
+            
+            // Newton's method update: d_(n+1) = d_n - f(d_n) / f'(d_n)
+            currentDistance -= velocityError / velocityDerivative;
+            
+            // Update velocity for next iteration
+            currentVelocity = getVelocityForDistance(currentDistance);
+        }
+        
+        // Get shot parameters from the compensated distance
+        return getShotParameters(currentDistance);
     }
 }

@@ -27,7 +27,8 @@ public class ContinuousShotCalculationCommand extends Command {
      */
     public enum ShootingMode {
         SIMPLE_LOOKUP,              // Mode 0: Lookup table, no velocity compensation
-        LOOKUP_WITH_VELOCITY        // Mode 1: Lookup table with simple velocity compensation
+        LOOKUP_WITH_VELOCITY,       // Mode 1: Lookup table with simple velocity compensation
+        NEWTON_METHOD               // Mode 2: Newton's method with TOF table for velocity compensation
     }
     
     private final SwerveDriveSubsystem drivetrain;
@@ -37,7 +38,7 @@ public class ContinuousShotCalculationCommand extends Command {
     private final Supplier<Double> ySpdFunction;
     
     // Tunable parameters
-    private ShootingMode shootingMode = ShootingMode.LOOKUP_WITH_VELOCITY;
+    private ShootingMode shootingMode = ShootingMode.NEWTON_METHOD;
     private static final double kAimingSpeedMultiplier = 0.5; // Reduce speed to 50% while aiming for better control
     private static final double kRotationP = 5.0; // Proportional gain for rotation
 
@@ -82,7 +83,7 @@ public class ContinuousShotCalculationCommand extends Command {
 
     @Override
     public void execute() {
-        // Read shooting mode from dashboard (0=Simple, 1=Lookup+Velocity)
+        // Read shooting mode from dashboard (0=Simple, 1=Lookup+Velocity, 2=Newton)
         int modeIndex = (int) SmartDashboard.getNumber("Shooter/ShootingMode", shootingMode.ordinal());
         if (modeIndex >= 0 && modeIndex < ShootingMode.values().length) {
             shootingMode = ShootingMode.values()[modeIndex];
@@ -135,7 +136,6 @@ public class ContinuousShotCalculationCommand extends Command {
                 break;
                 
             case LOOKUP_WITH_VELOCITY:
-            default:
                 // Mode 1: Lookup table with simple velocity compensation (original method)
                 distance = ShotSolverSimplified.getDistanceToTarget(robotPose, targetPose2d);
                 ShotSolverSimplified.ShotParameters velocityParams = ShotSolverSimplified.getShotParameters(distance);
@@ -160,6 +160,35 @@ public class ContinuousShotCalculationCommand extends Command {
                 
                 calculatedRPM = velocityParams.rpm;
                 calculatedPitch = velocityParams.pitchDegrees;
+                angleToTarget = ShotSolverSimplified.getAngleToTarget(robotPose, effectiveTargetPose2d);
+                break;
+                
+            case NEWTON_METHOD:
+            default:
+                // Mode 2: Newton's method with TOF table for precise velocity compensation
+                distance = ShotSolverSimplified.getDistanceToTarget(robotPose, targetPose2d);
+                
+                // Use Newton's method to find shot parameters compensated for robot velocity
+                ShotSolverSimplified.ShotParameters newtonParams = 
+                    ShotSolverSimplified.getShotParametersWithNewton(robotPose, robotVelocity, targetPose2d);
+                
+                calculatedRPM = newtonParams.rpm;
+                calculatedPitch = newtonParams.pitchDegrees;
+                
+                // Get TOF for calculating lead angle
+                flightTime = ShotSolverSimplified.getTOFForDistance(distance);
+                
+                // Calculate horizontal velocity for logging
+                double newtonVelocity = (newtonParams.rpm * 2.0 * Math.PI * 0.05) / 60.0;
+                horizontalVelocity = newtonVelocity * Math.cos(Math.toRadians(newtonParams.pitchDegrees));
+                
+                // Calculate lead target for lateral (tangential) motion compensation
+                // Newton's method handles radial velocity (toward/away from target)
+                // Lead angle handles tangential velocity (perpendicular to shot direction)
+                effectiveTargetPose2d = ShotSolverSimplified.getLeadTargetPose(
+                    robotVelocity, targetPose2d, flightTime);
+                
+                // Aim at the lead target to compensate for sideways robot motion
                 angleToTarget = ShotSolverSimplified.getAngleToTarget(robotPose, effectiveTargetPose2d);
                 break;
         }
