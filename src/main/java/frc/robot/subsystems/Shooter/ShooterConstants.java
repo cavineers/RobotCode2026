@@ -31,8 +31,8 @@ public final class ShooterConstants {
     public static final double kD = 0.0;
     
     // Kraken x44: ~5800 RPM free speed = ~97 RPS @ 12V → kV ≈ 0.12
-    public static final double kS = 0.24058; // Static friction - TODO: Characterize with SysId
-    public static final double kV = 0.09398; // Velocity feedforward
+    public static final double kS = 0.19832; // Static friction - TODO: Characterize with SysId
+    public static final double kV = 0.09380; // Velocity feedforward
     public static final double kA = 0.0; // Acceleration feedforward - TODO: Tune if needed
     
     // Control

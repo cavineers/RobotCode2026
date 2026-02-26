@@ -22,7 +22,7 @@ public class InBumperIntakeConstants {
     public static final int kOutsideCurrentLimit = 40;
 
     public static final double kDefaultVoltage = 12.0;
-    public static final double kBottomVoltage = kDefaultVoltage * 0.65; //TODO: set speed
-    public static final double kOutsideVoltage = kDefaultVoltage * 0.65;
-    public static final double kTopVoltage = kDefaultVoltage * 0.65;
+    public static final double kBottomVoltage = kDefaultVoltage * 0.4; //TODO: set speed
+    public static final double kOutsideVoltage = kDefaultVoltage * 0.4;
+    public static final double kTopVoltage = kDefaultVoltage * 0.4;
 }
