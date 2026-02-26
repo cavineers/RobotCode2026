@@ -43,9 +43,6 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
 
     @AutoLogOutput(key="OverBumperIntake/IsClosed")
     public boolean isClosed = false;
-    
-    @AutoLogOutput(key="OverBumperIntake/cutoff")
-    public boolean cutoff = false;
 
     public OverBumperIntakeIOSpark() {
         deployConfig = new SparkMaxConfig();
@@ -91,23 +88,6 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
             new DoubleSupplier[] {deployMotor::getAppliedOutput, deployMotor::getBusVoltage},
             (values) -> inputs.deployAppliedVolts = values[0] * values[1]);
         ifOk(deployMotor, deployMotor::getOutputCurrent, (value) -> inputs.deployCurrentAmps = value);
-        
-        for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
-            inputs.recentAmpsHistory[i] = inputs.recentAmpsHistory[i + 1];
-        }
-        // Set the last element to currentAmps
-        inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.deployCurrentAmps;
-
-        double sum = 0;
-        for (double value : inputs.recentAmpsHistory) {
-            sum += value;
-        }
-        Logger.recordOutput("OverBumperIntake/AverageAmps", sum / inputs.recentAmpsHistory.length);
-        if (sum / inputs.recentAmpsHistory.length > kCutOffAmps) {
-            cutoff = true;
-        } else {
-            cutoff = false;
-        }
 
         double desiredVoltage = this.controller.calculate(inputs.deployPositionRotations);
 
@@ -118,7 +98,6 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
         }
 
         inputs.deployed = this.deployed; 
-        inputs.cutoff = this.cutoff;
         inputs.isClosed = this.isClosed;
     }
 

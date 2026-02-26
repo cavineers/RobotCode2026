@@ -6,19 +6,15 @@ public interface OverBumperIntakeIO {
     @AutoLog
     public static class OverBumperIntakeIOInputs {
         public double deployPositionRotations = 0.0;
-        public double deployVelocityRotations = 0.0;
         public double deployAppliedVolts = 0.0;
         public double deployCurrentAmps = 0.0;
         public boolean deployed = false;
-        public double[] recentAmpsHistory = new double[20];
         public double deployVelocityRotationsPerSec = 0.0;
 
         public double intakePositionRotations = 0.0;
-        public double intakeVelocityRotPerSec = 0.0;
         public double intakeAppliedVolts = 0.0;
         public double intakeCurrentAmps = 0.0;
         public double intakeVelocityRotationsPerSec = 0.0;
-        public boolean cutoff = false;
         public boolean isClosed = false;
     }
     

@@ -50,12 +50,6 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
         inputs.intakeAppliedVolts = intakeAppliedVolts;
         inputs.intakeCurrentAmps = intakeMotor.getCurrentDrawAmps();
 
-        for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
-            inputs.recentAmpsHistory[i] = inputs.recentAmpsHistory[i + 1];
-        }
-        // Set the last element to currentAmps
-        inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.deployCurrentAmps;
-
         double desiredVoltage = this.simPID.calculate(inputs.deployPositionRotations);
 
         Logger.recordOutput("OverBumperIntake/PIDRequestedVoltage", desiredVoltage);

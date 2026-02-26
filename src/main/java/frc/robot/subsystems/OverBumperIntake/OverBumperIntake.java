@@ -37,10 +37,6 @@ public class OverBumperIntake extends SubsystemBase {
             io.setPID(kP, kI, kD);
         }
         Logger.processInputs("OverBumperIntake", inputs);
-
-        // if (inputs.cutoff && inputs.deployed && inputs.isClosed) {
-        //     io.resetEncoder(OverBumperIntakeConstants.kHomingSwitchZeroPositionRot);
-        // }
     }
 
     public void setIntakeVoltage(double volts) {
@@ -49,17 +45,6 @@ public class OverBumperIntake extends SubsystemBase {
 
     public void setDeployVoltage(double volts) {
         io.setDeployVoltage(volts);
-    }
-
-    public Command setDeployVoltageCommand(double volts) {
-        return Commands.run(() -> {
-            io.setClosedLoop(false);
-            io.setDeployVoltage(volts);
-        }, this);
-    }
-
-    public Command setIntakeVoltageCommand(double volts) {
-        return Commands.run(() -> io.setIntakeVoltage(volts), this).finallyDo(interrupted -> io.setIntakeVoltage(0.0));
     }
 
     public Command deployCommand() {
