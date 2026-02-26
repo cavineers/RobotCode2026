@@ -20,6 +20,24 @@ public final class ShotSolverSimplified {
         }
     }
 
+    /**
+     * Extended shot parameters that include time of flight and compensated distance.
+     * Used by Newton's method to return all necessary information for accurate SOTF.
+     */
+    public static class ShotParametersWithTOF {
+        public final double rpm;
+        public final double pitchDegrees;
+        public final double timeOfFlight;
+        public final double compensatedDistance;
+
+        public ShotParametersWithTOF(double rpm, double pitchDegrees, double tof, double distance) {
+            this.rpm = rpm;
+            this.pitchDegrees = pitchDegrees;
+            this.timeOfFlight = tof;
+            this.compensatedDistance = distance;
+        }
+    }
+
     // Lookup tables: distance (meters) -> parameter
     private static final InterpolatingDoubleTreeMap distanceToRPM = new InterpolatingDoubleTreeMap();
     private static final InterpolatingDoubleTreeMap distanceToPitch = new InterpolatingDoubleTreeMap();
@@ -182,15 +200,22 @@ public final class ShotSolverSimplified {
     }
 
     /**
+     * Calculate shot parameters compensated for robot velocity using Newton's method.
+     * 
+     * This method compensates for radial robot velocity (toward/away from target) by:
+     * 1. Calculating the required ball velocity after accounting for robot momentum
+     * 2. Using Newton's method to find what distance's parameters produce that velocity
+     * 3. Calculating the actual time of flight for those parameters over the actual distance
+     * 
      * Uses Newton's method to solve: f(d) = Vel(d) - v_c = 0
      * Iteration: d_(n+1) = d_n - f(d_n) / f'(d_n)
      * 
      * @param robotPose     Current robot position
      * @param robotVelocity Robot field-relative velocity
      * @param targetPose    Target position
-     * @return Shot parameters compensated for robot velocity
+     * @return ShotParametersWithTOF containing RPM, pitch, actual TOF, and compensated distance
      */
-    public static ShotParameters getShotParametersWithNewton(
+    public static ShotParametersWithTOF getShotParametersWithNewton(
             Pose2d robotPose,
             ChassisSpeeds robotVelocity,
             Pose2d targetPose) {
@@ -233,6 +258,15 @@ public final class ShotSolverSimplified {
         }
         
         // Get shot parameters from the compensated distance
-        return getShotParameters(currentDistance);
+        ShotParameters params = getShotParameters(currentDistance);
+        
+        // Calculate ACTUAL time of flight:
+        // Time for a ball shot with these compensated params to travel the actual distance
+        // (NOT the TOF from lookup table, which is for different distance/params combination)
+        double ballVelocity = (params.rpm * 2.0 * Math.PI * 0.05) / 60.0; // Convert RPM to m/s (assuming 0.05m flywheel radius)
+        double horizontalVelocity = ballVelocity * Math.cos(Math.toRadians(params.pitchDegrees));
+        double actualTOF = horizontalVelocity > 0 ? robotDistance / horizontalVelocity : 0.5;
+        
+        return new ShotParametersWithTOF(params.rpm, params.pitchDegrees, actualTOF, currentDistance);
     }
 }

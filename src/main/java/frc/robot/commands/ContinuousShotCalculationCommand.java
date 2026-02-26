@@ -168,19 +168,19 @@ public class ContinuousShotCalculationCommand extends Command {
                 // Mode 2: Newton's method with TOF table for precise velocity compensation
                 distance = ShotSolverSimplified.getDistanceToTarget(robotPose, targetPose2d);
                 
-                // Use Newton's method to find shot parameters compensated for robot velocity
-                ShotSolverSimplified.ShotParameters newtonParams = 
+                // Use Newton's method to find shot parameters with correct TOF
+                ShotSolverSimplified.ShotParametersWithTOF newtonResult = 
                     ShotSolverSimplified.getShotParametersWithNewton(robotPose, robotVelocity, targetPose2d);
                 
-                calculatedRPM = newtonParams.rpm;
-                calculatedPitch = newtonParams.pitchDegrees;
+                calculatedRPM = newtonResult.rpm;
+                calculatedPitch = newtonResult.pitchDegrees;
                 
-                // Get TOF for calculating lead angle
-                flightTime = ShotSolverSimplified.getTOFForDistance(distance);
+                // Use actual TOF calculated from compensated parameters over actual distance
+                flightTime = newtonResult.timeOfFlight;
                 
                 // Calculate horizontal velocity for logging
-                double newtonVelocity = (newtonParams.rpm * 2.0 * Math.PI * 0.05) / 60.0;
-                horizontalVelocity = newtonVelocity * Math.cos(Math.toRadians(newtonParams.pitchDegrees));
+                double newtonVelocity = (newtonResult.rpm * 2.0 * Math.PI * 0.05) / 60.0;
+                horizontalVelocity = newtonVelocity * Math.cos(Math.toRadians(newtonResult.pitchDegrees));
                 
                 // Calculate lead target for lateral (tangential) motion compensation
                 // Newton's method handles radial velocity (toward/away from target)
