@@ -15,14 +15,13 @@ public class ClimberConstants {
 
     public static final double kSupplyCurrentLimit = 20.0; // Amps
     public static final double kStatorCurrentLimit = 40.0; // Amps
-    public static final double kCutOffAmps = 25.0; //TODO: set value
 
-    public static final double kManualDeployVoltage = 6.0; //TODO: Update
-    public static final double kManualRetractVoltage = -6.0; //TODO: Update
+    public static final double kManualSetpointIncrease = 0.5; //TODO: Update
+    public static final double kManualSetpointDecrease = -0.5; //TODO: Update
 
-    public static final double kRestMotorRotations = 0;
-    public static final double kDeployedMotorRotations = 33.5;
-    public static final double kEngagedMotorRotations = 18;
+    public static final double kRestMotorRotations = 0.0;
+    public static final double kDeployedMotorRotations = 42.0;
+    public static final double kEngagedMotorRotations = 15.0;
 
     public static final double kP = 1.0; //TODO: Update
     public static final double kI = 0.0; //TODO: Update

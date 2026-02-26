@@ -20,8 +20,6 @@ public class ClimberIOKraken implements ClimberIO {
     @AutoLogOutput(key="Climber/Setpoint")
     public double setpoint = 0;
 
-    private boolean cutoff = false;
-
     private final TalonFX climberMotor;
     private final VelocityVoltage velocityControl;
     private final VoltageOut voltageControl = new VoltageOut(0);
@@ -71,9 +69,6 @@ public class ClimberIOKraken implements ClimberIO {
         
         // Optimize CAN bus utilization by reducing unused signals
         climberMotor.optimizeBusUtilization();
-
-        //If we're starting with no tension on climber
-        climberMotor.setPosition(kDeployedMotorRotations);
     }
 
     @Override
@@ -82,27 +77,9 @@ public class ClimberIOKraken implements ClimberIO {
         inputs.climberAppliedVoltage = climberMotor.getMotorVoltage().getValueAsDouble();
         inputs.climberCurrentAmps = climberMotor.getSupplyCurrent().getValueAsDouble();
         inputs.climberPositionRotations = climberMotor.getPosition().getValueAsDouble();
-        inputs.cutoff = this.cutoff;
         inputs.setpoint = this.setpoint;
         
         Logger.recordOutput("Climber/climberPositionRotations", inputs.climberPositionRotations);
-
-        for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
-            inputs.recentAmpsHistory[i] = inputs.recentAmpsHistory[i + 1];
-        }
-        // Set the last element to currentAmps
-        inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.climberCurrentAmps;
-
-        double sum = 0;
-        for (double value : inputs.recentAmpsHistory) {
-            sum += value;
-        }
-        Logger.recordOutput("Climber/AverageAmps", sum / inputs.recentAmpsHistory.length);
-        if (sum / inputs.recentAmpsHistory.length > kCutOffAmps) {
-            cutoff = true;
-        } else {
-            cutoff = false;
-        }
     }
 
     @Override
@@ -124,11 +101,6 @@ public class ClimberIOKraken implements ClimberIO {
              return ClimberConstants.kRestMotorRotations;
         }
         return rotations;
-    }
-
-    @Override
-    public void setClimberVoltage(double volts) {
-        climberMotor.setControl(voltageControl.withOutput(volts));
     }
 
     @Override

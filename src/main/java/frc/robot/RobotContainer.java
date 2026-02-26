@@ -1,8 +1,5 @@
 package frc.robot;
 
-import static frc.robot.subsystems.Climber.ClimberConstants.kManualDeployVoltage;
-import static frc.robot.subsystems.Climber.ClimberConstants.kManualRetractVoltage;
-
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -116,11 +113,10 @@ public class RobotContainer {
             
         primaryDriverController.y().onTrue(climber.goToPresetCommand());
         primaryDriverController.x().onTrue(climber.undoCommand());
-        primaryDriverController.povUp().onTrue(climber.setVoltageCommand(kManualDeployVoltage));
-        primaryDriverController.povUp().onFalse(climber.setVoltageCommand(0));
-        primaryDriverController.povDown().onTrue(climber.setVoltageCommand(kManualRetractVoltage));
-        primaryDriverController.povDown().onFalse(climber.setVoltageCommand(0));
-
+        primaryDriverController.a().onTrue(climber.changeSetpointCommand(ClimberConstants.kManualSetpointIncrease));
+        primaryDriverController.a().onFalse(climber.changeSetpointCommand(0));
+        primaryDriverController.b().onTrue(climber.changeSetpointCommand(ClimberConstants.kManualSetpointDecrease));
+        primaryDriverController.b().onFalse(climber.changeSetpointCommand(0));
     }
 
     public void configureNamedCommands() {

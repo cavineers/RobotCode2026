@@ -16,8 +16,6 @@ import edu.wpi.first.math.MathUtil;
 public class ClimberIOSim implements ClimberIO {
     @AutoLogOutput(key="Climber/Setpoint")
     private double setpoint = 0;
-
-    private boolean tempCutoff = false;
     
     public enum ClimbState{
         RESTING,
@@ -50,26 +48,8 @@ public class ClimberIOSim implements ClimberIO {
         inputs.climberAppliedVoltage = climberAppliedVoltage;
         inputs.climberCurrentAmps = climberMotor.getCurrentDrawAmps();
         inputs.climberPositionRotations = climberMotor.getAngularPositionRotations();
-        inputs.cutoff = this.tempCutoff;
         
         Logger.recordOutput("Climber/climberPositionRotations", inputs.climberPositionRotations);
-
-        for (int i = 0; i < inputs.recentAmpsHistory.length - 1; i++) {
-            inputs.recentAmpsHistory[i] = inputs.recentAmpsHistory[i + 1];
-        }
-        // Set the last element to currentAmps
-        inputs.recentAmpsHistory[inputs.recentAmpsHistory.length - 1] = inputs.climberCurrentAmps;
-
-        double sum = 0;
-        for (double value : inputs.recentAmpsHistory) {
-            sum += value;
-        }
-        Logger.recordOutput("OverBumperIntake/AverageAmps", sum / inputs.recentAmpsHistory.length);
-        if (sum / inputs.recentAmpsHistory.length > kCutOffAmps) {
-            tempCutoff = true;
-        } else {
-            tempCutoff = false;
-        }
     }
 
     @Override

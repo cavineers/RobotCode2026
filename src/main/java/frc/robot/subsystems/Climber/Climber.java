@@ -51,17 +51,14 @@ public class Climber extends SubsystemBase {
 
         climbState = climbStater.get(getSetpoint());
         Logger.processInputs("Climber", inputs);
-
-        if (inputs.cutoff && climbState == ClimbState.RESTING) {
-            io.resetEncoder(ClimberConstants.kRestMotorRotations);
-        }
     }
 
-    public Command setVoltageCommand(double volts) {
+    public Command changeSetpointCommand(double rotations) {
         return Commands.run(() -> {
-            io.setClimberVoltage(volts);
+            io.updateClimberSetpoint(inputs.setpoint + rotations);
         }, this);
     } 
+    
     public Command goToPresetCommand() {
         return Commands.runOnce(() -> {
         switch (climbState) {

@@ -11,9 +11,6 @@ public interface ClimberIO {
         public double climberCurrentAmps = 0.0;
 
         public double setpoint = 0.0;
-
-        public double[] recentAmpsHistory = new double[20];
-        public boolean cutoff = false;
     }
     
     default void updateInputs(ClimberIOInputs inputs) {
