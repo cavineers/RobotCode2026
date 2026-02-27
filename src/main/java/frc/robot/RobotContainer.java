@@ -41,6 +41,7 @@ import frc.robot.subsystems.InBumperIntake.InBumperIntake;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSim;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSpark;
+import frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants;
 import frc.robot.subsystems.Shooter.ShooterIO;
 import frc.robot.subsystems.Shooter.ShooterIOKraken;
 import frc.robot.subsystems.Shooter.ShooterIOSim;
@@ -64,7 +65,6 @@ public class RobotContainer {
     public final OverBumperIntake overBumperIntake;
     public final InBumperIntake inBumperIntake;
     public final ShooterSubsystem shooter;
-
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
@@ -103,6 +103,8 @@ public class RobotContainer {
                         new ModuleIOSim());
 
                 turret = new Turret(new TurretIOSim(), () -> new Pose3d(drivetrain.getPose()));
+                climber = new Climber(new ClimberIOSim());
+                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSim());
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSim());
                 shooter = new ShooterSubsystem(
                         new ShooterIOSim());
@@ -141,7 +143,23 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
-            
+        
+        // ------ PRIMARY DRIVER CONTROLS ------
+        // Shooting controls (for testing purposes, will be replaced with vision-based shooting commands)
+        primaryDriverController.rightTrigger().whileTrue(
+            Commands.run(
+                () -> shooter.setTunableVelocity(), shooter)
+            .finallyDo(() -> shooter.stop()));
+        
+        primaryDriverController.b().onTrue(overBumperIntake.deployCommand());
+        
+        // Toggle InBumperIntake: Press to start runGroundToHopper, press again to stop
+        primaryDriverController.x().toggleOnTrue(
+            inBumperIntake.runGroundToHopper(
+                InBumperIntakeConstants.kOutsideVoltage, 
+                InBumperIntakeConstants.kBottomVoltage, 
+                InBumperIntakeConstants.kTopVoltage)
+        );
     }
     
     public void configureAutoChooser() {    
@@ -150,41 +168,41 @@ public class RobotContainer {
         // Set up SysId routines
         autoChooser.addOption("Shooter Characterization", ShooterCharacterizationCommand.feedforwardCharacterization(shooter));
 
-        // autoChooser.addOption(
-        // "Drive Wheel Radius Characterization",
-        // SystemIdCommands.wheelRadiusCharacterization(drivetrain));
-        // autoChooser.addOption(
-        // "Drive Base Radius Characterization",
-        // SystemIdCommands.driveBaseRadiusCharacterization(drivetrain));
-        // autoChooser.addOption(
-        // "Drive Simple FF Characterization",
-        // SystemIdCommands.feedforwardCharacterization(drivetrain));
-        // autoChooser.addOption(
-        // "Drive SysId (Quasistatic Forward)",
-        // drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-        // autoChooser.addOption(
-        // "Drive SysId (Quasistatic Reverse)",
-        // drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-        // autoChooser.addOption(
-        // "Drive SysId (Dynamic Forward)",
-        // drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
-        // autoChooser.addOption(
-        // "Drive SysId (Dynamic Reverse)",
-        // drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+        autoChooser.addOption(
+        "Drive Wheel Radius Characterization",
+        SystemIdCommands.wheelRadiusCharacterization(drivetrain));
+        autoChooser.addOption(
+        "Drive Base Radius Characterization",
+        SystemIdCommands.driveBaseRadiusCharacterization(drivetrain));
+        autoChooser.addOption(
+        "Drive Simple FF Characterization",
+        SystemIdCommands.feedforwardCharacterization(drivetrain));
+        autoChooser.addOption(
+        "Drive SysId (Quasistatic Forward)",
+        drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Drive SysId (Quasistatic Reverse)",
+        drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+        autoChooser.addOption(
+        "Drive SysId (Dynamic Forward)",
+        drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Drive SysId (Dynamic Reverse)",
+        drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
         
-        // // Rotation SysId for trackwidth characterization
-        // autoChooser.addOption(
-        // "Rotation SysId (Quasistatic Forward)",
-        // drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kForward));
-        // autoChooser.addOption(
-        // "Rotation SysId (Quasistatic Reverse)",
-        // drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kReverse));
-        // autoChooser.addOption(
-        // "Rotation SysId (Dynamic Forward)",
-        // drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kForward));
-        // autoChooser.addOption(
-        // "Rotation SysId (Dynamic Reverse)",
-        // drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kReverse));
+        // Rotation SysId for trackwidth characterization
+        autoChooser.addOption(
+        "Rotation SysId (Quasistatic Forward)",
+        drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Rotation SysId (Quasistatic Reverse)",
+        drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kReverse));
+        autoChooser.addOption(
+        "Rotation SysId (Dynamic Forward)",
+        drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Rotation SysId (Dynamic Reverse)",
+        drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kReverse));
     }
 
     public void configureNamedCommands() {
