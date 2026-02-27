@@ -93,9 +93,11 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
     public void autoDeploy() {
         if (deployed) {
             updateSetpoint(OverBumperIntakeConstants.kRetractedRotations);
+            this.setIntakeVoltage(0);
             this.deployed = false;
         } else {
             updateSetpoint(OverBumperIntakeConstants.kDeployedRotations);
+            this.intake();
             this.deployed = true;
         }
     }

@@ -140,10 +140,12 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     public void autoDeploy() {
         if (deployed) {
             updateSetpoint(kRetractedRotations);
+            this.setIntakeVoltage(0);
             this.deployed = false;
         } 
         else {
             updateSetpoint(kDeployedRotations);
+            this.intake();
             this.deployed = true;
         }
     }
