@@ -24,6 +24,10 @@ import frc.robot.subsystems.Drivetrain.GyroPigeonIO;
 import frc.robot.subsystems.Drivetrain.ModuleIO;
 import frc.robot.subsystems.Drivetrain.ModuleIOSim;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntake;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIO;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSim;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSpark;
 import frc.robot.subsystems.Drivetrain.ModuleIOTalonFX;
 import frc.robot.commands.SystemIdCommands;
 
@@ -40,6 +44,8 @@ public class RobotContainer {
     // private final SparkMax testGyro; 
     // private final RelativeEncoder testGyroEncoder;
     public final SwerveDriveSubsystem drivetrain;
+
+    public final OverBumperIntake overBumperIntake;
     public final InBumperIntake inBumperIntake;
     // public final ShooterSubsystem shooter;
 
@@ -57,11 +63,12 @@ public class RobotContainer {
             case REAL:
                 drivetrain = new SwerveDriveSubsystem(
                         new GyroPigeonIO(),
+
                         new ModuleIOTalonFX(0),
                         new ModuleIOTalonFX(1),
                         new ModuleIOTalonFX(2),
                         new ModuleIOTalonFX(3));
-
+                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSpark());
                 turret = new Turret(new TurretIOSpark(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
                 // shooter = new ShooterSubsystem(
@@ -76,11 +83,10 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
-
+                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSim());
                 turret = new Turret(new TurretIOSim(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSim());
-                // shooter = new ShooterSubsystem(
-                //         new ShooterIOSim());
+                shooter = new ShooterSubsystem(new ShooterIOSim());
                 break;
             default:
                 drivetrain = new SwerveDriveSubsystem(
@@ -88,12 +94,15 @@ public class RobotContainer {
                         new ModuleIO() {},
                         new ModuleIO() {},
                         new ModuleIO() {},
-                        new ModuleIO() {});
+                        new ModuleIO() {}
+                    );
+                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIO() {});
+
+             
             
                 turret = new Turret(new TurretIO() {}, () -> new Pose3d());
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIO() {});
-                // shooter = new ShooterSubsystem(
-                //         new ShooterIO(){});
+                shooter = new ShooterSubsystem(new ShooterIO(){});
                 break;
         }
 
@@ -111,6 +120,10 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
+        
+        primaryDriverController.a().onTrue(overBumperIntake.deployCommand());
+        primaryDriverController.leftBumper().whileTrue(overBumperIntake.outtakeCommand());
+        primaryDriverController.rightBumper().whileTrue(overBumperIntake.intakeCommand());
 
         // Intake button bindings
         primaryDriverController.leftTrigger().whileTrue(inBumperIntake.runGroundToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
