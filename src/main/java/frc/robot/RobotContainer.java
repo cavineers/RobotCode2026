@@ -7,6 +7,9 @@ import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.geometry.Pose3d;
 
@@ -27,6 +30,10 @@ import frc.robot.subsystems.Drivetrain.GyroPigeonIO;
 import frc.robot.subsystems.Drivetrain.ModuleIO;
 import frc.robot.subsystems.Drivetrain.ModuleIOSim;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntake;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIO;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSim;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSpark;
 import frc.robot.subsystems.Drivetrain.ModuleIOTalonFX;
 import frc.robot.commands.SystemIdCommands;
 
@@ -41,15 +48,23 @@ import frc.robot.subsystems.Shooter.ShooterSubsystem;
 
 import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
 
+import frc.robot.subsystems.Climber.Climber;
+import frc.robot.subsystems.Climber.ClimberConstants;
+import frc.robot.subsystems.Climber.ClimberIO;
+import frc.robot.subsystems.Climber.ClimberIOKraken;
+import frc.robot.subsystems.Climber.ClimberIOSim;
+
 public class RobotContainer {
 
     // Subsystems
-    // private final Turret turret;
-    // private final SparkMax testGyro; 
-    // private final RelativeEncoder testGyroEncoder;
-    // public final SwerveDriveSubsystem drivetrain;
+
+    private final Turret turret;
+    public final SwerveDriveSubsystem drivetrain;
+    public final Climber climber;
+    public final OverBumperIntake overBumperIntake;
     public final InBumperIntake inBumperIntake;
     public final ShooterSubsystem shooter;
+
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
@@ -63,42 +78,49 @@ public class RobotContainer {
         switch (Constants.currentMode) {
             // Instantiate input/output for their respective modes
             case REAL:
-                // drivetrain = new SwerveDriveSubsystem(
-                //         new GyroPigeonIO(),
-                //         new ModuleIOTalonFX(0),
-                //         new ModuleIOTalonFX(1),
-                //         new ModuleIOTalonFX(2),
-                //         new ModuleIOTalonFX(3));
-
-                // turret = new Turret(new TurretIOSpark(), () -> new Pose3d(drivetrain.getPose()));
+                drivetrain = new SwerveDriveSubsystem(
+                        new GyroPigeonIO(),
+                        new ModuleIOTalonFX(0),
+                        new ModuleIOTalonFX(1),
+                        new ModuleIOTalonFX(2),
+                        new ModuleIOTalonFX(3));
+                climber = new Climber(
+                        new ClimberIOKraken());
+                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSpark());
+                turret = new Turret(new TurretIOSpark(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
                 shooter = new ShooterSubsystem(
                         new ShooterIOKraken()
                 );
                 break;
             case SIM:
-                // drivetrain = new SwerveDriveSubsystem(
-                //         new GyroIO() {
-                //         },
-                //         new ModuleIOSim(),
-                //         new ModuleIOSim(),
-                //         new ModuleIOSim(),
-                //         new ModuleIOSim());
+                drivetrain = new SwerveDriveSubsystem(
+                        new GyroIO() {
+                        },
+                        new ModuleIOSim(),
+                        new ModuleIOSim(),
+                        new ModuleIOSim(),
+                        new ModuleIOSim());
 
-                // turret = new Turret(new TurretIOSim(), () -> new Pose3d(drivetrain.getPose()));
+                turret = new Turret(new TurretIOSim(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSim());
                 shooter = new ShooterSubsystem(
                         new ShooterIOSim());
                 break;
             default:
-                // drivetrain = new SwerveDriveSubsystem(
-                //         new GyroIO() {},
-                //         new ModuleIO() {},
-                //         new ModuleIO() {},
-                //         new ModuleIO() {},
-                //         new ModuleIO() {});
-            
-                // turret = new Turret(new TurretIO() {}, () -> new Pose3d());
+                drivetrain = new SwerveDriveSubsystem(
+                        new GyroIO() {},
+                        new ModuleIO() {},
+                        new ModuleIO() {},
+                        new ModuleIO() {},
+                        new ModuleIO() {}
+                    );
+                climber = new Climber(
+                        new ClimberIO(){
+                    });
+                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIO() {});
+              
+                turret = new Turret(new TurretIO() {}, () -> new Pose3d());
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIO() {});
                 shooter = new ShooterSubsystem(
                         new ShooterIO(){});
@@ -107,52 +129,19 @@ public class RobotContainer {
 
         configureButtonBindings();
         configureNamedCommands();
-      
+        configureAutoChooser();
+        
     }
 
     private void configureButtonBindings() {
         // Set default drivetrain command
-        // drivetrain.setDefaultCommand(new SwerveCommand(
-        //         drivetrain,
-        //         primaryDriverController::getLeftY,
-        //         primaryDriverController::getLeftX,
-        //         primaryDriverController::getRightX)
-        //     );
-
-        // Intake button bindings
-        primaryDriverController.leftTrigger().whileTrue(inBumperIntake.runGroundToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
-        primaryDriverController.rightBumper().whileTrue(inBumperIntake.runGroundToHopper(kOutsideVoltage, kBottomVoltage, kTopVoltage));
-        primaryDriverController.rightTrigger().whileTrue(inBumperIntake.runHopperToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
-
-        // Turret button bindings
-        // secondaryDriverController.a().whileTrue(
-        //         new TurretPresetCommand(turret, TurretConstants.kPresetOneRad, "One"));
-        // secondaryDriverController.b().whileTrue(
-        //         new TurretPresetCommand(turret, TurretConstants.kPresetTwoRad, "Two"));
-        // secondaryDriverController.y().whileTrue(
-        //         new TurretPresetCommand(turret, TurretConstants.kPresetThreeRad, "Three"));
-        
-        // Y button: Use tunable RPM from /Tuning/Shooter/TargetRPM
-        primaryDriverController.y().whileTrue(
-            Commands.run(() -> shooter.setTunableVelocity(), shooter)
-                .finallyDo(() -> shooter.stop())
-        );
-        
-        // Right Bumper: Test voltage - 12V (full power open loop)
-        // primaryDriverController.x().whileTrue(
-        //     Commands.run(() -> shooter.setVoltage(3.0), shooter)
-        //         .finallyDo(() -> shooter.stop())
-        // );
-
-        primaryDriverController.leftBumper().whileTrue(ShooterCharacterizationCommand.feedforwardCharacterization(shooter));
-        
-        // Left Bumper: Stop shooter manually
-        // primaryDriverController.leftBumper().onTrue(
-        //     Commands.runOnce(() -> shooter.stop(), shooter)
-        // );
-        // turret.setDefaultCommand(
-        //         new ManualTurretVoltageCommand(turret, () -> secondaryDriverController.getHID().getRawAxis(0)));
-        
+        drivetrain.setDefaultCommand(new SwerveCommand(
+                drivetrain,
+                primaryDriverController::getLeftY,
+                primaryDriverController::getLeftX,
+                primaryDriverController::getRightX)
+            );
+            
     }
     
     public void configureAutoChooser() {    
@@ -204,5 +193,15 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return this.autoChooser.get();
+    }
+    
+    /**
+     * @brief Releases the climber to the extended position 
+     * @Note Climber must have the setpoint set to kDeploy
+     */
+    public void releaseAutoClimb() {
+        if (climber.getSetpoint() == ClimberConstants.kEngagedMotorRotations){
+            CommandScheduler.getInstance().schedule(climber.releaseAutoCommand());
+        } 
     }
 }

@@ -1,0 +1,106 @@
+package frc.robot.subsystems.Climber;
+
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
+import java.util.HashMap;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+
+public class Climber extends SubsystemBase {
+    private final ClimberIO io;
+    private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
+
+    private double kP;
+    private double kI;
+    private double kD;
+
+    public enum ClimbState{
+        RESTING,
+        DEPLOYED,
+        ENGAGED
+    }
+
+    HashMap<Double, ClimbState> climbStater = new HashMap<>();
+    
+    @AutoLogOutput(key="Climber/ClimbState")
+    public ClimbState climbState = ClimbState.RESTING;
+
+    private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Climber/kP", ClimberConstants.kP);
+    private LoggedNetworkNumber tuningI = new LoggedNetworkNumber("/Tuning/Climber/kI", ClimberConstants.kI);
+    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Climber/kD", ClimberConstants.kD);
+    
+    public Climber(ClimberIO io) {
+        this.io = io;
+        climbStater.put(ClimberConstants.kRestMotorRotations, ClimbState.RESTING);
+        climbStater.put(ClimberConstants.kDeployedMotorRotations, ClimbState.DEPLOYED);
+        climbStater.put(ClimberConstants.kEngagedMotorRotations, ClimbState.ENGAGED);
+    }
+
+    @Override
+    public void periodic() {
+        io.updateInputs(inputs);
+        if (kP != tuningP.get() || kI != tuningI.get() || kD != tuningD.get()) {
+            kP = tuningP.get();
+            kI = tuningI.get();
+            kD = tuningD.get();
+            this.io.setPID(kP, kI, kD);
+        }
+
+        climbState = climbStater.get(getSetpoint());
+        Logger.processInputs("Climber", inputs);
+    }
+
+    public Command changeSetpointCommand(double rotations) {
+        return Commands.run(() -> {
+            io.updateClimberSetpoint(inputs.setpoint + rotations);
+        }, this);
+    } 
+    
+    public Command goToPresetCommand() {
+        return Commands.runOnce(() -> {
+        switch (climbState) {
+            case RESTING:
+                io.updateClimberSetpoint(ClimberConstants.kDeployedMotorRotations);
+                break;
+            case DEPLOYED:
+                io.updateClimberSetpoint(ClimberConstants.kEngagedMotorRotations);
+                break;
+            case ENGAGED:
+                io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
+                break;
+        }
+    }, this);
+}
+    public Command undoCommand() {
+        return Commands.runOnce(() -> {
+        switch (climbState) {
+            case RESTING:
+                io.updateClimberSetpoint(ClimberConstants.kEngagedMotorRotations);
+                break;
+            case DEPLOYED:
+                io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
+                break;
+            case ENGAGED:
+                io.updateClimberSetpoint(ClimberConstants.kDeployedMotorRotations);
+                break;
+        }
+    }, this);
+}
+
+    public Command releaseAutoCommand() {
+        return Commands.runOnce(() -> {
+        io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
+        }, this);
+    }
+
+    public double getClimberPosition() {
+        return inputs.climberPositionRotations;
+    }
+
+    public double getSetpoint(){
+        return inputs.setpoint;
+    }
+}
