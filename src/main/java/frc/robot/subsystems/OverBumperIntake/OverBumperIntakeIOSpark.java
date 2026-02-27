@@ -38,10 +38,6 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
 
     PIDController controller = new PIDController(kProportionalGainSpark, kIntegralTermSpark, kDerivativeTermSpark);
 
-    @AutoLogOutput(key="OverBumperIntake/Deployed")
-    public boolean deployed = false;
-
-    @AutoLogOutput(key="OverBumperIntake/IsClosed")
     public boolean isClosed = false;
 
     public OverBumperIntakeIOSpark() {
@@ -97,7 +93,6 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
             this.setDeployVoltage(desiredVoltage);
         }
 
-        inputs.deployed = this.deployed; 
         inputs.isClosed = this.isClosed;
     }
 
@@ -123,10 +118,10 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     }
 
     public double clipSetpoint(double setpoint) {
-        if (setpoint > OverBumperIntakeConstants.kDeployedRotations) {
-            return OverBumperIntakeConstants.kDeployedRotations;
-        } else if (setpoint < OverBumperIntakeConstants.kRetractedRotations) {
+        if (setpoint > OverBumperIntakeConstants.kRetractedRotations) {
             return OverBumperIntakeConstants.kRetractedRotations;
+        } else if (setpoint < OverBumperIntakeConstants.kDeployedRotations) {
+            return OverBumperIntakeConstants.kDeployedRotations;
         }
         return setpoint;
     }
@@ -134,20 +129,6 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     @Override
     public void setClosedLoop(boolean val) {
         this.isClosed = val;
-    }
-
-    @Override
-    public void autoDeploy() {
-        if (deployed) {
-            updateSetpoint(kRetractedRotations);
-            this.setIntakeVoltage(0);
-            this.deployed = false;
-        } 
-        else {
-            updateSetpoint(kDeployedRotations);
-            this.intake();
-            this.deployed = true;
-        }
     }
 
     @Override

@@ -8,7 +8,6 @@ public interface OverBumperIntakeIO {
         public double deployPositionRotations = 0.0;
         public double deployAppliedVolts = 0.0;
         public double deployCurrentAmps = 0.0;
-        public boolean deployed = false;
         public double deployVelocityRotationsPerSec = 0.0;
 
         public double intakePositionRotations = 0.0;
@@ -19,8 +18,6 @@ public interface OverBumperIntakeIO {
     }
     
     public default void updateInputs(OverBumperIntakeIOInputs inputs) {}
-
-    public default void autoDeploy() {}
 
     public default void intake() {}
 

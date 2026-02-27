@@ -93,4 +93,13 @@ public class InBumperIntake extends SubsystemBase {
         });
     }
 
+    public Command stopCommand() {
+        return this.runOnce(() -> {
+            currentState = IntakeState.IDLE;
+            io.setOutsideVoltage(0);
+            io.setBottomVoltage(0);
+            io.setTopVoltage(0);
+        });
+    }
+
 }
