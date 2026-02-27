@@ -6,6 +6,9 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.geometry.Pose3d;
 
@@ -37,17 +40,25 @@ import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSim;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSpark;
 import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
 
+import frc.robot.subsystems.Climber.Climber;
+import frc.robot.subsystems.Climber.ClimberConstants;
+import frc.robot.subsystems.Climber.ClimberIO;
+import frc.robot.subsystems.Climber.ClimberIOKraken;
+import frc.robot.subsystems.Climber.ClimberIOSim;
+
 public class RobotContainer {
 
     // Subsystems
     private final Turret turret;
-    // private final SparkMax testGyro; 
-    // private final RelativeEncoder testGyroEncoder;
+
     public final SwerveDriveSubsystem drivetrain;
+
+    public final Climber climber;
 
     public final OverBumperIntake overBumperIntake;
     public final InBumperIntake inBumperIntake;
     // public final ShooterSubsystem shooter;
+
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
@@ -63,11 +74,12 @@ public class RobotContainer {
             case REAL:
                 drivetrain = new SwerveDriveSubsystem(
                         new GyroPigeonIO(),
-
                         new ModuleIOTalonFX(0),
                         new ModuleIOTalonFX(1),
                         new ModuleIOTalonFX(2),
                         new ModuleIOTalonFX(3));
+                climber = new Climber(
+                        new ClimberIOKraken());
                 overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSpark());
                 turret = new Turret(new TurretIOSpark(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
@@ -83,10 +95,12 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
+                climber = new Climber(
+                        new ClimberIOSim());
                 overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSim());
                 turret = new Turret(new TurretIOSim(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSim());
-                shooter = new ShooterSubsystem(new ShooterIOSim());
+//                 shooter = new ShooterSubsystem(new ShooterIOSim());
                 break;
             default:
                 drivetrain = new SwerveDriveSubsystem(
@@ -96,6 +110,9 @@ public class RobotContainer {
                         new ModuleIO() {},
                         new ModuleIO() {}
                     );
+                climber = new Climber(
+                        new ClimberIO(){
+                    });
                 overBumperIntake = new OverBumperIntake(new OverBumperIntakeIO() {});
 
              
@@ -120,6 +137,13 @@ public class RobotContainer {
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX)
             );
+            
+        primaryDriverController.y().onTrue(climber.goToPresetCommand());
+        primaryDriverController.x().onTrue(climber.undoCommand());
+        primaryDriverController.a().onTrue(climber.changeSetpointCommand(ClimberConstants.kManualSetpointIncrease));
+        primaryDriverController.a().onFalse(climber.changeSetpointCommand(0));
+        primaryDriverController.b().onTrue(climber.changeSetpointCommand(ClimberConstants.kManualSetpointDecrease));
+        primaryDriverController.b().onFalse(climber.changeSetpointCommand(0));
         
         primaryDriverController.a().onTrue(overBumperIntake.deployCommand());
         primaryDriverController.leftBumper().whileTrue(overBumperIntake.outtakeCommand());
@@ -190,5 +214,15 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return null;
+    }
+    
+    /**
+     * @brief Releases the climber to the extended position 
+     * @Note Climber must have the setpoint set to kDeploy
+     */
+    public void releaseAutoClimb() {
+        if (climber.getSetpoint() == ClimberConstants.kEngagedMotorRotations){
+            CommandScheduler.getInstance().schedule(climber.releaseAutoCommand());
+        } 
     }
 }
