@@ -120,10 +120,10 @@ public class SwerveDriveConstants {
         public static final double kDriveKs = 0.08877; // Static friction voltage
         public static final double kDriveKv = 0.10606 ; // V per (rad/s) at motor shaft
         
-        public static final double kDriveSimP = 0;
+        public static final double kDriveSimP = 0.05; 
         public static final double kDriveSimD = 0.0;
-        public static final double kDriveSimKs = 0.01701;
-        public static final double kDriveSimKv = 0.11965;
+        public static final double kDriveSimKs = 0.10;  // V - theoretical estimate
+        public static final double kDriveSimKv = 0.115;  // V per (rad/s) at WHEEL - theoretical from Kraken X60 specs 
 
         // Turn motor configuration
         public static final int kTurnMotorCurrentLimit = 40;
