@@ -6,9 +6,10 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.geometry.Pose3d;
 
@@ -20,6 +21,8 @@ import frc.robot.subsystems.Turret.TurretIOSim;
 import frc.robot.subsystems.Turret.TurretIOSpark;
 import frc.robot.subsystems.Turret.TurretConstants;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.commands.ContinuousShotCalculationCommand;
+import frc.robot.commands.ShooterCharacterizationCommand;
 import frc.robot.commands.SwerveCommand;
 
 import frc.robot.subsystems.Drivetrain.GyroIO;
@@ -38,6 +41,11 @@ import frc.robot.subsystems.InBumperIntake.InBumperIntake;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSim;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSpark;
+import frc.robot.subsystems.Shooter.ShooterIO;
+import frc.robot.subsystems.Shooter.ShooterIOKraken;
+import frc.robot.subsystems.Shooter.ShooterIOSim;
+import frc.robot.subsystems.Shooter.ShooterSubsystem;
+
 import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
 
 import frc.robot.subsystems.Climber.Climber;
@@ -49,15 +57,13 @@ import frc.robot.subsystems.Climber.ClimberIOSim;
 public class RobotContainer {
 
     // Subsystems
+
     private final Turret turret;
-
     public final SwerveDriveSubsystem drivetrain;
-
     public final Climber climber;
-
     public final OverBumperIntake overBumperIntake;
     public final InBumperIntake inBumperIntake;
-    // public final ShooterSubsystem shooter;
+    public final ShooterSubsystem shooter;
 
 
     // Controllers
@@ -83,9 +89,9 @@ public class RobotContainer {
                 overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSpark());
                 turret = new Turret(new TurretIOSpark(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
-                // shooter = new ShooterSubsystem(
-                //         new ShooterIOKraken()
-                // );
+                shooter = new ShooterSubsystem(
+                        new ShooterIOKraken()
+                );
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -95,12 +101,11 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim(),
                         new ModuleIOSim());
-                climber = new Climber(
-                        new ClimberIOSim());
-                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSim());
+
                 turret = new Turret(new TurretIOSim(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSim());
-//                 shooter = new ShooterSubsystem(new ShooterIOSim());
+                shooter = new ShooterSubsystem(
+                        new ShooterIOSim());
                 break;
             default:
                 drivetrain = new SwerveDriveSubsystem(
@@ -114,12 +119,11 @@ public class RobotContainer {
                         new ClimberIO(){
                     });
                 overBumperIntake = new OverBumperIntake(new OverBumperIntakeIO() {});
-
-             
-            
+              
                 turret = new Turret(new TurretIO() {}, () -> new Pose3d());
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIO() {});
-                // shooter = new ShooterSubsystem(new ShooterIO(){});
+                shooter = new ShooterSubsystem(
+                        new ShooterIO(){});
                 break;
         }
 
@@ -142,43 +146,45 @@ public class RobotContainer {
     
     public void configureAutoChooser() {    
         // Set up auto routines for SysIds
-        autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
+        autoChooser = new LoggedDashboardChooser<>("Auto Choices");//AutoBuilder.buildAutoChooser()
         // Set up SysId routines
-        autoChooser.addOption(
-        "Drive Wheel Radius Characterization",
-        SystemIdCommands.wheelRadiusCharacterization(drivetrain));
-        autoChooser.addOption(
-        "Drive Base Radius Characterization",
-        SystemIdCommands.driveBaseRadiusCharacterization(drivetrain));
-        autoChooser.addOption(
-        "Drive Simple FF Characterization",
-        SystemIdCommands.feedforwardCharacterization(drivetrain));
-        autoChooser.addOption(
-        "Drive SysId (Quasistatic Forward)",
-        drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-        autoChooser.addOption(
-        "Drive SysId (Quasistatic Reverse)",
-        drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-        autoChooser.addOption(
-        "Drive SysId (Dynamic Forward)",
-        drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
-        autoChooser.addOption(
-        "Drive SysId (Dynamic Reverse)",
-        drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+        autoChooser.addOption("Shooter Characterization", ShooterCharacterizationCommand.feedforwardCharacterization(shooter));
+
+        // autoChooser.addOption(
+        // "Drive Wheel Radius Characterization",
+        // SystemIdCommands.wheelRadiusCharacterization(drivetrain));
+        // autoChooser.addOption(
+        // "Drive Base Radius Characterization",
+        // SystemIdCommands.driveBaseRadiusCharacterization(drivetrain));
+        // autoChooser.addOption(
+        // "Drive Simple FF Characterization",
+        // SystemIdCommands.feedforwardCharacterization(drivetrain));
+        // autoChooser.addOption(
+        // "Drive SysId (Quasistatic Forward)",
+        // drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+        // autoChooser.addOption(
+        // "Drive SysId (Quasistatic Reverse)",
+        // drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+        // autoChooser.addOption(
+        // "Drive SysId (Dynamic Forward)",
+        // drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
+        // autoChooser.addOption(
+        // "Drive SysId (Dynamic Reverse)",
+        // drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
         
-        // Rotation SysId for trackwidth characterization
-        autoChooser.addOption(
-        "Rotation SysId (Quasistatic Forward)",
-        drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kForward));
-        autoChooser.addOption(
-        "Rotation SysId (Quasistatic Reverse)",
-        drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kReverse));
-        autoChooser.addOption(
-        "Rotation SysId (Dynamic Forward)",
-        drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kForward));
-        autoChooser.addOption(
-        "Rotation SysId (Dynamic Reverse)",
-        drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kReverse));
+        // // Rotation SysId for trackwidth characterization
+        // autoChooser.addOption(
+        // "Rotation SysId (Quasistatic Forward)",
+        // drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kForward));
+        // autoChooser.addOption(
+        // "Rotation SysId (Quasistatic Reverse)",
+        // drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kReverse));
+        // autoChooser.addOption(
+        // "Rotation SysId (Dynamic Forward)",
+        // drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kForward));
+        // autoChooser.addOption(
+        // "Rotation SysId (Dynamic Reverse)",
+        // drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kReverse));
     }
 
     public void configureNamedCommands() {
