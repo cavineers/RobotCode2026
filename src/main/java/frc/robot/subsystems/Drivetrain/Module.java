@@ -1,16 +1,3 @@
-// Copyright 2021-2024 FRC 6328
-// http://github.com/Mechanical-Advantage
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// version 3 as published by the Free Software Foundation or
-// available in the root directory of this project.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-
 package frc.robot.subsystems.Drivetrain;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -69,8 +56,14 @@ public class Module {
         state.optimize(getAngle());
         state.cosineScale(inputs.turnPosition);
 
-        // Apply setpoints
-        io.setDriveVelocity(state.speedMetersPerSecond / kWheelRadiusMeters);
+        // Convert m/s to motor shaft rad/s: (wheel rad/s) * gear_ratio = (motor rad/s)
+        double velocityCommand = state.speedMetersPerSecond / kWheelRadiusMeters * SwerveDriveConstants.ModuleConstants.kDriveMotorGearRatio;
+        
+        // Log the velocity being commanded
+        Logger.recordOutput("Drivetrain/Module" + index + "/VelocityCommand", velocityCommand);
+        Logger.recordOutput("Drivetrain/Module" + index + "/SpeedMPS", state.speedMetersPerSecond);
+        
+        io.setDriveVelocity(velocityCommand);
         io.setTurnPosition(state.angle);
     }
 
@@ -123,13 +116,18 @@ public class Module {
         return inputs.odometryTimestamps;
     }
 
-    /** Returns the module position in radians. */
+    /** Returns the module position in radians (at the wheel, for wheel radius characterization). */
     public double getWheelRadiusCharacterizationPosition() {
         return inputs.drivePositionRad;
     }
 
-    /** Returns the module velocity in rad/sec. */
+    /** 
+     * Returns the module velocity in rad/sec at the WHEEL (mechanism).
+     * Used for feedforward characterization - matches the velocity units commanded in runSetpoint().
+     * SensorToMechanismRatio in TalonFX already handles gear ratio conversion.
+     */
     public double getFFCharacterizationVelocity() {
+        // Return wheel velocity for feedforward characterization (already in mechanism rad/s)
         return inputs.driveVelocityRadPerSec;
     }
 }

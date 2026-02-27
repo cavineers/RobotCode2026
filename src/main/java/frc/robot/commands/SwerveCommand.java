@@ -28,9 +28,9 @@ public class SwerveCommand extends Command {
         this.xSpdFunction = xSpdFunction;
         this.ySpdFunction = ySpdFunction;
         this.turningSpdFunction = turningSpdFunction;
-        this.xLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
-        this.yLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
-        this.turningLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond);
+        this.xLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationMetersPerSecSq);
+        this.yLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationMetersPerSecSq);
+        this.turningLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAngularAccelerationRadPerSecSq);
         addRequirements(swerveSubsystem);
     }
 
@@ -50,15 +50,17 @@ public class SwerveCommand extends Command {
         // Apply deadband -- compensated for when the joystick value does not return to exactly zero
         xSpeed = Math.abs(xSpeed) > OIConstants.kDeadband ? xSpeed : 0.0;
         ySpeed = Math.abs(ySpeed) > OIConstants.kDeadband ? ySpeed : 0.0;
-        turningSpeed = Math.abs(turningSpeed) > OIConstants.kDeadband ? turningSpeed : 0.0;
+        turningSpeed = Math.abs(turningSpeed) > 0.1 ? turningSpeed : 0.0;
 
-        // Smooths driving for jerky joystick movement & eases acceleration
-        xSpeed = xLimiter.calculate(xSpeed) * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
-        
-        ySpeed = yLimiter.calculate(ySpeed) * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
-      
-        turningSpeed = turningLimiter.calculate(turningSpeed)
-            * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond;
+        // Scale inputs to max speed FIRST (convert from [-1,1] to velocity)
+        xSpeed = xSpeed * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
+        ySpeed = ySpeed * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
+        turningSpeed = turningSpeed * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond;
+
+        // THEN apply acceleration limiting (on actual velocities, not normalized inputs)
+        xSpeed = xLimiter.calculate(xSpeed);
+        ySpeed = yLimiter.calculate(ySpeed);
+        turningSpeed = turningLimiter.calculate(turningSpeed);
      
         // Flipped
         boolean flipped = swerveSubsystem.shouldFlipPose();

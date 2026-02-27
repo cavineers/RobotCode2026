@@ -99,8 +99,10 @@ public class ModuleIOSpark implements ModuleIO {
                 .smartCurrentLimit(kDriveMotorCurrentLimit)
                 .voltageCompensation(12.0);
         driveConfig.encoder
-                .positionConversionFactor(kDriveEncoderRot2Rad)
-                .velocityConversionFactor(kDriveEncoderRPM2RadPerSec)
+                // Configure encoder to report MOTOR SHAFT position/velocity (like TalonFX SensorToMechanismRatio = 1.0)
+                // This way our units are consistent: motor rotations -> motor radians
+                .positionConversionFactor(2 * Math.PI)  // NEO rotations to radians (at motor shaft)
+                .velocityConversionFactor(2 * Math.PI / 60.0)  // NEO RPM to rad/s (at motor shaft)
                 .uvwMeasurementPeriod(10)
                 .uvwAverageDepth(2);
         driveConfig.closedLoop
@@ -164,8 +166,12 @@ public class ModuleIOSpark implements ModuleIO {
     public void updateInputs(ModuleIOInputs inputs) {
         // Update drive inputs
         sparkStickyFault = false; // controlled by the sparkUtil class
-        ifOk(driveSpark, driveEncoder::getPosition, (value) -> inputs.drivePositionRad = value);
-        ifOk(driveSpark, driveEncoder::getVelocity, (value) -> inputs.driveVelocityRadPerSec = value);
+        
+        // Drive encoder now reports motor shaft rad and rad/s, need to convert to wheel units
+        // wheel_position = motor_position / gear_ratio
+        // wheel_velocity = motor_velocity / gear_ratio
+        ifOk(driveSpark, driveEncoder::getPosition, (value) -> inputs.drivePositionRad = value / kDriveMotorGearRatio);
+        ifOk(driveSpark, driveEncoder::getVelocity, (value) -> inputs.driveVelocityRadPerSec = value / kDriveMotorGearRatio);
         ifOk(
                 driveSpark,
                 new DoubleSupplier[] { driveSpark::getAppliedOutput, driveSpark::getBusVoltage },
@@ -201,6 +207,8 @@ public class ModuleIOSpark implements ModuleIO {
     @Override
     public void setDriveVelocity(double velocityRadPerSec) {
         double ffVolts = kDriveKs * Math.signum(velocityRadPerSec) + kDriveKv * velocityRadPerSec;
+        
+        // Command motor shaft velocity to Spark Max
         driveController.setSetpoint(
                 velocityRadPerSec, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ffVolts, ArbFFUnits.kVoltage);
     }
