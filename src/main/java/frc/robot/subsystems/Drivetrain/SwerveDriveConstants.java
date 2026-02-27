@@ -5,6 +5,9 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.math.system.plant.DCMotor;
 
+import static frc.robot.subsystems.Drivetrain.SwerveDriveConstants.ModuleConstants.kTurningMotorGearRatio;
+import static frc.robot.subsystems.Shooter.ShooterConstants.kGearRatio;
+
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.pathplanner.lib.config.ModuleConfig;
@@ -109,7 +112,7 @@ public class SwerveDriveConstants {
 
         // Drive motor configuration
         public static final int kDriveMotorCurrentLimit = 20;
-        public static final DCMotor kDriveGearbox = DCMotor.getNEO(1);
+        public static final DCMotor kDriveGearbox = DCMotor.getKrakenX60(1);
 
         // Drive PID configuration
         public static final double kDriveKp = 0.0;
@@ -119,12 +122,12 @@ public class SwerveDriveConstants {
         
         public static final double kDriveSimP = 0;
         public static final double kDriveSimD = 0.0;
-        public static final double kDriveSimKs = 0.16999 ;
+        public static final double kDriveSimKs = 0.01701;
         public static final double kDriveSimKv = 0.11965;
 
         // Turn motor configuration
         public static final int kTurnMotorCurrentLimit = 40;
-        public static final DCMotor kTurnGearbox = DCMotor.getNEO(1);
+        public static final DCMotor kTurnGearbox = DCMotor.getKrakenX44(1);
 
         // Turn PID configuration
         public static final double kTurnKp = 100.0;

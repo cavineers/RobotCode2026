@@ -119,13 +119,13 @@ public class RobotContainer {
             
                 turret = new Turret(new TurretIO() {}, () -> new Pose3d());
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIO() {});
-                shooter = new ShooterSubsystem(new ShooterIO(){});
+                // shooter = new ShooterSubsystem(new ShooterIO(){});
                 break;
         }
 
         configureButtonBindings();
         configureNamedCommands();
-
+        configureAutoChooser();
         
     }
 
@@ -138,33 +138,6 @@ public class RobotContainer {
                 primaryDriverController::getRightX)
             );
             
-        primaryDriverController.y().onTrue(climber.goToPresetCommand());
-        primaryDriverController.x().onTrue(climber.undoCommand());
-        primaryDriverController.a().onTrue(climber.changeSetpointCommand(ClimberConstants.kManualSetpointIncrease));
-        primaryDriverController.a().onFalse(climber.changeSetpointCommand(0));
-        primaryDriverController.b().onTrue(climber.changeSetpointCommand(ClimberConstants.kManualSetpointDecrease));
-        primaryDriverController.b().onFalse(climber.changeSetpointCommand(0));
-        
-        primaryDriverController.a().onTrue(overBumperIntake.deployCommand());
-        primaryDriverController.leftBumper().whileTrue(overBumperIntake.outtakeCommand());
-        primaryDriverController.rightBumper().whileTrue(overBumperIntake.intakeCommand());
-
-        // Intake button bindings
-        primaryDriverController.leftTrigger().whileTrue(inBumperIntake.runGroundToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
-        primaryDriverController.rightBumper().whileTrue(inBumperIntake.runGroundToHopper(kOutsideVoltage, kBottomVoltage, kTopVoltage));
-        primaryDriverController.rightTrigger().whileTrue(inBumperIntake.runHopperToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
-
-        // Turret button bindings
-        secondaryDriverController.a().whileTrue(
-                new TurretPresetCommand(turret, TurretConstants.kPresetOneRad, "One"));
-        secondaryDriverController.b().whileTrue(
-                new TurretPresetCommand(turret, TurretConstants.kPresetTwoRad, "Two"));
-        secondaryDriverController.y().whileTrue(
-                new TurretPresetCommand(turret, TurretConstants.kPresetThreeRad, "Three"));
-        
-        // turret.setDefaultCommand(
-        //         new ManualTurretVoltageCommand(turret, () -> secondaryDriverController.getHID().getRawAxis(0)));
-        
     }
     
     public void configureAutoChooser() {    
@@ -213,7 +186,7 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        return null;
+        return this.autoChooser.get();
     }
     
     /**
