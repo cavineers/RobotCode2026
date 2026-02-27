@@ -3,8 +3,8 @@ package frc.robot.subsystems.OverBumperIntake;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 public class OverBumperIntakeConstants {
-    public static final int kDeployMotorCanID = 55; //TODO: set actual ID
-    public static final int kIntakeMotorCanID = 36;
+    public static final int kDeployMotorCanID = 30; //TODO: set actual ID
+    public static final int kIntakeMotorCanID = 31;
 
     // Motor Configuration
     public static final boolean kInverted = true;
