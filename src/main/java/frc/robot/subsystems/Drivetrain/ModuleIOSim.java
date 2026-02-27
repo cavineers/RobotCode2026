@@ -63,18 +63,6 @@ public class ModuleIOSim implements ModuleIO {
             double feedbackVolts = driveController.calculate(driveSim.getAngularVelocityRadPerSec());
             double totalVolts = driveFFVolts + feedbackVolts;
             driveAppliedVolts = MathUtil.clamp(totalVolts, -12.0, 12.0);
-            
-            // Debug - occasional console print
-            if (Math.random() < 0.1) { // 10% chance to print
-                System.out.println("=== ModuleIOSim updateInputs ===");
-                System.out.println("Motor shaft velocity: " + driveSim.getAngularVelocityRadPerSec() + " rad/s");
-                System.out.println("Motor shaft setpoint: " + driveController.getSetpoint() + " rad/s");
-                System.out.println("FF Volts: " + driveFFVolts);
-                System.out.println("Feedback Volts: " + feedbackVolts);
-                System.out.println("Total Volts: " + totalVolts);
-                System.out.println("Applied Volts (clamped): " + driveAppliedVolts);
-                System.out.println("================================");
-            }
         } else {
             driveController.reset();
         }
@@ -132,17 +120,6 @@ public class ModuleIOSim implements ModuleIO {
         // Convert motor shaft to wheel velocity
         double wheelVelocityRadPerSec = velocityRadPerSec / ModuleConstants.kDriveMotorGearRatio;
         driveFFVolts = kDriveSimKs * Math.signum(wheelVelocityRadPerSec) + kDriveSimKv * wheelVelocityRadPerSec;
-        
-        // Debug - print once to console
-        if (Math.abs(velocityRadPerSec) > 100) {
-            System.out.println("=== ModuleIOSim setDriveVelocity ===");
-            System.out.println("Motor shaft setpoint: " + velocityRadPerSec + " rad/s");
-            System.out.println("Wheel velocity: " + wheelVelocityRadPerSec + " rad/s");
-            System.out.println("kDriveSimKs: " + kDriveSimKs);
-            System.out.println("kDriveSimKv: " + kDriveSimKv);
-            System.out.println("FF Volts: " + driveFFVolts);
-            System.out.println("=====================================");
-        }
         
         // Set PID setpoint in motor shaft rad/s (what driveSim outputs)
         driveController.setSetpoint(velocityRadPerSec);
