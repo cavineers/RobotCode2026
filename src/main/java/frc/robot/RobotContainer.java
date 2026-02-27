@@ -1,12 +1,21 @@
 package frc.robot;
 
+import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.kOutsideVoltage;
+
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.math.geometry.Pose3d;
+
+import frc.robot.commands.ManualTurretVoltageCommand;
+import frc.robot.commands.TurretPresetCommand;
+import frc.robot.subsystems.Turret.Turret;
+import frc.robot.subsystems.Turret.TurretIO;
+import frc.robot.subsystems.Turret.TurretIOSim;
+import frc.robot.subsystems.Turret.TurretIOSpark;
+import frc.robot.subsystems.Turret.TurretConstants;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.SwerveCommand;
 
@@ -14,38 +23,57 @@ import frc.robot.subsystems.Drivetrain.GyroIO;
 import frc.robot.subsystems.Drivetrain.GyroPigeonIO;
 import frc.robot.subsystems.Drivetrain.ModuleIO;
 import frc.robot.subsystems.Drivetrain.ModuleIOSim;
-import frc.robot.subsystems.Drivetrain.ModuleIOSpark;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntake;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIO;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSim;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSpark;
+import frc.robot.subsystems.Drivetrain.ModuleIOTalonFX;
+import frc.robot.commands.SystemIdCommands;
+
+import frc.robot.subsystems.InBumperIntake.InBumperIntake;
+import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO;
+import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSim;
+import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSpark;
+import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
 
 public class RobotContainer {
 
     // Subsystems
+    private final Turret turret;
+    // private final SparkMax testGyro; 
+    // private final RelativeEncoder testGyroEncoder;
     public final SwerveDriveSubsystem drivetrain;
 
     public final OverBumperIntake overBumperIntake;
+    public final InBumperIntake inBumperIntake;
+    // public final ShooterSubsystem shooter;
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
     private final CommandXboxController secondaryDriverController = new CommandXboxController(1);
 
     // Auto chooser
-    private final LoggedDashboardChooser<Command> autoChooser;
+    private LoggedDashboardChooser<Command> autoChooser;
 
     public RobotContainer() {
+
         switch (Constants.currentMode) {
             // Instantiate input/output for their respective modes
             case REAL:
                 drivetrain = new SwerveDriveSubsystem(
                         new GyroPigeonIO(),
-                        new ModuleIOSpark(0),
-                        new ModuleIOSpark(1),
-                        new ModuleIOSpark(2),
-                        new ModuleIOSpark(3));
+
+                        new ModuleIOTalonFX(0),
+                        new ModuleIOTalonFX(1),
+                        new ModuleIOTalonFX(2),
+                        new ModuleIOTalonFX(3));
                 overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSpark());
+                turret = new Turret(new TurretIOSpark(), () -> new Pose3d(drivetrain.getPose()));
+                inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
+                // shooter = new ShooterSubsystem(
+                //         new ShooterIOKraken()
+                // );
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -56,9 +84,11 @@ public class RobotContainer {
                         new ModuleIOSim(),
                         new ModuleIOSim());
                 overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSim());
+                turret = new Turret(new TurretIOSim(), () -> new Pose3d(drivetrain.getPose()));
+                inBumperIntake = new InBumperIntake(new InBumperIntakeIOSim());
+                shooter = new ShooterSubsystem(new ShooterIOSim());
                 break;
             default:
-                // Replay
                 drivetrain = new SwerveDriveSubsystem(
                         new GyroIO() {},
                         new ModuleIO() {},
@@ -67,37 +97,23 @@ public class RobotContainer {
                         new ModuleIO() {}
                     );
                 overBumperIntake = new OverBumperIntake(new OverBumperIntakeIO() {});
+
+             
+            
+                turret = new Turret(new TurretIO() {}, () -> new Pose3d());
+                inBumperIntake = new InBumperIntake(new InBumperIntakeIO() {});
+                shooter = new ShooterSubsystem(new ShooterIO(){});
                 break;
         }
-       
+
         configureButtonBindings();
         configureNamedCommands();
 
-        // // // Set up auto routines for SysIds
-        autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
-        // // Set up SysId routines
-        // autoChooser.addOption(
-        // "Drive Wheel Radius Characterization",
-        // SystemIdCommands.wheelRadiusCharacterization(drivetrain));
-        // autoChooser.addOption(
-        // "Drive Simple FF Characterization",
-        // SystemIdCommands.feedforwardCharacterization(drivetrain));
-        // autoChooser.addOption(
-        // "Drive SysId (Quasistatic Forward)",
-        // drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-        // autoChooser.addOption(
-        // "Drive SysId (Quasistatic Reverse)",
-        // drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-        // autoChooser.addOption(
-        // "Drive SysId (Dynamic Forward)",
-        // drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
-        // autoChooser.addOption(
-        // "Drive SysId (Dynamic Reverse)",
-        // drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+        
     }
 
     private void configureButtonBindings() {
-        // Set the drivetrain default command
+        // Set default drivetrain command
         drivetrain.setDefaultCommand(new SwerveCommand(
                 drivetrain,
                 primaryDriverController::getLeftY,
@@ -108,6 +124,64 @@ public class RobotContainer {
         primaryDriverController.a().onTrue(overBumperIntake.deployCommand());
         primaryDriverController.leftBumper().whileTrue(overBumperIntake.outtakeCommand());
         primaryDriverController.rightBumper().whileTrue(overBumperIntake.intakeCommand());
+
+        // Intake button bindings
+        primaryDriverController.leftTrigger().whileTrue(inBumperIntake.runGroundToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
+        primaryDriverController.rightBumper().whileTrue(inBumperIntake.runGroundToHopper(kOutsideVoltage, kBottomVoltage, kTopVoltage));
+        primaryDriverController.rightTrigger().whileTrue(inBumperIntake.runHopperToShooter(kOutsideVoltage, kBottomVoltage, kTopVoltage));
+
+        // Turret button bindings
+        secondaryDriverController.a().whileTrue(
+                new TurretPresetCommand(turret, TurretConstants.kPresetOneRad, "One"));
+        secondaryDriverController.b().whileTrue(
+                new TurretPresetCommand(turret, TurretConstants.kPresetTwoRad, "Two"));
+        secondaryDriverController.y().whileTrue(
+                new TurretPresetCommand(turret, TurretConstants.kPresetThreeRad, "Three"));
+        
+        // turret.setDefaultCommand(
+        //         new ManualTurretVoltageCommand(turret, () -> secondaryDriverController.getHID().getRawAxis(0)));
+        
+    }
+    
+    public void configureAutoChooser() {    
+        // Set up auto routines for SysIds
+        autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
+        // Set up SysId routines
+        autoChooser.addOption(
+        "Drive Wheel Radius Characterization",
+        SystemIdCommands.wheelRadiusCharacterization(drivetrain));
+        autoChooser.addOption(
+        "Drive Base Radius Characterization",
+        SystemIdCommands.driveBaseRadiusCharacterization(drivetrain));
+        autoChooser.addOption(
+        "Drive Simple FF Characterization",
+        SystemIdCommands.feedforwardCharacterization(drivetrain));
+        autoChooser.addOption(
+        "Drive SysId (Quasistatic Forward)",
+        drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Drive SysId (Quasistatic Reverse)",
+        drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+        autoChooser.addOption(
+        "Drive SysId (Dynamic Forward)",
+        drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Drive SysId (Dynamic Reverse)",
+        drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+        
+        // Rotation SysId for trackwidth characterization
+        autoChooser.addOption(
+        "Rotation SysId (Quasistatic Forward)",
+        drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Rotation SysId (Quasistatic Reverse)",
+        drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kReverse));
+        autoChooser.addOption(
+        "Rotation SysId (Dynamic Forward)",
+        drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kForward));
+        autoChooser.addOption(
+        "Rotation SysId (Dynamic Reverse)",
+        drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kReverse));
     }
 
     public void configureNamedCommands() {
@@ -115,6 +189,6 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        return autoChooser.get();
+        return null;
     }
 }
