@@ -366,7 +366,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
      */
     public void addVisionMeasurement(Pose2d poseMeters, double timestamp, Matrix<N3, N1> visionMeasurementStdDevs) {
         if (Constants.currentMode != Constants.Mode.REAL)
-            return; // for some reason sim camera is being funky
+            return; 
 
         Pose2d pose;
         pose = new Pose2d(poseMeters.getX(), poseMeters.getY(),

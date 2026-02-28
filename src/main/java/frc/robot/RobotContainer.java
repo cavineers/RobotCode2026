@@ -19,6 +19,10 @@ import frc.robot.subsystems.Turret.Turret;
 import frc.robot.subsystems.Turret.TurretIO;
 import frc.robot.subsystems.Turret.TurretIOSim;
 import frc.robot.subsystems.Turret.TurretIOSpark;
+import frc.robot.subsystems.Vision.Vision;
+import frc.robot.subsystems.Vision.VisionConstants;
+import frc.robot.subsystems.Vision.VisionIO;
+import frc.robot.subsystems.Vision.VisionIOPhotonVision;
 import frc.robot.subsystems.Turret.TurretConstants;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.ContinuousShotCalculationCommand;
@@ -65,6 +69,7 @@ public class RobotContainer {
     public final OverBumperIntake overBumperIntake;
     public final InBumperIntake inBumperIntake;
     public final ShooterSubsystem shooter;
+    public final Vision vision;
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
@@ -91,6 +96,7 @@ public class RobotContainer {
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
                 shooter = new ShooterSubsystem(
                         new ShooterIOKraken());
+                vision = new Vision(drivetrain::addVisionMeasurement, new VisionIOPhotonVision(VisionConstants.camera1Name, VisionConstants.robotToCamera1));
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -107,6 +113,8 @@ public class RobotContainer {
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSim());
                 shooter = new ShooterSubsystem(
                         new ShooterIOSim());
+                
+                vision = new Vision(drivetrain::addVisionMeasurement, new VisionIO(){});
                 break;
             default:
                 drivetrain = new SwerveDriveSubsystem(
@@ -133,6 +141,8 @@ public class RobotContainer {
                 shooter = new ShooterSubsystem(
                         new ShooterIO() {
                         });
+
+                vision = new Vision(drivetrain::addVisionMeasurement, new VisionIO(){});
                 break;
         }
 
