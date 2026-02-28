@@ -56,8 +56,10 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
         intakeConfig = new SparkFlexConfig();
         intakeConfig
             .idleMode(IdleMode.kBrake)
-            .smartCurrentLimit(OverBumperIntakeConstants.kCurrentLimit)    
+            .smartCurrentLimit(OverBumperIntakeConstants.kCurrentLimit)
+            .inverted(true)
             .voltageCompensation(12);
+            
         
         tryUntilOk(
             intakeMotor,

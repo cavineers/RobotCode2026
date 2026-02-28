@@ -90,8 +90,7 @@ public class RobotContainer {
                 turret = new Turret(new TurretIOSpark(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
                 shooter = new ShooterSubsystem(
-                        new ShooterIOKraken()
-                );
+                        new ShooterIOKraken());
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -111,28 +110,36 @@ public class RobotContainer {
                 break;
             default:
                 drivetrain = new SwerveDriveSubsystem(
-                        new GyroIO() {},
-                        new ModuleIO() {},
-                        new ModuleIO() {},
-                        new ModuleIO() {},
-                        new ModuleIO() {}
-                    );
+                        new GyroIO() {
+                        },
+                        new ModuleIO() {
+                        },
+                        new ModuleIO() {
+                        },
+                        new ModuleIO() {
+                        },
+                        new ModuleIO() {
+                        });
                 climber = new Climber(
-                        new ClimberIO(){
-                    });
-                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIO() {});
-              
-                turret = new Turret(new TurretIO() {}, () -> new Pose3d());
-                inBumperIntake = new InBumperIntake(new InBumperIntakeIO() {});
+                        new ClimberIO() {
+                        });
+                overBumperIntake = new OverBumperIntake(new OverBumperIntakeIO() {
+                });
+
+                turret = new Turret(new TurretIO() {
+                }, () -> new Pose3d());
+                inBumperIntake = new InBumperIntake(new InBumperIntakeIO() {
+                });
                 shooter = new ShooterSubsystem(
-                        new ShooterIO(){});
+                        new ShooterIO() {
+                        });
                 break;
         }
 
         configureButtonBindings();
         configureNamedCommands();
         configureAutoChooser();
-        
+
     }
 
     private void configureButtonBindings() {
@@ -146,10 +153,10 @@ public class RobotContainer {
         
         // ------ PRIMARY DRIVER CONTROLS ------
         // Shooting controls (for testing purposes, will be replaced with vision-based shooting commands)
-        primaryDriverController.rightTrigger().whileTrue(
-            Commands.run(
-                () -> shooter.setTunableVelocity(), shooter)
-            .finallyDo(() -> shooter.stop()));
+        // primaryDriverController.rightTrigger().whileTrue(
+        //     Commands.run(
+        //         () -> shooter.setTunableVelocity(), shooter)
+        //     .finallyDo(() -> shooter.stop()));
         
         primaryDriverController.b().onTrue(overBumperIntake.deployCommand());
         
@@ -160,49 +167,57 @@ public class RobotContainer {
                 InBumperIntakeConstants.kBottomVoltage, 
                 InBumperIntakeConstants.kTopVoltage)
         );
+        primaryDriverController.rightTrigger().toggleOnTrue(
+                inBumperIntake.runHopperToShooter(
+                InBumperIntakeConstants.kOutsideVoltage, 
+                InBumperIntakeConstants.kBottomVoltage, 
+                InBumperIntakeConstants.kTopVoltage)
+        );
+
     }
-    
-    public void configureAutoChooser() {    
+
+    public void configureAutoChooser() {
         // Set up auto routines for SysIds
-        autoChooser = new LoggedDashboardChooser<>("Auto Choices");//AutoBuilder.buildAutoChooser()
+        autoChooser = new LoggedDashboardChooser<>("Auto Choices");// AutoBuilder.buildAutoChooser()
         // Set up SysId routines
-        autoChooser.addOption("Shooter Characterization", ShooterCharacterizationCommand.feedforwardCharacterization(shooter));
+        autoChooser.addOption("Shooter Characterization",
+                ShooterCharacterizationCommand.feedforwardCharacterization(shooter));
 
         autoChooser.addOption(
-        "Drive Wheel Radius Characterization",
-        SystemIdCommands.wheelRadiusCharacterization(drivetrain));
+                "Drive Wheel Radius Characterization",
+                SystemIdCommands.wheelRadiusCharacterization(drivetrain));
         autoChooser.addOption(
-        "Drive Base Radius Characterization",
-        SystemIdCommands.driveBaseRadiusCharacterization(drivetrain));
+                "Drive Base Radius Characterization",
+                SystemIdCommands.driveBaseRadiusCharacterization(drivetrain));
         autoChooser.addOption(
-        "Drive Simple FF Characterization",
-        SystemIdCommands.feedforwardCharacterization(drivetrain));
+                "Drive Simple FF Characterization",
+                SystemIdCommands.feedforwardCharacterization(drivetrain));
         autoChooser.addOption(
-        "Drive SysId (Quasistatic Forward)",
-        drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+                "Drive SysId (Quasistatic Forward)",
+                drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
         autoChooser.addOption(
-        "Drive SysId (Quasistatic Reverse)",
-        drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+                "Drive SysId (Quasistatic Reverse)",
+                drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
         autoChooser.addOption(
-        "Drive SysId (Dynamic Forward)",
-        drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
+                "Drive SysId (Dynamic Forward)",
+                drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
         autoChooser.addOption(
-        "Drive SysId (Dynamic Reverse)",
-        drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-        
+                "Drive SysId (Dynamic Reverse)",
+                drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+
         // Rotation SysId for trackwidth characterization
         autoChooser.addOption(
-        "Rotation SysId (Quasistatic Forward)",
-        drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kForward));
+                "Rotation SysId (Quasistatic Forward)",
+                drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kForward));
         autoChooser.addOption(
-        "Rotation SysId (Quasistatic Reverse)",
-        drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kReverse));
+                "Rotation SysId (Quasistatic Reverse)",
+                drivetrain.sysIdRotationQuasistatic(SysIdRoutine.Direction.kReverse));
         autoChooser.addOption(
-        "Rotation SysId (Dynamic Forward)",
-        drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kForward));
+                "Rotation SysId (Dynamic Forward)",
+                drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kForward));
         autoChooser.addOption(
-        "Rotation SysId (Dynamic Reverse)",
-        drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kReverse));
+                "Rotation SysId (Dynamic Reverse)",
+                drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kReverse));
     }
 
     public void configureNamedCommands() {
@@ -212,14 +227,14 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         return this.autoChooser.get();
     }
-    
+
     /**
-     * @brief Releases the climber to the extended position 
+     * @brief Releases the climber to the extended position
      * @Note Climber must have the setpoint set to kDeploy
      */
     public void releaseAutoClimb() {
-        if (climber.getSetpoint() == ClimberConstants.kEngagedMotorRotations){
+        if (climber.getSetpoint() == ClimberConstants.kEngagedMotorRotations) {
             CommandScheduler.getInstance().schedule(climber.releaseAutoCommand());
-        } 
+        }
     }
 }
