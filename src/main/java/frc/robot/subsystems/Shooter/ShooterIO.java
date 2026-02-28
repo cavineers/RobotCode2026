@@ -20,6 +20,10 @@ public interface ShooterIO {
         public double followerCurrentAmps = 0.0;
         public double followerTempCelsius = 0.0;
         
+        // Hood servo telemetry
+        public double hoodAngleDegrees = 0.0;
+        public double hoodServoPosition = 0.0; // 0.0 to 1.0
+        
         public boolean connected = false;
     }
 
@@ -61,4 +65,17 @@ public interface ShooterIO {
      * @param kA Acceleration feedforward (V/(rad/s^2))
      */
     default void setFF(double kS, double kV, double kA) {}
+
+    /**
+     * @brief Set hood angle in degrees.
+     * @param angleDegrees Target hood angle in degrees
+     */
+    default void setHoodAngle(double angleDegrees) {}
+
+    /**
+     * @brief Set hood servo position directly (0.0 to 1.0).
+     * @param position Servo position from 0.0 to 1.0
+     */
+    default void setHoodServoPosition(double position) {}
 }
+

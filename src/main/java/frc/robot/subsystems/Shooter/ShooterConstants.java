@@ -11,11 +11,19 @@ public final class ShooterConstants {
     public static final int kFlywheelFollowerMotorCanID = 32; // TODO: Set actual CAN ID
     public static final String kFlywheelCanBus = "canivore"; // Empty for RIO CAN, or "canivore" etc.
     
+    public static final int kHoodServoPWMChannel = 0; // TODO: Set actual PWM channel
+    
     // Mechanical
     public static final double kGearRatio = 1.0; // Motor rotations per flywheel rotation
     public static final double kFlywheelMOI = 0.004; // kg*m^2 (moment of inertia)
     public static final double kFlywheelDiameterMeters = 0.1016; // 4 inches - TODO: Update
     public static final double kFlywheelRadiusMeters = kFlywheelDiameterMeters / 2.0;
+    
+    // Hood servo configuration
+    public static final double kMinHoodAngleDegrees = 50.0; // TODO: Set minimum hood angle
+    public static final double kMaxHoodAngleDegrees = 85.0; // TODO: Set maximum hood angle
+    public static final double kMinServoPosition = 0.0; // Servo position at min angle
+    public static final double kMaxServoPosition = 1.0; // Servo position at max angle
     
     // Motor configuration
     public static final NeutralModeValue kNeutralMode = NeutralModeValue.Coast;

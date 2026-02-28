@@ -152,23 +152,29 @@ public class RobotContainer {
             );
         
         // ------ PRIMARY DRIVER CONTROLS ------
-        // Shooting controls (for testing purposes, will be replaced with vision-based shooting commands)
-        // primaryDriverController.rightTrigger().whileTrue(
-        //     Commands.run(
-        //         () -> shooter.setTunableVelocity(), shooter)
-        //     .finallyDo(() -> shooter.stop()));
+        // Shooting controls: Spin up shooter + set hood angle, then start intake after delay
+        primaryDriverController.rightTrigger().whileTrue(
+            Commands.sequence(
+                // Set shooter velocity and hood angle simultaneously
+                Commands.parallel(
+                    Commands.runOnce(() -> shooter.setTunableVelocity(), shooter),
+                    Commands.runOnce(() -> shooter.setTunableAngle(), shooter)
+                ),
+                // Wait for shooter to spin up and hood to reach position
+                Commands.waitSeconds(0.5), // TODO: Adjust delay as needed
+                // Start feeding game pieces
+                inBumperIntake.runHopperToShooter(
+                    InBumperIntakeConstants.kOutsideVoltage, 
+                    InBumperIntakeConstants.kBottomVoltage, 
+                    InBumperIntakeConstants.kTopVoltage)
+            ).finallyDo(() -> shooter.stop())
+        );
         
         primaryDriverController.b().onTrue(overBumperIntake.deployCommand());
         
         // Toggle InBumperIntake: Press to start runGroundToHopper, press again to stop
         primaryDriverController.x().toggleOnTrue(
             inBumperIntake.runGroundToHopper(
-                InBumperIntakeConstants.kOutsideVoltage, 
-                InBumperIntakeConstants.kBottomVoltage, 
-                InBumperIntakeConstants.kTopVoltage)
-        );
-        primaryDriverController.rightTrigger().toggleOnTrue(
-                inBumperIntake.runHopperToShooter(
                 InBumperIntakeConstants.kOutsideVoltage, 
                 InBumperIntakeConstants.kBottomVoltage, 
                 InBumperIntakeConstants.kTopVoltage)

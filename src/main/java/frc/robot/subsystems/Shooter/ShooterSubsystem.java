@@ -26,6 +26,9 @@ public class ShooterSubsystem extends SubsystemBase {
     // Tunable shooter RPM value that can be adjusted from NetworkTables/AdvantageScope
     private final LoggedNetworkNumber tunableShooterRPM = 
         new LoggedNetworkNumber("/Tuning/Shooter/TargetRPM", 3500.0);
+
+    private final LoggedNetworkNumber tunableHoodAngle = 
+        new LoggedNetworkNumber("/Tuning/Shooter/TargetAngle", ShooterConstants.kMaxHoodAngleDegrees);
     
     // Tunable PID values
     private final LoggedNetworkNumber tunableKP = 
@@ -166,6 +169,10 @@ public class ShooterSubsystem extends SubsystemBase {
         setVelocity(tunableShooterRPM.get());
     }
 
+    public void setTunableAngle() {
+        setHoodAngle(tunableHoodAngle.get());
+    }
+
     /**
      * @brief Check if shooter is running in velocity mode.
      * @return true if velocity control is active
@@ -215,5 +222,22 @@ public class ShooterSubsystem extends SubsystemBase {
     public double getCharacterizationVelocity() {
         return (inputs.flywheelVelocityRPM / 60.0) * kGearRatio;
     }
+
+    /**
+     * @brief Set hood angle in degrees.
+     * @param angleDegrees Target hood angle
+     */
+    public void setHoodAngle(double angleDegrees) {
+        io.setHoodAngle(angleDegrees);
+    }
+
+    /**
+     * @brief Get current hood angle in degrees.
+     * @return Current hood angle
+     */
+    public double getHoodAngle() {
+        return inputs.hoodAngleDegrees;
+    }
 }
+
 
