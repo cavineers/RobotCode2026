@@ -184,6 +184,32 @@ public class RobotContainer {
                 InBumperIntakeConstants.kTopVoltage)
         );
 
+        // ------ SECONDARY DRIVER CONTROLS (Turret) ------
+        // POV Up: Hold turret at 0 degrees field-relative (due north)
+        secondaryDriverController.povUp().onTrue(
+            Commands.runOnce(
+                () -> turret.setFieldRelativeTarget(0.0),
+                turret
+            )
+        );
+
+        // POV Right: Hold turret at 90 degrees field-relative (due east)
+        secondaryDriverController.povRight().onTrue(
+            Commands.runOnce(
+                () -> turret.setFieldRelativeTarget(-90.0),
+                turret
+            )
+        );
+
+        // POV Left: Hold turret at -90 degrees field-relative (due west)
+        secondaryDriverController.povLeft().onTrue(
+            Commands.runOnce(
+                () -> turret.setFieldRelativeTarget(Math.toRadians(90.0)),
+                turret
+            )
+        );
+
+
     }
 
     public void configureAutoChooser() {

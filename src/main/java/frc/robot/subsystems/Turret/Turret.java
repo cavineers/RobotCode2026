@@ -230,21 +230,13 @@ public class Turret extends SubsystemBase {
         double normalizedField = wrapAngle(fieldAngleRad);
         double robotHeading = wrapAngle(robotPoseSupplier.get().getRotation().getZ());
         
-        // Debug components
-        Logger.recordOutput("Turret/Debug/Setpt/Field", normalizedField);
-        Logger.recordOutput("Turret/Debug/Setpt/Heading", robotHeading);
         
         // To find the necessary turret angle:
         // FieldTarget = RobotHeading + TurretOffset + TurretAngle
         // TurretAngle = FieldTarget - RobotHeading - TurretOffset
         double rawRel = normalizedField - robotHeading - TurretConstants.kTurretZeroOffsetRad;
-        Logger.recordOutput("Turret/Debug/Setpt/RawRel", rawRel);
-
         double robotRelative = wrapAngle(rawRel);
-        Logger.recordOutput("Turret/Debug/Setpt/WrappedRel", robotRelative);
-
         double clamped = MathUtil.clamp(robotRelative, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
-        Logger.recordOutput("Turret/Debug/Setpt/Clamped", clamped);
 
         return clamped;
     }
