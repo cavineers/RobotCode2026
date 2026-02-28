@@ -25,11 +25,10 @@ public final class TurretConstants {
     // Mechanical limits
     // Defined as Robot-Relative angles (0 is Front/North)
     // Range: -175 degrees (Right) to +175 degrees (Left)
-    public static final double kMinAngleRad = Units.degreesToRadians(-175.0);
-    public static final double kMaxAngleRad = Units.degreesToRadians(175.0);
+    public static final double kMinAngleRad = Units.degreesToRadians(-110.0);
+    public static final double kMaxAngleRad = Units.degreesToRadians(110.0);
     
     // Offset from the robot's front (0 degrees) to the turret's "Mechanical Zero"
-    // Since we defined 0 as Front/North, the offset is 0.0
     public static final double kTurretZeroOffsetRad = 0.0;
 
     // Preset positions (robot-relative angles)
@@ -51,10 +50,10 @@ public final class TurretConstants {
     public static final double kVelocityToleranceRadPerSec = Math.toRadians(5.0);
 
     // Homing / limit switch
-    public static final boolean kUseHomingSwitch = true;
+    public static final boolean kUseHomingSwitch = false;
     public static final boolean kHomingSwitchNormallyOpen = false;
-    public static final int kHomingSwitchDioPort = 0; // TODO: Update with actual DIO port
-    public static final double kHomingSwitchZeroPositionRad = 0.0;
+    public static final int kHomingSwitchDioPort = 5; // TODO: Update with actual DIO port
+    public static final double kHomingSwitchZeroPositionRad = 0;
     public static final double kHomingSearchMaxVoltage = 3.0; // Reduced voltage when not homed for safety
 
     // Simulation parameters
