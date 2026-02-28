@@ -10,6 +10,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.Servo;
+import edu.wpi.first.math.MathUtil;
 
 import static frc.robot.subsystems.Shooter.ShooterConstants.*;
 
@@ -18,8 +20,11 @@ public class ShooterIOKraken implements ShooterIO {
     
     private final TalonFX leaderMotor;
     private final TalonFX followerMotor;
+    private final Servo hoodServo;
     private final VelocityVoltage velocityControl;
     private final VoltageOut voltageControl = new VoltageOut(0);
+    
+    private double currentHoodAngleDegrees = 0.0;
     
     // WPILib Alerts for error handling
     private final Alert leaderConfigAlert = new Alert("Shooter leader motor config failed", AlertType.kError);
@@ -30,6 +35,7 @@ public class ShooterIOKraken implements ShooterIO {
     public ShooterIOKraken() {
         leaderMotor = new TalonFX(kFlywheelLeaderMotorCanID);
         followerMotor = new TalonFX(kFlywheelFollowerMotorCanID);
+        hoodServo = new Servo(kHoodServoPWMChannel);
         
         velocityControl = new VelocityVoltage(0)
             .withSlot(0)
@@ -103,6 +109,9 @@ public class ShooterIOKraken implements ShooterIO {
         inputs.followerCurrentAmps = followerMotor.getSupplyCurrent().getValueAsDouble();
         inputs.followerTempCelsius = followerMotor.getDeviceTemp().getValueAsDouble();
         
+        inputs.hoodAngleDegrees = currentHoodAngleDegrees;
+        inputs.hoodServoPosition = hoodServo.get();
+        
         inputs.connected = leaderMotor.isAlive() && followerMotor.isAlive();
     }
 
@@ -146,5 +155,30 @@ public class ShooterIOKraken implements ShooterIO {
         
         StatusCode status = leaderMotor.getConfigurator().apply(config.Slot0);
         setFFAlert.set(!status.isOK());
+    }
+
+    @Override
+    public void setHoodAngle(double angleDegrees) {
+        // Clamp angle to valid range
+        currentHoodAngleDegrees = MathUtil.clamp(angleDegrees, kMinHoodAngleDegrees, kMaxHoodAngleDegrees);
+        
+        // Map angle to servo position (linear interpolation)
+        double servoPosition = (currentHoodAngleDegrees - kMinHoodAngleDegrees) / 
+                               (kMaxHoodAngleDegrees - kMinHoodAngleDegrees);
+        servoPosition = kMinServoPosition + servoPosition * (kMaxServoPosition - kMinServoPosition);
+        
+        hoodServo.set(servoPosition);
+    }
+
+    @Override
+    public void setHoodServoPosition(double position) {
+        double clampedPosition = MathUtil.clamp(position, kMinServoPosition, kMaxServoPosition);
+        hoodServo.set(clampedPosition);
+        
+        // Update angle based on position
+        double normalizedPosition = (clampedPosition - kMinServoPosition) / 
+                                    (kMaxServoPosition - kMinServoPosition);
+        currentHoodAngleDegrees = kMinHoodAngleDegrees + 
+                                  normalizedPosition * (kMaxHoodAngleDegrees - kMinHoodAngleDegrees);
     }
 }

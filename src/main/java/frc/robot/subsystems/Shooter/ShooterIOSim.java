@@ -2,6 +2,7 @@ package frc.robot.subsystems.Shooter;
 
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 import static frc.robot.subsystems.Shooter.ShooterConstants.*;
@@ -13,6 +14,8 @@ public class ShooterIOSim implements ShooterIO {
     
     private final DCMotorSim flywheelSim;
     private double appliedVolts = 0.0;
+    private double currentHoodAngleDegrees = 0.0;
+    private double currentServoPosition = 0.0;
 
     public ShooterIOSim() {
         // Note: FOC is handled in hardware, simulation uses standard model
@@ -40,6 +43,9 @@ public class ShooterIOSim implements ShooterIO {
         inputs.followerAppliedVolts = appliedVolts;
         inputs.followerCurrentAmps = flywheelSim.getCurrentDrawAmps();
         inputs.followerTempCelsius = 25.0;
+        
+        inputs.hoodAngleDegrees = currentHoodAngleDegrees;
+        inputs.hoodServoPosition = currentServoPosition;
         
         inputs.connected = true;
     }
@@ -74,4 +80,27 @@ public class ShooterIOSim implements ShooterIO {
     public void setFF(double kS, double kV, double kA) {
         // FF not used in sim
     }
+
+    @Override
+    public void setHoodAngle(double angleDegrees) {
+        // Clamp angle to valid range
+        currentHoodAngleDegrees = MathUtil.clamp(angleDegrees, kMinHoodAngleDegrees, kMaxHoodAngleDegrees);
+        
+        // Map angle to servo position (linear interpolation)
+        currentServoPosition = (currentHoodAngleDegrees - kMinHoodAngleDegrees) / 
+                               (kMaxHoodAngleDegrees - kMinHoodAngleDegrees);
+        currentServoPosition = kMinServoPosition + currentServoPosition * (kMaxServoPosition - kMinServoPosition);
+    }
+
+    @Override
+    public void setHoodServoPosition(double position) {
+        currentServoPosition = MathUtil.clamp(position, kMinServoPosition, kMaxServoPosition);
+        
+        // Update angle based on position
+        double normalizedPosition = (currentServoPosition - kMinServoPosition) / 
+                                    (kMaxServoPosition - kMinServoPosition);
+        currentHoodAngleDegrees = kMinHoodAngleDegrees + 
+                                  normalizedPosition * (kMaxHoodAngleDegrees - kMinHoodAngleDegrees);
+    }
 }
+
