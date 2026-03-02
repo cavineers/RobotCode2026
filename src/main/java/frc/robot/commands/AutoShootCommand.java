@@ -98,7 +98,7 @@ public class AutoShootCommand extends Command {
         }
 
         // Fire a sim ball every 1 second regardless of ready state
-        if (fuelSim != null && solution.isValid() && shotTimer.advanceIfElapsed(1.0)) {
+        if (fuelSim != null && solution.isValid() && shotTimer.advanceIfElapsed(0.25)) {
             launchSimFuel(solution);
         }
     }
