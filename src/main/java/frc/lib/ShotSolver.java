@@ -1,6 +1,5 @@
 package frc.lib;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -12,16 +11,12 @@ import edu.wpi.first.wpilibj.DriverStation;
 import org.littletonrobotics.junction.Logger;
 
 /**
- * Figures out what RPM, hood angle, and turret heading to use for a given robot
- * state.
- *
- * Two modes:
- * solveSimple — straight lookup table, no velocity compensation.
- * solveDynamic — Newton's method SOTF. Finds a virtual distance d* that
- * accounts for
- * the robot's momentum being added to the ball.
- *
- * All angles are field-relative, WPILib convention (CCW positive, 0 = +X).
+ * Shot solver for calculating shooter parameters based on robot position and velocity.
+ * 
+ * solveSimple: Uses lookup table with current position, no velocity compensation
+ * solveDynamic: Calculates lookahead position based on time of flight, compensates for robot motion
+ * 
+ * All angles use WPILib field convention (CCW+, 0° = +X axis toward red alliance)
  */
 public class ShotSolver {
 
@@ -46,15 +41,7 @@ public class ShotSolver {
     public static final double GOAL_HEIGHT_METERS = Units.inchesToMeters(72);
 
     /**
-     * Everything the shooter and turret need to take the shot.
-     *
-     * @param rpm                     flywheel speed
-     * @param pitchDegrees            hood angle, degrees up from horizontal
-     * @param turretFieldAngleRad     field-relative turret heading to command
-     * @param effectiveDistanceMeters the d* the solver converged on
-     * @param aimPoint                field-relative 2D point the turret is aimed at
-     *                                (goal for simple, laterally-shifted for dynamic)
-     * @param isValid                 false if d* is outside the characterised range
+     * Shot parameters needed by shooter and turret subsystems.
      */
     public record ShotSolution(
             double rpm,
@@ -74,39 +61,25 @@ public class ShotSolver {
     }
 
     // -----------------------------------------------------------------------
-    // Lookup tables
-    // Key: distance from launcher to goal opening (meters).
+    // Lookup tables - characterized with robot stationary
     // -----------------------------------------------------------------------
 
-    // Shared by both solvers — solveSimple just doesn't use TOF
     private static final InterpolatingDoubleTreeMap RPM = new InterpolatingDoubleTreeMap();
     private static final InterpolatingDoubleTreeMap PITCH = new InterpolatingDoubleTreeMap();
-    // TOF = horizontal travel time (s), used by solveDynamic for Vel(d) = d/Tof(d)
     private static final InterpolatingDoubleTreeMap TOF = new InterpolatingDoubleTreeMap();
 
     static {
-        // dist (m) RPM pitch (°) tof (s)
+        // distance (m), RPM, pitch angle (deg), time of flight (s)
         addEntry(2.17, 1600, 70.0, 0.9);
         addEntry(3.24, 1700, 60.0, 0.9);
         addEntry(1.59, 1600, 85.0, 1.0);
         addEntry(1.59, 1600, 85.0, 1.0);
         addEntry(3.81, 1800, 60.0, 1.0);
-
     }
 
-    // -----------------------------------------------------------------------
-    // Newton's method settings
-    // -----------------------------------------------------------------------
-
-    private static final double EPSILON = 0.001; // central-difference step (m) for numerical derivative of Vel(d)
-    private static final double CONVERGENCE_THRESHOLD = 0.005; // stop when |f(d)| < this (m/s)
-    private static final int MAX_ITERATIONS = 10;
-
     /**
-     * Simple lookup — no velocity compensation.
-     * Computes 3D distance from the launcher to the goal, reads RPM/pitch from the
-     * table,
-     * and points the turret straight at the goal.
+     * Basic shot calculation - no compensation for robot movement.
+     * Just looks up RPM and pitch from current distance and aims straight at the goal.
      */
     public static ShotSolution solveSimple(Pose2d robotPose) {
         Translation3d goal = getGoal();
@@ -124,74 +97,72 @@ public class ShotSolver {
     }
 
     /**
-     * Newton's method shoot-on-the-fly.
-     *
-     * The robot's velocity adds to the ball's velocity at release. To compensate:
-     * - The radial component (toward/away from goal) is cancelled by finding a d*
-     * whose
-     * LUT horizontal velocity equals v_s - v_radial. That d* drives RPM and pitch.
-     * - The lateral component (perpendicular to the goal ray) drifts the ball
-     * sideways during flight. The turret aim point is shifted opposite to that drift by
-     * v_lateral * tof.
+     * Shoot-on-the-fly with velocity compensation.
+     * 
+     * Works by calculating where the shooter will be when the fuel arrives at the goal.
+     * Uses that "lookahead" position to look up shot parameters instead of current position.
+     * This naturally compensates for robot velocity - if you're driving toward the goal,
+     * the lookahead position is closer so you get lower RPM. Vice versa for driving away.
      */
     public static ShotSolution solveDynamic(Pose2d robotPose, ChassisSpeeds fieldSpeeds) {
         Translation3d goal = getGoal();
         Translation3d shooter = getShooterPosition(robotPose);
-        Translation2d toGoalXY = goal.toTranslation2d().minus(shooter.toTranslation2d());
 
         double dr = distanceTo(shooter, goal);
         if (dr < 1e-6) {
             return solveSimple(robotPose);
         }
 
-        // Decompose robot velocity into radial (toward goal) and lateral
-        // (perpendicular) components
-        double ux = toGoalXY.getX() / toGoalXY.getNorm(); // the "u" denotes unit vector toward the goal (magnitude 1)
-        double uy = toGoalXY.getY() / toGoalXY.getNorm();
-        double lx = -uy;  // rotate u 90° CCW to get the "lateral" unit vector pointing left of the goal
-        double ly = ux;
-
         double vx = fieldSpeeds.vxMetersPerSecond;
         double vy = fieldSpeeds.vyMetersPerSecond;
 
-        // Dot product of velocity with unit vectors gives us the radial and lateral components 
-        // Simply said: vrRadial is how much of the robot's velocity is helping or hurting the shot, and vrLateral is how much it's pushing the ball sideways
-        double vrRadial = vx * ux + vy * uy;
-        double vrLateral = vx * lx + vy * ly; 
+        // Iteratively converge on lookahead position
+        // Initial guess uses TOF from current distance, then we refine it
+        double tof = TOF.get(dr);
+        Translation3d lookaheadShooter = shooter;
+        double lookaheadDistance = dr;
+        
+        for (int i = 0; i < 20; i++) {
+            // Calculate where shooter will be after TOF seconds
+            double offsetX = vx * tof;
+            double offsetY = vy * tof;
 
-        // Find d* such that Vel(d*) = Vel(dr) - vrRadial
-        double vc = vel(dr) - vrRadial;
-        double d = dr;
-        for (int i = 0; i < MAX_ITERATIONS; i++) {
-            double f = vel(d) - vc; // how far off are we from the target velocity compensation? We want this to be zero, which would mean "the LUT-prescribed shot velocity at distance d exactly cancels out the robot's radial velocity, giving us the correct net ball velocity to hit the goal"
-            if (Math.abs(f) < CONVERGENCE_THRESHOLD)
+            // Lookahead shooter position is current position plus velocity * time of flight
+            lookaheadShooter = new Translation3d(
+                shooter.getX() + offsetX,
+                shooter.getY() + offsetY,
+                shooter.getZ()
+            );
+            
+            lookaheadDistance = distanceTo(lookaheadShooter, goal);
+
+            // Recalculate TOF from new position
+            double newTof = TOF.get(lookaheadDistance);
+            
+            if (Math.abs(newTof - tof) < 0.001) {
+                // Convergence achieved
+                tof = newTof;
                 break;
-
-            double deriv = (vel(d + EPSILON) - vel(d - EPSILON)) / (2.0 * EPSILON);
-            if (Math.abs(deriv) < 1e-9)
-                break;
-
-            d -= f / deriv; // Newton's method update: move d in the direction that would reduce f to zero. The step size is f/deriv, which is how much we expect f to change if we change d by a little bit. So this is like saying "if I increase d by this much, f would go down to zero, so let's do that".
-            d = Math.max(d, 0.0);
+            }
+            // Update TOF for next iteration
+            tof = newTof;
         }
 
-        double rpm = RPM.get(d);
-        double pitch = PITCH.get(d);
-        double tof = TOF.get(d);
+        double rpm = RPM.get(lookaheadDistance);
+        double pitch = PITCH.get(lookaheadDistance);
 
-        // Shift the aim point opposite to where the ball will drift laterally
-        double lateralOffset = vrLateral * tof;
-        Translation2d aimPoint = goal.toTranslation2d()
-                .minus(new Translation2d(lx * lateralOffset, ly * lateralOffset));
-        Rotation2d turretAngle = aimPoint.minus(shooter.toTranslation2d()).getAngle();
+        // Turret aims from lookahead position, not current position
+        Translation2d aimPoint = goal.toTranslation2d();
+        Rotation2d turretAngle = aimPoint.minus(lookaheadShooter.toTranslation2d()).getAngle();
 
-        ShotSolution solution = new ShotSolution(rpm, pitch, turretAngle.getRadians(), d, aimPoint, isInRange(dr));
+        ShotSolution solution = new ShotSolution(rpm, pitch, turretAngle.getRadians(), lookaheadDistance, aimPoint, isInRange(lookaheadDistance));
 
         logSolution("ShotSolver/Dynamic", solution, shooter.toTranslation2d(), aimPoint);
-        Logger.recordOutput("ShotSolver/Dynamic/RadialVelocity", vrRadial);
-        Logger.recordOutput("ShotSolver/Dynamic/LateralVelocity", vrLateral);
-        Logger.recordOutput("ShotSolver/Dynamic/LateralOffset", lateralOffset);
+        Logger.recordOutput("ShotSolver/Dynamic/LookaheadDistance", lookaheadDistance);
+        Logger.recordOutput("ShotSolver/Dynamic/ActualDistance", dr);
         Logger.recordOutput("ShotSolver/Dynamic/TimeOfFlight", tof);
+        Logger.recordOutput("ShotSolver/Dynamic/RobotVelocity", new double[]{vx, vy});
+        Logger.recordOutput("ShotSolver/Dynamic/LookaheadShooterPos", lookaheadShooter.toTranslation2d());
         return solution;
     }
 
@@ -206,9 +177,7 @@ public class ShotSolver {
         return isRed ? GOAL_RED : GOAL_BLUE;
     }
 
-    // Rotates the robot-frame shooter offset into the field frame and returns the
-    // full 3D position.
-    // Z is preserved directly since the robot drives on flat ground.
+    // Rotates shooter offset from robot frame to field frame
     public static Translation3d getShooterPosition(Pose2d robotPose) {
         double heading = robotPose.getRotation().getRadians();
         double dx = SHOOTER_OFFSET.getX() * Math.cos(heading) - SHOOTER_OFFSET.getY() * Math.sin(heading);
@@ -219,16 +188,8 @@ public class ShotSolver {
                 SHOOTER_OFFSET.getZ());
     }
 
-    // Straight-line distance between the launcher exit and the goal opening
     private static double distanceTo(Translation3d launcher, Translation3d goal) {
         return launcher.getDistance(goal);
-    }
-
-    // Vel(d) = d / Tof(d) — horizontal shot velocity the LUT prescribes for
-    // distance d
-    private static double vel(double d) {
-        double tof = TOF.get(MathUtil.clamp(d, MIN_DISTANCE_METERS, MAX_DISTANCE_METERS));
-        return (tof < 1e-9) ? 0.0 : d / tof;
     }
 
     private static boolean isInRange(double d) {
