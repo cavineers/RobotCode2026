@@ -9,6 +9,7 @@ public interface ShooterIO {
     
     @AutoLog
     public static class ShooterIOInputs {
+        /** Flywheel (output shaft) velocity in RPM. Already converted from motor shaft by the IO layer. */
         public double flywheelVelocityRPM = 0.0;
         public double flywheelAppliedVolts = 0.0;
         public double flywheelCurrentAmps = 0.0;
@@ -31,7 +32,9 @@ public interface ShooterIO {
 
     /**
      * @brief Set flywheel velocity in RPM.
-     * @param velocityRPM Target velocity in RPM
+     * @param velocityRPM Target flywheel (output shaft) velocity in RPM.
+     * @implNote                   Implementations are responsible for converting to motor shaft
+     *                    units using the gear ratio before commanding hardware.
      */
     default void setVelocity(double velocityRPM) {}
 

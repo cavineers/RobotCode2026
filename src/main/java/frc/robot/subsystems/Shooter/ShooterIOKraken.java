@@ -93,21 +93,23 @@ public class ShooterIOKraken implements ShooterIO {
 
     @Override
     public void updateInputs(ShooterIOInputs inputs) {
+        // getVelocity() returns motor shaft RPS — divide by kGearRatio (motor/flywheel) to get flywheel RPM
         inputs.flywheelVelocityRPM = leaderMotor.getVelocity().getValueAsDouble() * 60.0 / kGearRatio;
         inputs.flywheelAppliedVolts = leaderMotor.getMotorVoltage().getValueAsDouble();
         inputs.flywheelCurrentAmps = leaderMotor.getSupplyCurrent().getValueAsDouble();
         inputs.flywheelTempCelsius = leaderMotor.getDeviceTemp().getValueAsDouble();
-        
+
         inputs.followerVelocityRPM = followerMotor.getVelocity().getValueAsDouble() * 60.0 / kGearRatio;
         inputs.followerAppliedVolts = followerMotor.getMotorVoltage().getValueAsDouble();
         inputs.followerCurrentAmps = followerMotor.getSupplyCurrent().getValueAsDouble();
         inputs.followerTempCelsius = followerMotor.getDeviceTemp().getValueAsDouble();
-        
+
         inputs.connected = leaderMotor.isAlive() && followerMotor.isAlive();
     }
 
     @Override
     public void setVelocity(double velocityRPM) {
+        // velocityRPM is FLYWHEEL RPM — multiply by kGearRatio (motor/flywheel) to get motor shaft RPS for Phoenix 6
         double velocityRPS = (velocityRPM / 60.0) * kGearRatio;
         leaderMotor.setControl(velocityControl.withVelocity(velocityRPS));
     }
