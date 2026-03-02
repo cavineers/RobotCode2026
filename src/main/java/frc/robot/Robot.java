@@ -13,6 +13,7 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj.Timer;
 
 
 /**
@@ -26,6 +27,10 @@ public class Robot extends LoggedRobot {
     private Command m_autonomousCommand;
 
     private final RobotContainer m_robotContainer;
+
+    /** How often to wipe all FuelSim particles (seconds). Keeps the field readable. */
+    private static final double FUEL_CLEAR_INTERVAL_SEC = 20.0;
+    private final Timer fuelClearTimer = new Timer();
 
     /**
      * This function is run when the robot is first started up and should be used
@@ -156,10 +161,18 @@ public class Robot extends LoggedRobot {
     /** This function is called once when the robot is first started up. */
     @Override
     public void simulationInit() {
+        fuelClearTimer.start();
     }
 
     /** This function is called periodically whilst in simulation. */
     @Override
     public void simulationPeriodic() {
+        if (m_robotContainer.fuelSim != null) {
+            m_robotContainer.fuelSim.updateSim();
+
+            if (fuelClearTimer.advanceIfElapsed(FUEL_CLEAR_INTERVAL_SEC)) {
+                m_robotContainer.fuelSim.clearFuel();
+            }
+        }
     }
 }

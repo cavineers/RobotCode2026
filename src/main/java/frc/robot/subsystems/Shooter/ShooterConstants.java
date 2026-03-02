@@ -18,7 +18,7 @@ public final class ShooterConstants {
     // kSimGearRatio = flywheel rotations per motor rotation = 1.33 (used by DCMotorSim — WPILib convention is output/input)
     public static final double kSimGearRatio = 1.33;
     public static final double kFlywheelMOI = 0.004; // kg*m^2 (moment of inertia)
-    public static final double kFlywheelDiameterMeters = 0.1016; // 4 inches - TODO: Update
+    public static final double kFlywheelDiameterMeters = 0.0762; // 3 inches - TODO: Update
     public static final double kFlywheelRadiusMeters = kFlywheelDiameterMeters / 2.0;
     
     // Motor configuration

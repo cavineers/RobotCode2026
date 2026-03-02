@@ -25,9 +25,11 @@ import frc.robot.subsystems.Vision.VisionIO;
 import frc.robot.subsystems.Vision.VisionIOPhotonVision;
 import frc.robot.subsystems.Turret.TurretConstants;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.commands.ContinuousShotCalculationCommand;
+import frc.robot.commands.AutoShotCommand;
 import frc.robot.commands.ShooterCharacterizationCommand;
 import frc.robot.commands.SwerveCommand;
+import frc.robot.commands.ShooterTableCharacterizationCommand;
+import frc.lib.FuelSim;
 
 import frc.robot.subsystems.Drivetrain.GyroIO;
 import frc.robot.subsystems.Drivetrain.GyroPigeonIO;
@@ -70,6 +72,9 @@ public class RobotContainer {
     public final InBumperIntake inBumperIntake;
     public final ShooterSubsystem shooter;
     public final Vision vision;
+
+    /** Fuel particle simulation — only non-null in SIM mode. */
+    public FuelSim fuelSim = null;
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
@@ -115,6 +120,18 @@ public class RobotContainer {
                         new ShooterIOSim());
                 
                 vision = new Vision(drivetrain::addVisionMeasurement, new VisionIO(){});
+
+                // ---- FuelSim ----
+                fuelSim = new FuelSim("FuelSim/Fuel");
+                fuelSim.registerRobot(
+                        Constants.RobotDimensions.kWidthMeters,
+                        Constants.RobotDimensions.kLengthMeters,
+                        Constants.RobotDimensions.kBumperHeightMeters,
+                        drivetrain::getPose,
+                        drivetrain::getFieldRelativeChassisSpeeds);
+                fuelSim.setLoggingFrequency(100);
+                fuelSim.setSubticks(10);
+                fuelSim.start();
                 break;
             default:
                 drivetrain = new SwerveDriveSubsystem(
@@ -184,7 +201,17 @@ public class RobotContainer {
                 InBumperIntakeConstants.kTopVoltage)
         );
 
-        // ------ SECONDARY DRIVER CONTROLS (Turret) ------
+        // Auto shoot
+        primaryDriverController.a().whileTrue(new AutoShotCommand(drivetrain, shooter, turret, fuelSim));
+
+        // ------ SECONDARY DRIVER CONTROLS ------
+        // Y: Hold to spin up at tunable RPM + pitch and aim at goal for LUT characterization.
+        //    While held, press A to fire a sim shot and log the data point.
+        ShooterTableCharacterizationCommand charCmd =
+                new ShooterTableCharacterizationCommand(drivetrain, shooter, turret, fuelSim);
+        secondaryDriverController.y().whileTrue(charCmd);
+        secondaryDriverController.a().onTrue(
+                edu.wpi.first.wpilibj2.command.Commands.runOnce(charCmd::fire));
         // POV Up: Hold turret at 0 degrees field-relative (due north)
         secondaryDriverController.povUp().onTrue(
             Commands.runOnce(
