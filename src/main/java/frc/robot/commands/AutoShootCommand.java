@@ -17,9 +17,9 @@ import frc.robot.subsystems.Turret.Turret;
 import org.littletonrobotics.junction.Logger;
 
 /**
- * Continuously solves for and commands RPM, pitch, and turret heading using
+ * Continuously solves for and commands RPM, pitch, and turret heading for shooting on the fly
  */
-public class AutoShotCommand extends Command {
+public class AutoShootCommand extends Command {
 
     private final SwerveDriveSubsystem drivetrain;
     private final ShooterSubsystem shooter;
@@ -33,7 +33,7 @@ public class AutoShotCommand extends Command {
     /**
      * Convenience constructor — no FuelSim (real robot or testing without sim).
      */
-    public AutoShotCommand(SwerveDriveSubsystem drivetrain, ShooterSubsystem shooter, Turret turret) {
+    public AutoShootCommand(SwerveDriveSubsystem drivetrain, ShooterSubsystem shooter, Turret turret) {
         this(drivetrain, shooter, turret, null);
     }
 
@@ -43,7 +43,7 @@ public class AutoShotCommand extends Command {
      * @param turret     turret subsystem (required)
      * @param fuelSim    particle simulation to call {@code launchFuel} on, or {@code null}
      */
-    public AutoShotCommand(SwerveDriveSubsystem drivetrain, ShooterSubsystem shooter,
+    public AutoShootCommand(SwerveDriveSubsystem drivetrain, ShooterSubsystem shooter,
             Turret turret, FuelSim fuelSim) {
         this.drivetrain = drivetrain;
         this.shooter = shooter;
@@ -56,7 +56,7 @@ public class AutoShotCommand extends Command {
     public void initialize() {
         turret.enableClosedLoop(true);
         shotTimer.restart();
-        Logger.recordOutput("AutoShot/Active", true);
+        Logger.recordOutput("AutoShoot/Active", true);
     }
 
     @Override
@@ -75,15 +75,15 @@ public class AutoShotCommand extends Command {
             turret.holdCurrentPosition();
         }
 
-        Logger.recordOutput("AutoShot/SolutionValid", solution.isValid());
-        Logger.recordOutput("AutoShot/ReadyToFire", isReadyToFire());
+        Logger.recordOutput("AutoShoot/SolutionValid", solution.isValid());
+        Logger.recordOutput("AutoShoot/ReadyToFire", isReadyToFire());
 
         if (solution.isValid()) {
             Translation3d shooterPos = ShotSolver.getShooterPosition(drivetrain.getPose());
             // ShooterPose3d: where the ball leaves, yaw = turret heading
             Pose3d shooterPose3d = new Pose3d(shooterPos,
                     new Rotation3d(0.0, 0.0, solution.turretFieldAngleRad()));
-            Logger.recordOutput("AutoShot/ShooterPose3d", shooterPose3d);
+            Logger.recordOutput("AutoShoot/ShooterPose3d", shooterPose3d);
 
             // AimPointPose3d: the virtual target the turret is pointed at
             // Z matches the goal height so it renders correctly in AdvantageScope
@@ -91,10 +91,10 @@ public class AutoShotCommand extends Command {
             Pose3d aimPose3d = new Pose3d(
                     new Translation3d(aim.getX(), aim.getY(), ShotSolver.GOAL_HEIGHT_METERS),
                     new Rotation3d());
-            Logger.recordOutput("AutoShot/AimPointPose3d", aimPose3d);
+            Logger.recordOutput("AutoShoot/AimPointPose3d", aimPose3d);
         } else {
-            Logger.recordOutput("AutoShot/ShooterPose3d", new Pose3d());
-            Logger.recordOutput("AutoShot/AimPointPose3d", new Pose3d());
+            Logger.recordOutput("AutoShoot/ShooterPose3d", new Pose3d());
+            Logger.recordOutput("AutoShoot/AimPointPose3d", new Pose3d());
         }
 
         // Fire a sim ball every 1 second regardless of ready state
@@ -135,8 +135,8 @@ public class AutoShotCommand extends Command {
         turret.holdCurrentPosition();
         lastSolution = null;
         shotTimer.stop();
-        Logger.recordOutput("AutoShot/Active", false);
-        Logger.recordOutput("AutoShot/ReadyToFire", false);
+        Logger.recordOutput("AutoShoot/Active", false);
+        Logger.recordOutput("AutoShoot/ReadyToFire", false);
     }
 
     @Override

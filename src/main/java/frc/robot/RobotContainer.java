@@ -25,7 +25,7 @@ import frc.robot.subsystems.Vision.VisionIO;
 import frc.robot.subsystems.Vision.VisionIOPhotonVision;
 import frc.robot.subsystems.Turret.TurretConstants;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.commands.AutoShotCommand;
+import frc.robot.commands.AutoShootCommand;
 import frc.robot.commands.ShooterCharacterizationCommand;
 import frc.robot.commands.SwerveCommand;
 import frc.robot.commands.ShooterTableCharacterizationCommand;
@@ -202,7 +202,7 @@ public class RobotContainer {
         );
 
         // Auto shoot
-        primaryDriverController.a().whileTrue(new AutoShotCommand(drivetrain, shooter, turret, fuelSim));
+        primaryDriverController.a().whileTrue(new AutoShootCommand(drivetrain, shooter, turret, fuelSim));
 
         // ------ SECONDARY DRIVER CONTROLS ------
         // Y: Hold to spin up at tunable RPM + pitch and aim at goal for LUT characterization.
