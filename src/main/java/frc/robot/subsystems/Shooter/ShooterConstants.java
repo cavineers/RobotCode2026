@@ -12,7 +12,11 @@ public final class ShooterConstants {
     public static final String kFlywheelCanBus = "canivore"; // Empty for RIO CAN, or "canivore" etc.
     
     // Mechanical
-    public static final double kGearRatio = 1.0; // Motor rotations per flywheel rotation
+    // 1:1.33 upduction — flywheel spins 1.33× faster than motor shaft.
+    // kGearRatio = motor rotations per flywheel rotation = 1/1.33 (used by Kraken IO for unit conversion)
+    public static final double kGearRatio = 1.0 / 1.33;
+    // kSimGearRatio = flywheel rotations per motor rotation = 1.33 (used by DCMotorSim — WPILib convention is output/input)
+    public static final double kSimGearRatio = 1.33;
     public static final double kFlywheelMOI = 0.004; // kg*m^2 (moment of inertia)
     public static final double kFlywheelDiameterMeters = 0.1016; // 4 inches - TODO: Update
     public static final double kFlywheelRadiusMeters = kFlywheelDiameterMeters / 2.0;
@@ -43,5 +47,8 @@ public final class ShooterConstants {
     public static final double kAtTargetDebounceTime = 0.1; // seconds
     
     // Simulation
-    public static final double kSimP = 0.0685;
+    public static final double kSimP = 0.0;
+    public static final double kSimKS = 0.10;
+    // Kraken X44 free speed ~97 motor RPS @ 12V -> kV = 12 / (97 * 2π)
+    public static final double kSimKV = 12.0 / (97.0 * 2.0 * Math.PI);
 }
