@@ -207,34 +207,35 @@ public class RobotContainer {
         // ------ SECONDARY DRIVER CONTROLS ------
         // Y: Hold to spin up at tunable RPM + pitch and aim at goal for LUT characterization.
         //    While held, press A to fire a sim shot and log the data point.
-        ShooterTableCharacterizationCommand charCmd =
-                new ShooterTableCharacterizationCommand(drivetrain, shooter, turret, fuelSim);
-        secondaryDriverController.y().whileTrue(charCmd);
-        secondaryDriverController.a().onTrue(
-                edu.wpi.first.wpilibj2.command.Commands.runOnce(charCmd::fire));
+        // ShooterTableCharacterizationCommand charCmd =
+        //         new ShooterTableCharacterizationCommand(drivetrain, shooter, turret, fuelSim);
+        // secondaryDriverController.y().whileTrue(charCmd);
+        // secondaryDriverController.a().onTrue(
+        //         edu.wpi.first.wpilibj2.command.Commands.runOnce(charCmd::fire));
+        secondaryDriverController.y().whileTrue(Commands.run(()-> shooter.setTunableVelocity(), shooter).finallyDo(() -> shooter.setVelocity(0)));
         // POV Up: Hold turret at 0 degrees field-relative (due north)
-        secondaryDriverController.povUp().onTrue(
-            Commands.runOnce(
-                () -> turret.setFieldRelativeTarget(0.0),
-                turret
-            )
-        );
+        // secondaryDriverController.povUp().onTrue(
+        //     Commands.runOnce(
+        //         () -> turret.setFieldRelativeTarget(0.0),
+        //         turret
+        //     )
+        // );
 
         // POV Right: Hold turret at 90 degrees field-relative (due east)
-        secondaryDriverController.povRight().onTrue(
-            Commands.runOnce(
-                () -> turret.setFieldRelativeTarget(-90.0),
-                turret
-            )
-        );
+        // secondaryDriverController.povRight().onTrue(
+        //     Commands.runOnce(
+        //         () -> turret.setFieldRelativeTarget(-90.0),
+        //         turret
+        //     )
+        // );
 
-        // POV Left: Hold turret at -90 degrees field-relative (due west)
-        secondaryDriverController.povLeft().onTrue(
-            Commands.runOnce(
-                () -> turret.setFieldRelativeTarget(Math.toRadians(90.0)),
-                turret
-            )
-        );
+        // // POV Left: Hold turret at -90 degrees field-relative (due west)
+        // secondaryDriverController.povLeft().onTrue(
+        //     Commands.runOnce(
+        //         () -> turret.setFieldRelativeTarget(Math.toRadians(90.0)),
+        //         turret
+        //     )
+        // );
 
 
     }

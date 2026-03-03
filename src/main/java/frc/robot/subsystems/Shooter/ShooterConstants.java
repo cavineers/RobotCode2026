@@ -14,7 +14,7 @@ public final class ShooterConstants {
     // Mechanical
     // 1:1.33 upduction — flywheel spins 1.33× faster than motor shaft.
     // kGearRatio = motor rotations per flywheel rotation = 1/1.33 (used by Kraken IO for unit conversion)
-    public static final double kGearRatio = 1.0 / 1.33;
+    public static final double kGearRatio = 1.0;
     // kSimGearRatio = flywheel rotations per motor rotation = 1.33 (used by DCMotorSim — WPILib convention is output/input)
     public static final double kSimGearRatio = 1.33;
     public static final double kFlywheelMOI = 0.004; // kg*m^2 (moment of inertia)
@@ -23,7 +23,7 @@ public final class ShooterConstants {
     
     // Motor configuration
     public static final NeutralModeValue kNeutralMode = NeutralModeValue.Coast;
-    public static final InvertedValue kLeaderMotorInverted = InvertedValue.CounterClockwise_Positive;
+    public static final InvertedValue kLeaderMotorInverted = InvertedValue.Clockwise_Positive;
     
     // Current limits (per motor)
     public static final double kSupplyCurrentLimit = 40.0;

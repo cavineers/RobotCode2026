@@ -1,6 +1,7 @@
 package frc.robot.subsystems.Shooter;
 
 import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
@@ -20,6 +21,7 @@ public class ShooterIOKraken implements ShooterIO {
     private final TalonFX followerMotor;
     private final VelocityVoltage velocityControl;
     private final VoltageOut voltageControl = new VoltageOut(0);
+    private final CANBus shooterCANBus = new CANBus(kFlywheelCanBus);
     
     // WPILib Alerts for error handling
     private final Alert leaderConfigAlert = new Alert("Shooter leader motor config failed", AlertType.kError);
@@ -28,8 +30,9 @@ public class ShooterIOKraken implements ShooterIO {
     private final Alert setFFAlert = new Alert("Shooter setFF failed", AlertType.kWarning);
 
     public ShooterIOKraken() {
-        leaderMotor = new TalonFX(kFlywheelLeaderMotorCanID);
-        followerMotor = new TalonFX(kFlywheelFollowerMotorCanID);
+        
+        leaderMotor = new TalonFX(kFlywheelLeaderMotorCanID, shooterCANBus);
+        followerMotor = new TalonFX(kFlywheelFollowerMotorCanID, shooterCANBus);
         
         velocityControl = new VelocityVoltage(0)
             .withSlot(0)

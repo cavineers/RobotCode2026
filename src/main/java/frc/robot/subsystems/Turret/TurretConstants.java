@@ -25,11 +25,11 @@ public final class TurretConstants {
     // Mechanical limits
     // Defined as Robot-Relative angles (0 is Front/North)
     // Range: -175 degrees (Right) to +175 degrees (Left)
-    public static final double kMinAngleRad = Units.degreesToRadians(-110.0);
-    public static final double kMaxAngleRad = Units.degreesToRadians(110.0);
+    public static final double kMinAngleRad = Units.degreesToRadians(-160.0);
+    public static final double kMaxAngleRad = Units.degreesToRadians(160.0);
     
     // Offset from the robot's front (0 degrees) to the turret's "Mechanical Zero"
-    public static final double kTurretZeroOffsetRad = 0.0;
+    public static final double kTurretZeroOffsetRad = Units.degreesToRadians(180.0);
 
     // Preset positions (robot-relative angles)
     public static final double kPresetOneRad = Units.degreesToRadians(0.0); // Front
