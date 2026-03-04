@@ -52,7 +52,7 @@ public final class TurretConstants {
     // Homing / limit switch
     public static final boolean kUseHomingSwitch = false;
     public static final boolean kHomingSwitchNormallyOpen = false;
-    public static final int kHomingSwitchDioPort = 5; // TODO: Update with actual DIO port
+    public static final int kHomingSwitchDioPort = 4; // TODO: Update with actual DIO port
     public static final double kHomingSwitchZeroPositionRad = 0;
     public static final double kHomingSearchMaxVoltage = 3.0; // Reduced voltage when not homed for safety
 
