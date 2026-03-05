@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.math.geometry.Pose3d;
 
 import frc.robot.commands.ManualTurretVoltageCommand;
@@ -73,7 +74,7 @@ public class RobotContainer {
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
-    private final CommandXboxController secondaryDriverController = new CommandXboxController(1);
+    private final CommandGenericHID secondaryDriverController = new CommandGenericHID(1);
 
     // Auto chooser
     private LoggedDashboardChooser<Command> autoChooser;
@@ -172,44 +173,72 @@ public class RobotContainer {
         
         // Toggle InBumperIntake: Press to start runGroundToHopper, press again to stop
         primaryDriverController.x().toggleOnTrue(
-            inBumperIntake.runGroundToHopper(
-                InBumperIntakeConstants.kOutsideVoltage, 
-                InBumperIntakeConstants.kBottomVoltage, 
-                InBumperIntakeConstants.kTopVoltage)
-        );
-        primaryDriverController.rightTrigger().toggleOnTrue(
-                inBumperIntake.runHopperToShooter(
+            inBumperIntake.enableInBumperCommand(
                 InBumperIntakeConstants.kOutsideVoltage, 
                 InBumperIntakeConstants.kBottomVoltage, 
                 InBumperIntakeConstants.kTopVoltage)
         );
 
-        // ------ SECONDARY DRIVER CONTROLS (Turret) ------
-        // POV Up: Hold turret at 0 degrees field-relative (due north)
-        secondaryDriverController.povUp().onTrue(
+        // ------ SECONDARY DRIVER CONTROLS (Turret) ------        
+        //Button 1: Set Hopper State to Hopper-to-Shooter
+        secondaryDriverController.button(1).onTrue(
             Commands.runOnce(
-                () -> turret.setFieldRelativeTarget(0.0),
+                () -> inBumperIntake.setHopperToShooterState(),
+                inBumperIntake
+            )
+        );
+
+        //Button 2: Set Hopper State to Ground-to-Shooter
+        secondaryDriverController.button(2).onTrue(
+            Commands.runOnce(
+                () -> inBumperIntake.setGroundToShooterState(),
+                inBumperIntake
+            )
+        );
+
+        //Button 3: Set Hopper State to Ground-to-Hopper
+        secondaryDriverController.button(3).onTrue(
+            Commands.runOnce(
+                () -> inBumperIntake.setGroundToHopperState(),
+                inBumperIntake
+            )
+        );
+
+        //Button 4 (top of black): Manual Setpoint Increase
+        secondaryDriverController.button(4).whileTrue(  
+                climber.changeSetpointCommand(ClimberConstants.kManualSetpointIncrease)
+        );
+
+        //Button 5 (right of black): Forward Setpoint Command
+        secondaryDriverController.button(5).onTrue(  
+                climber.goToPresetCommand()
+        );
+
+        //Button 6 (bottom of black): Manual Setpoint Decrease
+        secondaryDriverController.button(6).whileTrue(  
+                climber.changeSetpointCommand(ClimberConstants.kManualSetpointDecrease)
+        );
+
+        //Button 7 (left of black): Undo Setpoint Command
+        secondaryDriverController.button(7).onTrue(  
+                climber.undoCommand()
+        );
+
+        // Button 11: Hold turret at 90 degrees field-relative (due east)
+        secondaryDriverController.button(11).onTrue(
+            Commands.runOnce(
+                () -> turret.setFieldRelativeTarget(Math.toRadians(-90.0)),
                 turret
             )
         );
 
-        // POV Right: Hold turret at 90 degrees field-relative (due east)
-        secondaryDriverController.povRight().onTrue(
-            Commands.runOnce(
-                () -> turret.setFieldRelativeTarget(-90.0),
-                turret
-            )
-        );
-
-        // POV Left: Hold turret at -90 degrees field-relative (due west)
-        secondaryDriverController.povLeft().onTrue(
+        // Button 12: Hold turret at -90 degrees field-relative (due west)
+        secondaryDriverController.button(12).onTrue(
             Commands.runOnce(
                 () -> turret.setFieldRelativeTarget(Math.toRadians(90.0)),
                 turret
             )
         );
-
-
     }
 
     public void configureAutoChooser() {

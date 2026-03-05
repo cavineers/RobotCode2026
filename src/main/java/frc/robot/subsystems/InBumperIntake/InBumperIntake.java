@@ -22,6 +22,9 @@ public class InBumperIntake extends SubsystemBase {
     @AutoLogOutput(key = "InBumperIntake/State")
     private IntakeState currentState = IntakeState.IDLE;
 
+    @AutoLogOutput(key = "InBumperIntake/State")
+    private IntakeState setState = IntakeState.HOPPER_TO_SHOOTER;
+
     public InBumperIntake(InBumperIntakeIO io) {
         this.io = io;
     }
@@ -51,13 +54,32 @@ public class InBumperIntake extends SubsystemBase {
         return currentState;
     }
 
-    public Command runGroundToShooter(double outsideVolts, double bottomVolts, double topVolts) {
+    public Command enableInBumperCommand(double outsideVolts, double bottomVolts, double topVolts) {
         return this.run(() -> {
-            currentState = IntakeState.GROUND_TO_SHOOTER;
-            io.setOutsideVoltage(-outsideVolts);
-            io.setBottomVoltage(bottomVolts);
-            io.setTopVoltage(topVolts);
-        }).finallyDo(interrupted -> {
+        switch (setState) {
+            case GROUND_TO_SHOOTER:
+                currentState = IntakeState.GROUND_TO_SHOOTER;
+                io.setOutsideVoltage(-outsideVolts);
+                io.setBottomVoltage(bottomVolts);
+                io.setTopVoltage(topVolts);
+                break;
+            case GROUND_TO_HOPPER:
+                currentState = IntakeState.GROUND_TO_HOPPER;
+                io.setOutsideVoltage(-outsideVolts);
+                io.setBottomVoltage(bottomVolts);
+                io.setTopVoltage(-topVolts);
+                break;
+            case HOPPER_TO_SHOOTER:
+                currentState = IntakeState.HOPPER_TO_SHOOTER;
+                io.setOutsideVoltage(-outsideVolts);
+                io.setBottomVoltage(-bottomVolts);
+                io.setTopVoltage(topVolts);
+                break;
+            case MANUAL_CONTROL:
+                break;
+            case IDLE:
+                break;
+        }}).finallyDo(interrupted -> {
             currentState = IntakeState.IDLE;
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
@@ -65,32 +87,16 @@ public class InBumperIntake extends SubsystemBase {
         });
     }
 
-    public Command runGroundToHopper(double outsideVolts, double bottomVolts, double topVolts) {
-        return this.run(() -> {
-            currentState = IntakeState.GROUND_TO_HOPPER;
-            io.setOutsideVoltage(-outsideVolts);
-            io.setBottomVoltage(bottomVolts);
-            io.setTopVoltage(-topVolts);
-        }).finallyDo(interrupted -> {
-            currentState = IntakeState.IDLE;
-            io.setOutsideVoltage(0);
-            io.setBottomVoltage(0);
-            io.setTopVoltage(0);
-        });
+    public void setGroundToShooterState(){
+        setState = IntakeState.GROUND_TO_SHOOTER;
     }
 
-    public Command runHopperToShooter(double outsideVolts, double bottomVolts, double topVolts) {
-        return this.run(() -> {
-            currentState = IntakeState.HOPPER_TO_SHOOTER;
-            io.setOutsideVoltage(-outsideVolts);
-            io.setBottomVoltage(-bottomVolts);
-            io.setTopVoltage(topVolts);
-        }).finallyDo(interrupted -> {
-            currentState = IntakeState.IDLE;
-            io.setOutsideVoltage(0);
-            io.setBottomVoltage(0);
-            io.setTopVoltage(0);
-        });
+    public void setGroundToHopperState(){
+        setState = IntakeState.GROUND_TO_HOPPER;
+    }
+
+    public void setHopperToShooterState(){
+        setState = IntakeState.HOPPER_TO_SHOOTER;
     }
 
     public Command stopCommand() {
