@@ -2,8 +2,11 @@ package frc.robot.subsystems.Turret;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -35,20 +38,22 @@ public class Turret extends SubsystemBase {
     @AutoLogOutput(key = "Turret/ClosedLoopEnabled")
     private boolean closedLoopEnabled = true;
 
-    @AutoLogOutput(key = "Turret/Homed")
-    private boolean homed = !TurretConstants.kUseHomingSwitch;
-
     private final LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Turret/PositionKp", TurretConstants.kPositionKp);
     private final LoggedNetworkNumber tuningI = new LoggedNetworkNumber("/Tuning/Turret/PositionKi", TurretConstants.kPositionKi);
     private final LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Turret/PositionKd", TurretConstants.kPositionKd);
     private double currentKp = TurretConstants.kPositionKp;
     private double currentKi = TurretConstants.kPositionKi;
     private double currentKd = TurretConstants.kPositionKd;
-    
-    private boolean lastHomeSwitchState = false;
 
     // Homing state variables
+    @AutoLogOutput(key = "Turret/Homed")
+    private boolean homed = false;
     private int homingCurrentSpikeCount = 0;
+
+    // Turret angle history buffer for moving camera support
+    // Stores turret angles over time to allow retrospective camera position calculation
+    private final TimeInterpolatableBuffer<Rotation2d> turretAngleBuffer =
+        TimeInterpolatableBuffer.createBuffer(TurretConstants.kTurretAngleBufferSizeSec);
 
 
     public Turret(TurretIO io, Supplier<Pose3d> robotPoseSupplier) {
@@ -67,6 +72,10 @@ public class Turret extends SubsystemBase {
         updateTunableGains();
 
         Logger.processInputs("Turret", inputs);
+
+        // Add current turret angle to history buffer for moving camera support
+        turretAngleBuffer.addSample(Timer.getFPGATimestamp(), new Rotation2d(getCurrentTurretAngleRad()));
+
 
         switch (controlMode) {
             case POSITION -> runClosedLoop();
@@ -169,6 +178,16 @@ public class Turret extends SubsystemBase {
         return homed;
     }
 
+    /**
+     * Get the turret angle at a specific timestamp from the history buffer.
+     * Used for calculating moving camera position when processing vision measurements.
+     * @param timestamp The timestamp to query
+     * @return The turret angle at that time, or current angle if timestamp not in buffer
+     */
+    public Rotation2d getTurretAngleAtTime(double timestamp) {
+        return turretAngleBuffer.getSample(timestamp).orElse(new Rotation2d(getCurrentTurretAngleRad()));
+    }
+
     public double getPositionError() {
         if (!hasValidTarget()) {
             return Double.NaN;
@@ -251,24 +270,6 @@ public class Turret extends SubsystemBase {
 
     private void stopOutputs() {
         io.stop();
-    }
-
-    private void handleHoming() {
-        if (!TurretConstants.kUseHomingSwitch) {
-            return;
-        }
-
-        boolean pressed = inputs.zeroSwitchPressed;
-
-        // Home on rising edge OR if switch is pressed on first run (robot booted while on switch)
-        if (pressed && (!lastHomeSwitchState || !homed)) {
-            io.resetEncoder(TurretConstants.kHomingSwitchZeroPositionRad);
-            homed = true;
-            commandedFieldAngleRad = getCurrentFieldAngleRad();
-            commandedTurretAngleRad = getCurrentTurretAngleRad();
-        }
-
-        lastHomeSwitchState = pressed;
     }
 
     private double calculateRobotRelativeSetpoint(double fieldAngleRad) {

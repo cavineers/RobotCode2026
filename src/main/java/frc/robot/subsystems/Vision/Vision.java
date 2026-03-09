@@ -7,14 +7,17 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.Vision.VisionIO.PoseObservationType;
+import frc.robot.subsystems.Turret.Turret;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
 public class Vision extends SubsystemBase {
@@ -22,9 +25,11 @@ public class Vision extends SubsystemBase {
     private final VisionIO[] io;
     private final VisionIOInputsAutoLogged[] inputs;
     private final Alert[] disconnectedAlerts;
+    private final Supplier<Turret> turretSupplier;
 
-    public Vision(VisionConsumer consumer, VisionIO... io) {
+    public Vision(VisionConsumer consumer, Supplier<Turret> turretSupplier, VisionIO... io) {
         this.consumer = consumer;
+        this.turretSupplier = turretSupplier;
         this.io = io;
 
         // Initialize inputs
@@ -68,6 +73,16 @@ public class Vision extends SubsystemBase {
         for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
             // Update disconnected alert
             disconnectedAlerts[cameraIndex].set(!inputs[cameraIndex].connected);
+
+            // Skip turret-mounted cameras if turret is not homed
+            if (cameraIndex < cameraOnTurret.length && cameraOnTurret[cameraIndex]) {
+                Turret turret = turretSupplier.get();
+                if (turret == null || !turret.isHomed()) {
+                    Logger.recordOutput(
+                        "Vision/Camera" + Integer.toString(cameraIndex) + "/SkippedNotHomed", true);
+                    continue;
+                }
+            }
 
             // Initialize logging values
             List<Pose3d> tagPoses = new LinkedList<>();
@@ -153,6 +168,38 @@ public class Vision extends SubsystemBase {
                 "Vision/Summary/RobotPosesAccepted", allRobotPosesAccepted.toArray(new Pose3d[0]));
         Logger.recordOutput(
                 "Vision/Summary/RobotPosesRejected", allRobotPosesRejected.toArray(new Pose3d[0]));
+    }
+
+    /**
+     * Get the robot-to-camera transform for a camera at a specific timestamp.
+     * For moving cameras (on turret), this calculates the transform based on the turret angle at that time.
+     * For fixed cameras, returns the static transform.
+     * @param cameraIndex The camera index
+     * @param timestamp The timestamp of the measurement
+     * @return The robot-to-camera transform at that timestamp
+     */
+    public Transform3d getRobotToCameraTransform(int cameraIndex, double timestamp) {
+        // Check if this camera is on the turret
+        if (cameraIndex < cameraOnTurret.length && cameraOnTurret[cameraIndex]) {
+            // Moving camera - calculate transform based on turret angle at measurement time
+            Turret turret = turretSupplier.get();
+            if (turret != null) {
+                Rotation2d turretAngle = turret.getTurretAngleAtTime(timestamp);
+                
+                // Calculate the full transform: robot -> turret center -> camera
+                // First, rotate the turret-to-camera transform by the turret angle
+                Transform3d turretRotation = new Transform3d(
+                    robotToTurretCenter.getTranslation(),
+                    new Rotation3d(0, 0, turretAngle.getRadians())
+                );
+                
+                // Combine: robot-to-turret-center + turret-rotation + turret-to-camera
+                return turretRotation.plus(turretToCamera2);
+            }
+        }
+        
+        // Fixed camera or turret not available - return static transform
+        return cameraIndex == 0 ? robotToCamera1 : robotToCamera1;
     }
 
     @FunctionalInterface

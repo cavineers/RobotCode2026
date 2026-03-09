@@ -101,7 +101,12 @@ public class RobotContainer {
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
                 shooter = new ShooterSubsystem(
                         new ShooterIOKraken());
-                vision = new Vision(drivetrain::addVisionMeasurement, new VisionIOPhotonVision(VisionConstants.camera1Name, VisionConstants.robotToCamera1));
+                vision = new Vision(
+                    drivetrain::addVisionMeasurement,
+                    () -> turret, // Turret supplier for moving camera support
+                    new VisionIOPhotonVision(VisionConstants.camera1Name, VisionConstants.robotToCamera1),
+                    new VisionIOPhotonVision(VisionConstants.camera2Name, VisionConstants.turretToCamera2)
+                );
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -119,7 +124,7 @@ public class RobotContainer {
                 shooter = new ShooterSubsystem(
                         new ShooterIOSim());
                 
-                vision = new Vision(drivetrain::addVisionMeasurement, new VisionIO(){});
+                vision = new Vision(drivetrain::addVisionMeasurement, () -> turret, new VisionIO(){});
 
                 // ---- FuelSim ----
                 fuelSim = new FuelSim("FuelSim/Fuel");
@@ -159,7 +164,7 @@ public class RobotContainer {
                         new ShooterIO() {
                         });
 
-                vision = new Vision(drivetrain::addVisionMeasurement, new VisionIO(){});
+                vision = new Vision(drivetrain::addVisionMeasurement, () -> turret, new VisionIO(){});
                 break;
         }
 

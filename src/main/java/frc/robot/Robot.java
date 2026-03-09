@@ -13,6 +13,7 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.lib.ShotSolver;
 import edu.wpi.first.wpilibj.Timer;
 
 
@@ -98,6 +99,9 @@ public class Robot extends LoggedRobot {
         // and running subsystem periodic() methods. This must be called from the
         // robot's periodic
         // block in order for anything in the Command-based framework to work.
+
+        ShotSolver.solveSimple(m_robotContainer.drivetrain.getPose());
+        
         CommandScheduler.getInstance().run();
     }
 

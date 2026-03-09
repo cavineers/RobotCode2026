@@ -15,7 +15,6 @@ public interface TurretIO {
 		public double appliedVolts = 0.0;
 		public double supplyCurrentAmps = 0.0;
 		public double motorTempCelsius = 0.0;
-		public boolean zeroSwitchPressed = false;
 		public boolean forwardLimit = false;
 		public boolean reverseLimit = false;
 	}

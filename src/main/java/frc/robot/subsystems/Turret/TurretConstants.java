@@ -50,8 +50,10 @@ public final class TurretConstants {
     public static final double kPositionToleranceRad = Math.toRadians(1.0);
     public static final double kVelocityToleranceRadPerSec = Math.toRadians(5.0);
 
+    // Moving camera support - turret angle history buffer
+    public static final double kTurretAngleBufferSizeSec = 2.0; // Store 2 seconds of turret angle history
+
     // Homing / limit switch
-    public static final boolean kUseHomingSwitch = false;
     public static final boolean kHomingSwitchNormallyOpen = false;
     public static final int kHomingSwitchDioPort = 4; // TODO: Update with actual DIO port
     public static final double kHomingSwitchZeroPositionRad = 0;
