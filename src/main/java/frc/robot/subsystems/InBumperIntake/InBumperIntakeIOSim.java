@@ -20,19 +20,26 @@ public class InBumperIntakeIOSim implements InBumperIntakeIO {
         LinearSystemId.createDCMotorSystem(DCMotor.getNEO(1), 0.004,1),
         DCMotor.getNEO(1));
 
+    private DCMotorSim spindexerMotor = new DCMotorSim(
+        LinearSystemId.createDCMotorSystem(DCMotor.getNeoVortex(1), 0.004,1),
+        DCMotor.getNeoVortex(1));
+
     private double bottomMotorAppliedVolts = 0.0;
     private double topMotorAppliedVolts = 0.0;
     private double outsideMotorAppliedVolts = 0.0;
+    private double spindexerMotorAppliedVolts = 0.0;
 
     @Override
     public void updateInputs(InBumperIntakeIOInputs inputs) {
         bottomMotor.setInputVoltage(bottomMotorAppliedVolts);
         topMotor.setInputVoltage(topMotorAppliedVolts);
         outsideMotor.setInputVoltage(outsideMotorAppliedVolts);
+        spindexerMotor.setInputVoltage(spindexerMotorAppliedVolts);
 
         bottomMotor.update(0.02);
         topMotor.update(0.02);
         outsideMotor.update(0.02);
+        spindexerMotor.update(0.02);
 
         inputs.bottomMotorPositionRad = bottomMotor.getAngularPositionRad();
         inputs.bottomMotorVelocityRadPerSec = bottomMotor.getAngularVelocityRadPerSec();
@@ -48,6 +55,11 @@ public class InBumperIntakeIOSim implements InBumperIntakeIO {
         inputs.outsideMotorVelocityRadPerSec = outsideMotor.getAngularVelocityRadPerSec();
         inputs.outsideMotorAppliedVolts = outsideMotorAppliedVolts;
         inputs.outsideMotorCurrentAmps = outsideMotor.getCurrentDrawAmps();
+
+        inputs.spindexerMotorPositionRad = spindexerMotor.getAngularPositionRad();
+        inputs.spindexerMotorVelocityRadPerSec = spindexerMotor.getAngularVelocityRadPerSec();
+        inputs.spindexerMotorAppliedVolts = spindexerMotorAppliedVolts;
+        inputs.spindexerMotorCurrentAmps = spindexerMotor.getCurrentDrawAmps();
     }
 
     @Override
@@ -63,6 +75,11 @@ public class InBumperIntakeIOSim implements InBumperIntakeIO {
     @Override
     public void setOutsideVoltage(double volts) {
         outsideMotorAppliedVolts = MathUtil.clamp(volts, -12, 12);
+    }
+
+    @Override
+    public void setSpindexerVoltage(double volts) {
+        spindexerMotorAppliedVolts = MathUtil.clamp(volts, -12, 12);
     }
 
 }

@@ -11,8 +11,10 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkFlexConfig;
 
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO.InBumperIntakeIOInputs;
 
@@ -28,9 +30,13 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
     private final SparkMax outsideMotor = new SparkMax(kOutsideMotorCanID, MotorType.kBrushless); 
     private final RelativeEncoder outsideEncoder = outsideMotor.getEncoder();
 
+    private final SparkFlex spindexerMotor = new SparkFlex(kSpindexerMotorCanID, MotorType.kBrushless);
+    private final RelativeEncoder spindexerEncoder = spindexerMotor.getEncoder();
+
     private SparkMaxConfig bottomConfig;
     private SparkMaxConfig topConfig;
     private SparkMaxConfig outsideConfig;
+    private SparkFlexConfig spindexerConfig;
 
     public InBumperIntakeIOSpark()  {
         bottomConfig = new SparkMaxConfig();
@@ -68,6 +74,18 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
             5,
             () -> outsideMotor.configure(outsideConfig, ResetMode.kResetSafeParameters,
                     PersistMode.kPersistParameters));
+
+        spindexerConfig = new SparkFlexConfig();
+        spindexerConfig
+            .idleMode(kSpindexerIdleMode)
+            .smartCurrentLimit(kSpindexerCurrentLimit)
+            .voltageCompensation(12)
+            .inverted(kSpindexerInverted);
+        tryUntilOk(
+            spindexerMotor,
+            5,
+            () -> spindexerMotor.configure(spindexerConfig, ResetMode.kResetSafeParameters,
+                    PersistMode.kPersistParameters));
     }
 
     @Override
@@ -97,6 +115,14 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
             new DoubleSupplier[] {outsideMotor::getAppliedOutput, outsideMotor::getBusVoltage},
             (values) -> inputs.outsideMotorAppliedVolts = values[0] * values[1]);
         ifOk(outsideMotor, outsideMotor::getOutputCurrent, (value) -> inputs.outsideMotorCurrentAmps = value);
+
+        ifOk(spindexerMotor, spindexerEncoder::getPosition, (value) -> inputs.spindexerMotorPositionRad = value);
+        ifOk(spindexerMotor, spindexerEncoder::getVelocity, (value) -> inputs.spindexerMotorVelocityRadPerSec = value);
+        ifOk(
+            spindexerMotor,
+            new DoubleSupplier[] {spindexerMotor::getAppliedOutput, spindexerMotor::getBusVoltage},
+            (values) -> inputs.spindexerMotorAppliedVolts = values[0] * values[1]);
+        ifOk(spindexerMotor, spindexerMotor::getOutputCurrent, (value) -> inputs.spindexerMotorCurrentAmps = value);
     }
 
     @Override
@@ -112,6 +138,11 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
     @Override
     public void setOutsideVoltage(double volts) {
         outsideMotor.setVoltage(volts);
+    }
+
+    @Override
+    public void setSpindexerVoltage(double volts) {
+        spindexerMotor.setVoltage(volts);
     }
 
 }
