@@ -5,7 +5,6 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -15,7 +14,8 @@ public class Turret extends SubsystemBase {
     private enum ControlMode {
         DISABLED,
         MANUAL,
-        POSITION
+        POSITION,
+        HOMING
     }
 
     private final TurretIO io;
@@ -47,6 +47,9 @@ public class Turret extends SubsystemBase {
     
     private boolean lastHomeSwitchState = false;
 
+    // Homing state variables
+    private int homingCurrentSpikeCount = 0;
+
 
     public Turret(TurretIO io, Supplier<Pose3d> robotPoseSupplier) {
         this.io = io;
@@ -65,11 +68,10 @@ public class Turret extends SubsystemBase {
 
         Logger.processInputs("Turret", inputs);
 
-        handleHoming();
-
         switch (controlMode) {
             case POSITION -> runClosedLoop();
             case MANUAL -> runManual();
+            case HOMING -> runHoming();
             case DISABLED -> stopOutputs();
         }
 
@@ -120,6 +122,13 @@ public class Turret extends SubsystemBase {
         manualDemandVolts = 0.0;
     }
 
+    public void startHoming() {
+        homed = false;
+        controlMode = ControlMode.HOMING;
+        homingCurrentSpikeCount = 0;
+        Logger.recordOutput("Turret/HomingStarted", true);
+    }
+
     public void resetEncoder(double positionRad) {
         io.resetEncoder(positionRad);
     }
@@ -143,6 +152,7 @@ public class Turret extends SubsystemBase {
         return positionOk && velocityOk;
     }
 
+    @AutoLogOutput(key="Turret/RobotRelativeAngle")
     public double getCurrentTurretAngleRad() {
         return inputs.positionRad;
     }
@@ -202,6 +212,41 @@ public class Turret extends SubsystemBase {
 
     private void runManual() {
         io.setVoltage(applySoftLimits(manualDemandVolts));
+    }
+
+    private void runHoming() {
+        // Check if current is above threshold
+        boolean currentSpikeDetected = inputs.supplyCurrentAmps >= TurretConstants.kHomingCurrentThresholdAmps;
+        
+        if (currentSpikeDetected) {
+            homingCurrentSpikeCount++;
+        } else {
+            homingCurrentSpikeCount = 0; // Reset if current drops
+        }
+        
+        // Check if we've detected a sustained current spike
+        boolean homingComplete = homingCurrentSpikeCount >= TurretConstants.kHomingCurrentSpikeCountRequired;
+        
+        if (homingComplete) {
+            // Stop the motor and reset encoder
+            io.stop();
+            io.resetEncoder(TurretConstants.kHomingHardstopPositionRad);
+            homed = true;
+            controlMode = ControlMode.DISABLED;
+            homingCurrentSpikeCount = 0;
+            
+            // Set current position as commanded position
+            commandedFieldAngleRad = getCurrentFieldAngleRad();
+            commandedTurretAngleRad = getCurrentTurretAngleRad();
+            
+            Logger.recordOutput("Turret/HomingComplete", true);
+        } else {
+            // Continue moving slowly toward the hardstop
+            io.setVoltage(TurretConstants.kHomingVoltage);
+        }
+        
+        Logger.recordOutput("Turret/HomingCurrentSpikeCount", homingCurrentSpikeCount);
+        Logger.recordOutput("Turret/CurrentSpikeDetected", currentSpikeDetected);
     }
 
     private void stopOutputs() {

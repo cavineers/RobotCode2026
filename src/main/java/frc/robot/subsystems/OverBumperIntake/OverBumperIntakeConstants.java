@@ -14,7 +14,7 @@ public class OverBumperIntakeConstants {
     public static final double kIntakeVoltage = 0.5;
     public static final double kDeployVoltage = 0.1;
 
-    public static final double kDeployedRotations = -3.47;
+    public static final double kDeployedRotations = -3.45;
     public static final double kRetractedRotations = 0.0; //TODO: set values
 
     //PID Gains (Slot 0)

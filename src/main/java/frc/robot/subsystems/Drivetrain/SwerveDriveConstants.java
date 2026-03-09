@@ -44,7 +44,7 @@ public class SwerveDriveConstants {
         public static final double kPhysicalMaxAngularSpeedRadiansPerSecond = 10.0;
         public static final double kWheelRadiusMeters = 0.051; // 1.97 in
         public static final double kSpeedAt12Volts = 5800 * ModuleConstants.kDriveEncoderRPM2RadPerSec * kWheelRadiusMeters; // 5,800RPM freespeed 
-        public static final double kPhysicalMaxSpeedMetersPerSecond = 4.51; 
+        public static final double kPhysicalMaxSpeedMetersPerSecond = kSpeedAt12Volts; 
         public static final CANBus kCANBus = new CANBus("canivore"); // NEEDS TO BE CANIVORE NAME OR SERIAL NUMBER
 
         public static final int kFrontLeftTurningCanID = 1;

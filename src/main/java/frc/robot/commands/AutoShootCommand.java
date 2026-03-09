@@ -113,7 +113,8 @@ public class AutoShootCommand extends Command {
         // World-space shooter origin — matches ShooterPose3d logged in execute()
         Translation3d shooterPos = ShotSolver.getShooterPosition(drivetrain.getPose());
 
-        double pitchRad = Math.toRadians(solution.pitchDegrees());
+        // Use a fixed pitch angle since we no longer have hood control
+        double pitchRad = Math.toRadians(45.0); // Fixed pitch for sim
         double yawRad = solution.turretFieldAngleRad(); // already field-relative
 
         double hVel = Math.cos(pitchRad) * launchSpeedMps;

@@ -45,7 +45,6 @@ public class ShotSolver {
      */
     public record ShotSolution(
             double rpm,
-            double pitchDegrees,
             double turretFieldAngleRad,
             double effectiveDistanceMeters,
             Translation2d aimPoint,
@@ -54,8 +53,8 @@ public class ShotSolver {
         @Override
         public String toString() {
             return String.format(
-                    "ShotSolution{rpm=%.1f, pitch=%.2f°, turret=%.2f°, d*=%.3fm, aim=(%.2f,%.2f), valid=%b}",
-                    rpm, pitchDegrees, Math.toDegrees(turretFieldAngleRad),
+                    "ShotSolution{rpm=%.1f, turret=%.2f°, d*=%.3fm, aim=(%.2f,%.2f), valid=%b}",
+                    rpm, Math.toDegrees(turretFieldAngleRad),
                     effectiveDistanceMeters, aimPoint.getX(), aimPoint.getY(), isValid);
         }
     }
@@ -65,21 +64,20 @@ public class ShotSolver {
     // -----------------------------------------------------------------------
 
     private static final InterpolatingDoubleTreeMap RPM = new InterpolatingDoubleTreeMap();
-    private static final InterpolatingDoubleTreeMap PITCH = new InterpolatingDoubleTreeMap();
     private static final InterpolatingDoubleTreeMap TOF = new InterpolatingDoubleTreeMap();
 
     static {
-        // distance (m), RPM, pitch angle (deg), time of flight (s)
-        addEntry(2.17, 1600, 70.0, 0.9);
-        addEntry(3.24, 1700, 60.0, 0.9);
-        addEntry(1.59, 1600, 85.0, 1.0);
-        addEntry(1.59, 1600, 85.0, 1.0);
-        addEntry(3.81, 1800, 60.0, 1.0);
+        // distance (m), RPM, time of flight (s)
+        addEntry(2.17, 1600, 0.9);
+        addEntry(3.24, 1700, 0.9);
+        addEntry(1.59, 1600, 1.0);
+        addEntry(1.59, 1600, 1.0);
+        addEntry(3.81, 1800, 1.0);
     }
 
     /**
      * Basic shot calculation - no compensation for robot movement.
-     * Just looks up RPM and pitch from current distance and aims straight at the goal.
+     * Just looks up RPM and aims straight at the goal.
      */
     public static ShotSolution solveSimple(Pose2d robotPose) {
         Translation3d goal = getGoal();
@@ -87,10 +85,9 @@ public class ShotSolver {
 
         double dr = distanceTo(shooter, goal);
         double rpm = RPM.get(dr);
-        double pitch = PITCH.get(dr);
 
         Rotation2d turretAngle = goal.toTranslation2d().minus(shooter.toTranslation2d()).getAngle();
-        ShotSolution solution = new ShotSolution(rpm, pitch, turretAngle.getRadians(), dr, goal.toTranslation2d(), isInRange(dr));
+        ShotSolution solution = new ShotSolution(rpm, turretAngle.getRadians(), dr, goal.toTranslation2d(), isInRange(dr));
 
         logSolution("ShotSolver/Simple", solution, shooter.toTranslation2d(), goal.toTranslation2d());
         return solution;
@@ -149,13 +146,12 @@ public class ShotSolver {
         }
 
         double rpm = RPM.get(lookaheadDistance);
-        double pitch = PITCH.get(lookaheadDistance);
 
         // Turret aims from lookahead position, not current position
         Translation2d aimPoint = goal.toTranslation2d();
         Rotation2d turretAngle = aimPoint.minus(lookaheadShooter.toTranslation2d()).getAngle();
 
-        ShotSolution solution = new ShotSolution(rpm, pitch, turretAngle.getRadians(), lookaheadDistance, aimPoint, isInRange(lookaheadDistance));
+        ShotSolution solution = new ShotSolution(rpm, turretAngle.getRadians(), lookaheadDistance, aimPoint, isInRange(lookaheadDistance));
 
         logSolution("ShotSolver/Dynamic", solution, shooter.toTranslation2d(), aimPoint);
         Logger.recordOutput("ShotSolver/Dynamic/LookaheadDistance", lookaheadDistance);
@@ -199,7 +195,6 @@ public class ShotSolver {
     private static void logSolution(String prefix, ShotSolution s,
             Translation2d launcherPos, Translation2d aimPoint) {
         Logger.recordOutput(prefix + "/RPM", s.rpm());
-        Logger.recordOutput(prefix + "/PitchDegrees", s.pitchDegrees());
         Logger.recordOutput(prefix + "/TurretFieldAngleDeg", Math.toDegrees(s.turretFieldAngleRad()));
         Logger.recordOutput(prefix + "/EffectiveDistanceMeters", s.effectiveDistanceMeters());
         Logger.recordOutput(prefix + "/IsValid", s.isValid());
@@ -207,9 +202,8 @@ public class ShotSolver {
         Logger.recordOutput(prefix + "/AimPoint", aimPoint);
     }
 
-    private static void addEntry(double distM, double rpm, double pitchDeg, double tofSec) {
+    private static void addEntry(double distM, double rpm, double tofSec) {
         RPM.put(distM, rpm);
-        PITCH.put(distM, pitchDeg);
         TOF.put(distM, tofSec);
     }
 }

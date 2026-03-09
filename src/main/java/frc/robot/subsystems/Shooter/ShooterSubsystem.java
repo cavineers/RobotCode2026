@@ -23,13 +23,10 @@ public class ShooterSubsystem extends SubsystemBase {
     
     private final Debouncer atTargetDebouncer = new Debouncer(kAtTargetDebounceTime);
     
+    
     // Tunable shooter RPM value that can be adjusted from NetworkTables/AdvantageScope
     private final LoggedNetworkNumber tunableShooterRPM = 
         new LoggedNetworkNumber("/Tuning/Shooter/TargetRPM", 3500.0);
-
-    // Tunable hood pitch angle for table characterization
-    private final LoggedNetworkNumber tunableHoodPitchDeg =
-        new LoggedNetworkNumber("/Tuning/Shooter/HoodPitchDeg", 20.0);
     
     // Tunable PID values
     private final LoggedNetworkNumber tunableKP = 
@@ -162,17 +159,9 @@ public class ShooterSubsystem extends SubsystemBase {
     public double getTunableRPM() {
         return tunableShooterRPM.get();
     }
-
+    
     /**
-     * @brief Get the tunable hood pitch angle from NetworkTables.
-     * @return Tunable pitch angle in degrees (up from horizontal)
-     */
-    public double getTunablePitchDegrees() {
-        return tunableHoodPitchDeg.get();
-    }
-
-    /**
-     * @brief Set shooter to the tunable RPM value from NetworkTables.
+     * @brief Set shooter to the tunable RPM from NetworkTables.
      */
     public void setTunableVelocity() {
         setVelocity(tunableShooterRPM.get());

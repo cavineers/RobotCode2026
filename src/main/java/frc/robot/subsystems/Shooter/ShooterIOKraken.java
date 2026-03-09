@@ -9,8 +9,11 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
+
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+
 
 import static frc.robot.subsystems.Shooter.ShooterConstants.*;
 
@@ -22,6 +25,7 @@ public class ShooterIOKraken implements ShooterIO {
     private final VelocityVoltage velocityControl;
     private final VoltageOut voltageControl = new VoltageOut(0);
     private final CANBus shooterCANBus = new CANBus(kFlywheelCanBus);
+
     
     // WPILib Alerts for error handling
     private final Alert leaderConfigAlert = new Alert("Shooter leader motor config failed", AlertType.kError);
@@ -33,7 +37,6 @@ public class ShooterIOKraken implements ShooterIO {
         
         leaderMotor = new TalonFX(kFlywheelLeaderMotorCanID, shooterCANBus);
         followerMotor = new TalonFX(kFlywheelFollowerMotorCanID, shooterCANBus);
-        
         velocityControl = new VelocityVoltage(0)
             .withSlot(0)
             .withEnableFOC(kEnableFOC);

@@ -1,5 +1,6 @@
 package frc.robot.subsystems.Shooter;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
@@ -13,6 +14,8 @@ public class ShooterIOSim implements ShooterIO {
     
     private final DCMotorSim flywheelSim;
     private double appliedVolts = 0.0;
+    private double currentHoodAngleDegrees = 0.0;
+    private double currentServoPosition = 0.0;
 
     public ShooterIOSim() {
         // kSimGearRatio = output/input (WPILib convention) = flywheel/motor = 1.33
@@ -41,7 +44,6 @@ public class ShooterIOSim implements ShooterIO {
         inputs.followerAppliedVolts = appliedVolts;
         inputs.followerCurrentAmps = flywheelSim.getCurrentDrawAmps();
         inputs.followerTempCelsius = 25.0;
-
         inputs.connected = true;
     }
 

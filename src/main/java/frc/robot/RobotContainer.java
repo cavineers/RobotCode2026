@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.geometry.Pose3d;
 
@@ -28,7 +29,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.AutoShootCommand;
 import frc.robot.commands.ShooterCharacterizationCommand;
 import frc.robot.commands.SwerveCommand;
-import frc.robot.commands.ShooterTableCharacterizationCommand;
 import frc.lib.FuelSim;
 
 import frc.robot.subsystems.Drivetrain.GyroIO;
@@ -78,7 +78,7 @@ public class RobotContainer {
 
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
-    private final CommandXboxController secondaryDriverController = new CommandXboxController(1);
+    private final CommandGenericHID secondaryDriverController = new CommandGenericHID(1);
 
     // Auto chooser
     private LoggedDashboardChooser<Command> autoChooser;
@@ -201,6 +201,9 @@ public class RobotContainer {
                 InBumperIntakeConstants.kTopVoltage)
         );
 
+        primaryDriverController.povUp().onTrue(climber.goToPresetCommand());
+        primaryDriverController.povDown().onTrue(climber.undoCommand());
+
         // Auto shoot
         primaryDriverController.a().whileTrue(new AutoShootCommand(drivetrain, shooter, turret, fuelSim));
 
@@ -212,7 +215,17 @@ public class RobotContainer {
         // secondaryDriverController.y().whileTrue(charCmd);
         // secondaryDriverController.a().onTrue(
         //         edu.wpi.first.wpilibj2.command.Commands.runOnce(charCmd::fire));
-        secondaryDriverController.y().whileTrue(Commands.run(()-> shooter.setTunableVelocity(), shooter).finallyDo(() -> shooter.setVelocity(0)));
+        secondaryDriverController.button(1).whileTrue(
+            Commands.run(() -> shooter.setTunableVelocity(), shooter)
+                .finallyDo(() -> shooter.setVelocity(0))
+        );
+        
+        // Button 2: Start turret homing sequence (current-based hardstop detection)
+        secondaryDriverController.button(2).onTrue(
+            Commands.runOnce(() -> turret.startHoming(), turret)
+        );
+
+        
         // POV Up: Hold turret at 0 degrees field-relative (due north)
         // secondaryDriverController.povUp().onTrue(
         //     Commands.runOnce(

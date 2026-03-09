@@ -29,7 +29,8 @@ public final class TurretConstants {
     public static final double kMaxAngleRad = Units.degreesToRadians(160.0);
     
     // Offset from the robot's front (0 degrees) to the turret's "Mechanical Zero"
-    public static final double kTurretZeroOffsetRad = Units.degreesToRadians(180.0);
+    // Mechanical zero is at the hardstop in the top right quadrant
+    public static final double kTurretZeroOffsetRad = Units.degreesToRadians(-45.0);
 
     // Preset positions (robot-relative angles)
     public static final double kPresetOneRad = Units.degreesToRadians(0.0); // Front
@@ -55,6 +56,12 @@ public final class TurretConstants {
     public static final int kHomingSwitchDioPort = 4; // TODO: Update with actual DIO port
     public static final double kHomingSwitchZeroPositionRad = 0;
     public static final double kHomingSearchMaxVoltage = 3.0; // Reduced voltage when not homed for safety
+
+    // Current-based homing (hardstop detection)
+    public static final double kHomingVoltage = -0.75; // Voltage to apply during homing
+    public static final double kHomingCurrentThresholdAmps = 15; // Current threshold to detect hardstop
+    public static final int kHomingCurrentSpikeCountRequired = 5; // Number of consecutive readings above threshold (at 50Hz = 0.1s)
+    public static final double kHomingHardstopPositionRad = Units.degreesToRadians(0.0); // Reset encoder to 0 at hardstop (mechanical zero)
 
     // Simulation parameters
     public static final double kSimStartingAngleRad = 0.0;
