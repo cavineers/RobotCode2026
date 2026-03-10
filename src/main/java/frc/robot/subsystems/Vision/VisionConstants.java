@@ -16,26 +16,26 @@ public class VisionConstants {
     // Robot to camera transforms
     // Camera 1: Fixed to robot chassis
     public static Transform3d robotToCamera1 = new Transform3d(
-        Units.inchesToMeters(0), 
-        -Units.inchesToMeters(0), 
-        0.0, 
+        Units.inchesToMeters(7.625), 
+        -Units.inchesToMeters(8.25), 
+        Units.inchesToMeters(7.25), 
         new Rotation3d(0, 0, Units.degreesToRadians(0))
     );
 
     // Camera 2: Mounted on turret - this transform is from turret center to camera
     // The actual robot-to-camera transform is calculated dynamically based on turret angle
     public static Transform3d turretToCamera2 = new Transform3d(
-        Units.inchesToMeters(6.0),  // Forward from turret center
-        Units.inchesToMeters(0.0),   // Lateral offset
+        Units.inchesToMeters(0.6),  // Forward from turret center
+        Units.inchesToMeters(4.65),   // Lateral offset
         Units.inchesToMeters(12.0),  // Height above turret
-        new Rotation3d(0, Units.degreesToRadians(-15), 0) // Pitched down 15 degrees
+        new Rotation3d(0, Units.degreesToRadians(20), 0) // Pitched down 15 degrees
     );
 
     // Turret position on robot (for calculating camera 2 position)
     public static Transform3d robotToTurretCenter = new Transform3d(
-        Units.inchesToMeters(0.0),   // Forward from robot center
+        Units.inchesToMeters(7.25),   // Forward from robot center
         Units.inchesToMeters(0.0),   // Lateral from robot center
-        Units.inchesToMeters(20.0),  // Height above ground
+        Units.inchesToMeters(15.91),  // Height above ground
         new Rotation3d(0, 0, 0)
     );
 
