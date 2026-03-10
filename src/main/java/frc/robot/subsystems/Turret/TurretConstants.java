@@ -24,13 +24,13 @@ public final class TurretConstants {
 
     // Mechanical limits
     // Defined as Robot-Relative angles (0 is Front/North)
-    // Range: -175 degrees (Right) to +175 degrees (Left)
-    public static final double kMinAngleRad = Units.degreesToRadians(-160.0);
-    public static final double kMaxAngleRad = Units.degreesToRadians(160.0);
+    // Range: 0 rad (minimum) to -5.236 rad (maximum, -300 degrees)
+    public static final double kMinAngleRad = Units.degreesToRadians(-300.0); // -5.236 rad
+    public static final double kMaxAngleRad = Units.degreesToRadians(0.0); // 0 rad
     
     // Offset from the robot's front (0 degrees) to the turret's "Mechanical Zero"
-    // Mechanical zero is at the hardstop in the top right quadrant
-    public static final double kTurretZeroOffsetRad = Units.degreesToRadians(-45.0);
+    // Mechanical zero is at 0 rad (front of robot)
+    public static final double kTurretZeroOffsetRad = Units.degreesToRadians(0);
 
     // Preset positions (robot-relative angles)
     public static final double kPresetOneRad = Units.degreesToRadians(0.0); // Front
@@ -63,10 +63,10 @@ public final class TurretConstants {
     public static final double kHomingVoltage = -0.75; // Voltage to apply during homing
     public static final double kHomingCurrentThresholdAmps = 15; // Current threshold to detect hardstop
     public static final int kHomingCurrentSpikeCountRequired = 5; // Number of consecutive readings above threshold (at 50Hz = 0.1s)
-    public static final double kHomingHardstopPositionRad = Units.degreesToRadians(0.0); // Reset encoder to 0 at hardstop (mechanical zero)
+    public static final double kHomingHardstopPositionRad = Units.degreesToRadians(-300.0); // -5.236 rad - encoder resets to this at hardstop
 
     // Simulation parameters
-    public static final double kSimStartingAngleRad = 0.0;
+    public static final double kSimStartingAngleRad = 0.0; // Start at 0 rad (front of robot)
     public static final double kSimDtSeconds = 0.02; // 20 ms loop time
     public static final double kSimMomentOfInertia = 0.05; // kg * m^2 (placeholder)
     public static final double kSimFrictionTorquePerRadPerSec = 0.02; // N*m per rad/s of velocity

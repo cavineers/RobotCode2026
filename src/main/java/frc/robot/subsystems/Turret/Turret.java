@@ -174,6 +174,10 @@ public class Turret extends SubsystemBase {
         return hasValidTarget() ? commandedFieldAngleRad : Double.NaN;
     }
 
+    public double getTargetTurretAngleRad() {
+        return hasValidTarget() ? commandedTurretAngleRad : getCurrentTurretAngleRad();
+    }
+
     public boolean isHomed() {
         return homed;
     }
@@ -282,6 +286,13 @@ public class Turret extends SubsystemBase {
         // TurretAngle = FieldTarget - RobotHeading - TurretOffset
         double rawRel = normalizedField - robotHeading - TurretConstants.kTurretZeroOffsetRad;
         double robotRelative = wrapAngle(rawRel);
+        
+        // Handle wrapping into turret's range [-300°, 0°]
+        // If angle is positive (0° to 180°), wrap it to negative equivalent
+        if (robotRelative > 0) {
+            robotRelative -= 2 * Math.PI; 
+        }
+        
         double clamped = MathUtil.clamp(robotRelative, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
 
         return clamped;
@@ -303,8 +314,6 @@ public class Turret extends SubsystemBase {
 
     private static double wrapAngle(double angleRad) {
         // Normalize angle to the standard (-PI, +PI] range.
-        // Mechanical/allowed turret limits are enforced separately using kMinAngleRad and kMaxAngleRad.
-        // Using angleModulus avoids needing custom wrapping logic for 0-2PI (0-360 deg) ranges.
         return MathUtil.angleModulus(angleRad);
     }
 

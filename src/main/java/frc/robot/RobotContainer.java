@@ -183,6 +183,36 @@ public class RobotContainer {
                 primaryDriverController::getRightX)
             );
         
+        // Set default turret command - manual control with secondary controller left/right stick
+        // Increments the closed-loop setpoint based on stick position
+        turret.setDefaultCommand(
+            Commands.run(() -> {
+                // Get X axis (left/right) from secondary controller - typically axis 0
+                double stickValue = secondaryDriverController.getRawAxis(0);
+                
+                // Apply deadband
+                double deadband = 0.1;
+                if (Math.abs(stickValue) < deadband) {
+                    stickValue = 0.0;
+                }
+                
+                if (stickValue != 0.0) {
+                    // Small increment for button-like digital control (left/right buttons on stick)
+                    double incrementDegrees = 2.0; // 2 degrees per button press (at 20ms = ~100 deg/sec)
+                    
+                    // Calculate increment in radians
+                    double increment = Math.signum(stickValue) * Math.toRadians(incrementDegrees);
+                    
+                    // Get current COMMANDED target (not actual position) and add increment
+                    double currentTarget = turret.getTargetTurretAngleRad();
+                    double newTarget = currentTarget + increment;
+                    
+                    // Set new robot-relative target (will be clamped by turret subsystem)
+                    turret.setRobotRelativeTarget(newTarget);
+                }
+            }, turret)
+        );
+        
         // ------ PRIMARY DRIVER CONTROLS ------
         // Shooting controls (for testing purposes, will be replaced with vision-based shooting commands)
         // primaryDriverController.rightTrigger().whileTrue(

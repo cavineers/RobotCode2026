@@ -22,7 +22,7 @@ public class InBumperIntakeConstants {
     public static final IdleMode kOutsideIdleMode = IdleMode.kBrake;
     public static final int kOutsideCurrentLimit = 40;
 
-    public static final boolean kSpindexerInverted = false;
+    public static final boolean kSpindexerInverted = true;
     public static final IdleMode kSpindexerIdleMode = IdleMode.kCoast;
     public static final int kSpindexerCurrentLimit = 30;
 
@@ -30,5 +30,5 @@ public class InBumperIntakeConstants {
     public static final double kBottomVoltage = kDefaultVoltage * 0.6; //TODO: set speed
     public static final double kOutsideVoltage = kDefaultVoltage * 0.6;
     public static final double kTopVoltage = kDefaultVoltage * 0.6;
-    public static final double kSpindexerVoltage = kDefaultVoltage * 0.5; //TODO: tune speed
+    public static final double kSpindexerVoltage = kDefaultVoltage * 0.175; //TODO: tune speed
 }
