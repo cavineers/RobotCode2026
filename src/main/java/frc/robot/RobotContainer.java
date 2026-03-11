@@ -13,6 +13,10 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 
 import frc.robot.commands.ManualTurretVoltageCommand;
 import frc.robot.commands.TurretPresetCommand;
@@ -103,9 +107,24 @@ public class RobotContainer {
                         new ShooterIOKraken());
                 vision = new Vision(
                     drivetrain::addVisionMeasurement,
-                    () -> turret, // Turret supplier for moving camera support
-                    new VisionIOPhotonVision(VisionConstants.camera1Name, VisionConstants.robotToCamera1),
-                    new VisionIOPhotonVision(VisionConstants.camera2Name, VisionConstants.turretToCamera2)
+                    drivetrain::resetOdometry,
+                    new VisionIOPhotonVision(VisionConstants.camera1Name, (timestamp) -> VisionConstants.robotToCamera1),
+                    new VisionIOPhotonVision(VisionConstants.camera2Name, (timestamp) -> {
+                        // Calculate turret-adjusted transform for moving camera using historical position
+                        Rotation2d turretAngle = turret.getTurretAngleAtTime(timestamp);
+                        
+                        // Create a rotation-only transform at the turret center
+                        Transform3d turretRotation = new Transform3d(
+                            new Translation3d(), // No translation, just rotation
+                            new Rotation3d(0, 0, turretAngle.getRadians())
+                        );
+                        
+                        // Chain transforms: Robot->TurretCenter, then rotate, then Turret->Camera
+                        // This ensures turretToCamera2 is applied in the rotated turret's coordinate frame
+                        return VisionConstants.robotToTurretCenter
+                            .plus(turretRotation)
+                            .plus(VisionConstants.turretToCamera2);
+                    })
                 );
                 break;
             case SIM:
@@ -124,7 +143,7 @@ public class RobotContainer {
                 shooter = new ShooterSubsystem(
                         new ShooterIOSim());
                 
-                vision = new Vision(drivetrain::addVisionMeasurement, () -> turret, new VisionIO(){});
+                vision = new Vision(drivetrain::addVisionMeasurement, drivetrain::resetOdometry, new VisionIO(){});
 
                 // ---- FuelSim ----
                 fuelSim = new FuelSim("FuelSim/Fuel");
@@ -164,7 +183,7 @@ public class RobotContainer {
                         new ShooterIO() {
                         });
 
-                vision = new Vision(drivetrain::addVisionMeasurement, () -> turret, new VisionIO(){});
+                vision = new Vision(drivetrain::addVisionMeasurement, drivetrain::resetOdometry, new VisionIO(){});
                 break;
         }
 
@@ -240,7 +259,7 @@ public class RobotContainer {
         primaryDriverController.povDown().onTrue(climber.undoCommand());
 
         // Auto shoot
-        primaryDriverController.a().whileTrue(new AutoShootCommand(drivetrain, shooter, turret, fuelSim));
+        primaryDriverController.leftTrigger().whileTrue(new AutoShootCommand(drivetrain, shooter, turret, fuelSim));
 
         // ------ SECONDARY DRIVER CONTROLS ------
         // Y: Hold to spin up at tunable RPM + pitch and aim at goal for LUT characterization.
