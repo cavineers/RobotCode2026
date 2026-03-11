@@ -16,9 +16,9 @@ public class VisionConstants {
     // Robot to camera transforms
     // Camera 1: Fixed to robot chassis, 7.64" forward, 8.25" left, facing left (90° CCW yaw)
     public static Transform3d robotToCamera1 = new Transform3d(
-        Units.inchesToMeters(7.64),    // +X: forward from robot center
-        Units.inchesToMeters(8.25),    // +Y: left from robot center
-        Units.inchesToMeters(9.25),    // +Z: height above robot base
+        Units.inchesToMeters(7),    // +X: forward from robot center
+        Units.inchesToMeters(8.05),    // +Y: left from robot center
+        Units.inchesToMeters(9.405),    // +Z: height above robot base
         new Rotation3d(0, Units.degreesToRadians(-23), Units.degreesToRadians(90))
     );
 
@@ -26,17 +26,17 @@ public class VisionConstants {
     // The actual robot-to-camera transform is calculated dynamically based on turret angle
     // Rotation: roll=0 (camera is upright), pitch=+20° (lens tilts down toward tags), yaw=0 (faces same direction as turret)
     public static Transform3d turretToCamera2 = new Transform3d(
-        Units.inchesToMeters(0.6),     // Forward from turret center
-        -Units.inchesToMeters(4.65),   // Right from turret center (negative = right in WPILib)
-        Units.inchesToMeters(12.0),    // Height above turret
+        Units.inchesToMeters(1.793),     // Forward from turret center
+        Units.inchesToMeters(-5.006),   
+        Units.inchesToMeters(0.293),    // Height above turret
         new Rotation3d(0, Units.degreesToRadians(-20), 0) // pitch up 20°, no roll, no yaw
     );
 
     // Turret position on robot (for calculating camera 2 position)
     public static Transform3d robotToTurretCenter = new Transform3d(
-        Units.inchesToMeters(7.25),   // Forward from robot center
+        Units.inchesToMeters(8.25),   // Forward from robot center
         Units.inchesToMeters(0.0),   // Lateral from robot center
-        Units.inchesToMeters(16.91),  // Height above ground
+        Units.inchesToMeters(17.641),  // Height above ground
         new Rotation3d(0, 0, 0)
     );
 
