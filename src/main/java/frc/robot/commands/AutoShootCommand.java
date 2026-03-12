@@ -125,25 +125,6 @@ public class AutoShootCommand extends Command {
         Logger.recordOutput("AutoShoot/ReadyToFire", ready);
         Logger.recordOutput("AutoShoot/Acceleration", accel);
 
-        if (solution.isValid()) {
-            Translation3d shooterPos = ShotSolver.getShooterPosition(drivetrain.getPose());
-            // ShooterPose3d: where the ball leaves, yaw = turret heading
-            Pose3d shooterPose3d = new Pose3d(shooterPos,
-                    new Rotation3d(0.0, 0.0, solution.turretFieldAngleRad()));
-            Logger.recordOutput("AutoShoot/ShooterPose3d", shooterPose3d);
-
-            // AimPointPose3d: the virtual target the turret is pointed at
-            // Z matches the goal height so it renders correctly in AdvantageScope
-            Translation2d aim = solution.aimPoint();
-            Pose3d aimPose3d = new Pose3d(
-                    new Translation3d(aim.getX(), aim.getY(), ShotSolver.GOAL_HEIGHT_METERS),
-                    new Rotation3d());
-            Logger.recordOutput("AutoShoot/AimPointPose3d", aimPose3d);
-        } else {
-            Logger.recordOutput("AutoShoot/ShooterPose3d", new Pose3d());
-            Logger.recordOutput("AutoShoot/AimPointPose3d", new Pose3d());
-        }
-
         // Fire a sim ball every 0.25 seconds regardless of ready state
         if (fuelSim != null && solution.isValid() && shotTimer.advanceIfElapsed(0.25)) {
             launchSimFuel(solution);
