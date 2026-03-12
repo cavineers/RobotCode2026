@@ -208,7 +208,7 @@ public class RobotContainer {
         // ------ PRIMARY DRIVER CONTROLS ------
         
         primaryDriverController.b().onTrue(overBumperIntake.deployCommand());
-        
+                
         // Toggle InBumperIntake: Press to start runGroundToHopper, press again to stop
         primaryDriverController.x().toggleOnTrue(
             inBumperIntake.runGroundToHopper(
@@ -244,8 +244,34 @@ public class RobotContainer {
                 turret.getTargetTurretAngleRad() - Math.toRadians(2.0)), turret)
         );
 
+        // ------ IN-BUMPER INTAKE MODES (secondary buttons 3/4/5) ------
+        // Button 3: Toggle ground -> hopper
+        secondaryDriverController.button(3).toggleOnTrue(
+            inBumperIntake.runGroundToHopper(
+                InBumperIntakeConstants.kOutsideVoltage,
+                InBumperIntakeConstants.kBottomVoltage,
+                InBumperIntakeConstants.kTopVoltage)
+        );
+
+        // Button 4: Toggle ground -> shooter (bypass hopper)
+        secondaryDriverController.button(4).toggleOnTrue(
+            inBumperIntake.runGroundToShooter(
+                InBumperIntakeConstants.kOutsideVoltage,
+                InBumperIntakeConstants.kBottomVoltage,
+                InBumperIntakeConstants.kTopVoltage)
+        );
+
+        // Button 5: Toggle hopper -> shooter
+        secondaryDriverController.button(5).toggleOnTrue(
+            inBumperIntake.runHopperToShooter(
+                InBumperIntakeConstants.kOutsideVoltage,
+                InBumperIntakeConstants.kBottomVoltage,
+                InBumperIntakeConstants.kTopVoltage)
+        );
+
         // OverBumper Unjam Sequence
-        
+        secondaryDriverController.button(6).whileTrue(overBumperIntake.unjamCommand());
+
 
     }
 
