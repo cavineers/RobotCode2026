@@ -238,6 +238,34 @@ public class Turret extends SubsystemBase {
     }
 
     private void runHoming() {
+        if (TurretConstants.kHomingMethod == TurretConstants.HomingMethod.LIMIT_SWITCH) {
+            runHomingLimitSwitch();
+        } else {
+            runHomingCurrentSpike();
+        }
+    }
+
+    private void runHomingLimitSwitch() {
+        if (inputs.homeSwitchTriggered) {
+            // Switch hit — stop and zero encoder at the configured switch position
+            io.stop();
+            io.resetEncoder(TurretConstants.kHomingSwitchZeroPositionRad);
+            homed = true;
+            controlMode = ControlMode.DISABLED;
+
+            commandedFieldAngleRad = getCurrentFieldAngleRad();
+            commandedTurretAngleRad = getCurrentTurretAngleRad();
+
+            Logger.recordOutput("Turret/HomingComplete", true);
+        } else {
+            // Drive slowly toward the hardstop until the switch triggers
+            io.setVoltage(TurretConstants.kHomingVoltage);
+        }
+
+        Logger.recordOutput("Turret/HomingSwitchTriggered", inputs.homeSwitchTriggered);
+    }
+
+    private void runHomingCurrentSpike() {
         // Check if current is above threshold
         boolean currentSpikeDetected = inputs.supplyCurrentAmps >= TurretConstants.kHomingCurrentThresholdAmps;
         

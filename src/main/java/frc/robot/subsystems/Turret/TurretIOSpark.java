@@ -28,9 +28,11 @@ public class TurretIOSpark implements TurretIO {
     private final RelativeEncoder encoder;
     private final SparkClosedLoopController closedLoopController;
     private final SparkMaxConfig config;
+    private final DigitalInput homingLimitSwitch;
 
     public TurretIOSpark() {
         motor = new SparkMax(TurretConstants.kTurretMotorId, MotorType.kBrushless);
+        homingLimitSwitch = new DigitalInput(TurretConstants.kHomingSwitchDioPort);
 
         config = new SparkMaxConfig();
         config
@@ -93,6 +95,9 @@ public class TurretIOSpark implements TurretIO {
 
         inputs.forwardLimit = inputs.positionRad >= TurretConstants.kMaxAngleRad;
         inputs.reverseLimit = inputs.positionRad <= TurretConstants.kMinAngleRad;
+
+        boolean rawSwitch = homingLimitSwitch.get();
+        inputs.homeSwitchTriggered = TurretConstants.kHomingSwitchNormallyOpen ? !rawSwitch : rawSwitch;
     }
 
     @Override

@@ -9,6 +9,17 @@ import edu.wpi.first.math.util.Units;
  */
 public final class TurretConstants {
 
+    /** Selects which homing strategy to use. */
+    public enum HomingMethod {
+        /** Detect the mechanical hardstop via a sustained motor current spike. */
+        CURRENT_SPIKE,
+        /** Detect the home position via a physical limit switch on a DIO port. */
+        LIMIT_SWITCH
+    }
+
+    /** Active homing method — change this to switch between strategies. */
+    public static final HomingMethod kHomingMethod = HomingMethod.CURRENT_SPIKE;
+
     // CAN IDs / hardware
     public static final int kTurretMotorId = 51; // TODO: Update with real CAN ID
     public static final boolean kMotorInverted = true;
