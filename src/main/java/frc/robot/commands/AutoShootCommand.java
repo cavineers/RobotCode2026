@@ -11,52 +11,68 @@ import frc.lib.FuelSim;
 import frc.lib.ShotSolver;
 import frc.lib.ShotSolver.ShotSolution;
 import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
+import frc.robot.subsystems.InBumperIntake.InBumperIntake;
+import frc.robot.subsystems.InBumperIntake.InBumperIntake.IntakeState;
+import frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants;
 import frc.robot.subsystems.Shooter.ShooterConstants;
 import frc.robot.subsystems.Shooter.ShooterSubsystem;
 import frc.robot.subsystems.Turret.Turret;
 import org.littletonrobotics.junction.Logger;
 
 /**
- * Continuously solves for and commands RPM, pitch, and turret heading for shooting on the fly
+ * Continuously solves for and commands RPM, pitch, and turret heading for shooting on the fly.
+ * Gates ball release on: acceleration, shooter RPM within tolerance, and turret not in deadzone.
  */
 public class AutoShootCommand extends Command {
+
+    // Safety thresholds
+    private static final double MAX_ACCELERATION_MPS2 = 3.0; // m/s² — above this, don't fire
+    private static final double RPM_TOLERANCE = 350.0;        // ± RPM from setpoint
 
     private final SwerveDriveSubsystem drivetrain;
     private final ShooterSubsystem shooter;
     private final Turret turret;
+    private final InBumperIntake intake;
     /** May be null when running on a real robot or when FuelSim is not desired. */
     private final FuelSim fuelSim;
 
     private ShotSolution lastSolution = null;
     private final Timer shotTimer = new Timer();
 
+    // For acceleration calculation
+    private ChassisSpeeds lastSpeeds = new ChassisSpeeds();
+    private double lastSpeedsTimestamp = 0.0;
+
     /**
      * Convenience constructor — no FuelSim (real robot or testing without sim).
      */
-    public AutoShootCommand(SwerveDriveSubsystem drivetrain, ShooterSubsystem shooter, Turret turret) {
-        this(drivetrain, shooter, turret, null);
+    public AutoShootCommand(SwerveDriveSubsystem drivetrain, ShooterSubsystem shooter, Turret turret, InBumperIntake intake) {
+        this(drivetrain, shooter, turret, intake, null);
     }
 
     /**
      * @param drivetrain drivetrain for pose / chassis-speeds (not required — read only)
      * @param shooter    shooter subsystem (required)
      * @param turret     turret subsystem (required)
+     * @param intake     in-bumper intake for hopper feed when ready (required)
      * @param fuelSim    particle simulation to call {@code launchFuel} on, or {@code null}
      */
     public AutoShootCommand(SwerveDriveSubsystem drivetrain, ShooterSubsystem shooter,
-            Turret turret, FuelSim fuelSim) {
+            Turret turret, InBumperIntake intake, FuelSim fuelSim) {
         this.drivetrain = drivetrain;
         this.shooter = shooter;
         this.turret = turret;
+        this.intake = intake;
         this.fuelSim = fuelSim;
-        // addRequirements(turret);
-        addRequirements(shooter, turret);
+        addRequirements(shooter, turret, intake);
     }
 
     @Override
     public void initialize() {
         turret.enableClosedLoop(true);
         shotTimer.restart();
+        lastSpeeds = drivetrain.getFieldRelativeChassisSpeeds();
+        lastSpeedsTimestamp = Timer.getFPGATimestamp();
         Logger.recordOutput("AutoShoot/Active", true);
     }
 
@@ -76,8 +92,38 @@ public class AutoShootCommand extends Command {
             turret.holdCurrentPosition();
         }
 
+        // Compute acceleration from delta speeds
+        double now = Timer.getFPGATimestamp();
+        double dt = now - lastSpeedsTimestamp;
+        ChassisSpeeds currentSpeeds = drivetrain.getFieldRelativeChassisSpeeds();
+        double accel = 0.0;
+        if (dt > 0.001) {
+            double dvx = currentSpeeds.vxMetersPerSecond - lastSpeeds.vxMetersPerSecond;
+            double dvy = currentSpeeds.vyMetersPerSecond - lastSpeeds.vyMetersPerSecond;
+            accel = Math.hypot(dvx, dvy) / dt;
+        }
+        lastSpeeds = currentSpeeds;
+        lastSpeedsTimestamp = now;
+
+        boolean ready = isReadyToFire(accel);
+
+        // Feed hopper into shooter only when all safeties pass
+        if (ready) {
+            intake.setState(IntakeState.HOPPER_TO_SHOOTER);
+            intake.setOutsideVoltage(-InBumperIntakeConstants.kOutsideVoltage);
+            intake.setBottomVoltage(-InBumperIntakeConstants.kBottomVoltage);
+            intake.setTopVoltage(InBumperIntakeConstants.kTopVoltage);
+            intake.setSpindexerVoltage(InBumperIntakeConstants.kSpindexerVoltage);
+        } else {
+            intake.setBottomVoltage(0);
+            intake.setTopVoltage(0);
+            intake.setSpindexerVoltage(0);
+            intake.setState(IntakeState.IDLE);      
+        }
+
         Logger.recordOutput("AutoShoot/SolutionValid", solution.isValid());
-        Logger.recordOutput("AutoShoot/ReadyToFire", isReadyToFire());
+        Logger.recordOutput("AutoShoot/ReadyToFire", ready);
+        Logger.recordOutput("AutoShoot/Acceleration", accel);
 
         if (solution.isValid()) {
             Translation3d shooterPos = ShotSolver.getShooterPosition(drivetrain.getPose());
@@ -98,7 +144,7 @@ public class AutoShootCommand extends Command {
             Logger.recordOutput("AutoShoot/AimPointPose3d", new Pose3d());
         }
 
-        // Fire a sim ball every 1 second regardless of ready state
+        // Fire a sim ball every 0.25 seconds regardless of ready state
         if (fuelSim != null && solution.isValid() && shotTimer.advanceIfElapsed(0.25)) {
             launchSimFuel(solution);
         }
@@ -135,6 +181,10 @@ public class AutoShootCommand extends Command {
     public void end(boolean interrupted) {
         shooter.stop();
         turret.holdCurrentPosition();
+        intake.setBottomVoltage(0);
+        intake.setTopVoltage(0);
+        intake.setSpindexerVoltage(0);
+        intake.setState(IntakeState.IDLE);
         lastSolution = null;
         shotTimer.stop();
         Logger.recordOutput("AutoShoot/Active", false);
@@ -147,13 +197,27 @@ public class AutoShootCommand extends Command {
     }
 
     /**
-     * True when the solver has a valid solution AND both the shooter and turret
-     * have settled onto their targets. Use this to gate ball release.
+     * True when all safeties pass and it is safe to feed a ball into the shooter.
+     *
+     * <p>Safeties:
+     * <ul>
+     *   <li>Solver has a valid solution</li>
+     *   <li>Shooter RPM is within ±{@value RPM_TOLERANCE} of setpoint</li>
+     *   <li>Turret is locked on target (target is reachable / not in deadzone)</li>
+     *   <li>Robot acceleration is below {@value MAX_ACCELERATION_MPS2} m/s²</li>
+     * </ul>
      */
-    public boolean isReadyToFire() {
-        return lastSolution != null
-                && lastSolution.isValid()
-                && shooter.isAtTarget()
-                && turret.isAtTarget();
+    public boolean isReadyToFire(double accelerationMps2) {
+        if (lastSolution == null || !lastSolution.isValid()) return false;
+
+        boolean rpmOk = Math.abs(lastSolution.rpm() - shooter.getVelocityRPM()) <= RPM_TOLERANCE;
+        boolean turretOk = turret.isTargetLocked();
+        boolean accelOk = accelerationMps2 <= MAX_ACCELERATION_MPS2;
+
+        Logger.recordOutput("AutoShoot/Safety/RPMOk", rpmOk);
+        Logger.recordOutput("AutoShoot/Safety/TurretLocked", turretOk);
+        Logger.recordOutput("AutoShoot/Safety/AccelOk", accelOk);
+
+        return rpmOk && turretOk && accelOk;
     }
 }

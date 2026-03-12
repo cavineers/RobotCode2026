@@ -17,17 +17,27 @@ public class SwerveCommand extends Command {
     private final SwerveDriveSubsystem swerveSubsystem;
 
     private final Supplier<Double> xSpdFunction, ySpdFunction, turningSpdFunction;
+    private final Supplier<Double> speedMultiplier;
     private final SlewRateLimiter xLimiter, yLimiter, turningLimiter;
 
     public SwerveCommand(SwerveDriveSubsystem swerveSubsystem,
             Supplier<Double> xSpdFunction, 
             Supplier<Double> ySpdFunction, 
             Supplier<Double> turningSpdFunction){
+        this(swerveSubsystem, xSpdFunction, ySpdFunction, turningSpdFunction, () -> 1.0);
+    }
+
+    public SwerveCommand(SwerveDriveSubsystem swerveSubsystem,
+            Supplier<Double> xSpdFunction, 
+            Supplier<Double> ySpdFunction, 
+            Supplier<Double> turningSpdFunction,
+            Supplier<Double> speedMultiplier){
         // Instance Variables
         this.swerveSubsystem = swerveSubsystem;
         this.xSpdFunction = xSpdFunction;
         this.ySpdFunction = ySpdFunction;
         this.turningSpdFunction = turningSpdFunction;
+        this.speedMultiplier = speedMultiplier;
         this.xLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationMetersPerSecSq);
         this.yLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationMetersPerSecSq);
         this.turningLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAngularAccelerationRadPerSecSq);
@@ -53,9 +63,10 @@ public class SwerveCommand extends Command {
         turningSpeed = Math.abs(turningSpeed) > 0.1 ? turningSpeed : 0.0;
 
         // Scale inputs to max speed FIRST (convert from [-1,1] to velocity)
-        xSpeed = xSpeed * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
-        ySpeed = ySpeed * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
-        turningSpeed = turningSpeed * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond;
+        double scalar = speedMultiplier.get();
+        xSpeed = xSpeed * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond * scalar;
+        ySpeed = ySpeed * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond * scalar;
+        turningSpeed = turningSpeed * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond * scalar;
 
         // THEN apply acceleration limiting (on actual velocities, not normalized inputs)
         xSpeed = xLimiter.calculate(xSpeed);

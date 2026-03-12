@@ -194,50 +194,18 @@ public class RobotContainer {
     }
 
     private void configureButtonBindings() {
-        // Set default drivetrain command
+        // Set default drivetrain command — halve speed while auto-shooting (left trigger)
         drivetrain.setDefaultCommand(new SwerveCommand(
                 drivetrain,
                 primaryDriverController::getLeftY,
                 primaryDriverController::getLeftX,
-                primaryDriverController::getRightX)
+                primaryDriverController::getRightX,
+                () -> primaryDriverController.getRightTriggerAxis() > 0.5 ? 0.5 : 1.0)
             );
         
         // Set default turret command - manual control with secondary controller left/right stick
-        // Increments the closed-loop setpoint based on stick position
-        // turret.setDefaultCommand(
-        //     Commands.run(() -> {
-        //         // Get X axis (left/right) from secondary controller - typically axis 0
-        //         double stickValue = secondaryDriverController.getRawAxis(0);
-                
-        //         // Apply deadband
-        //         double deadband = 0.1;
-        //         if (Math.abs(stickValue) < deadband) {
-        //             stickValue = 0.0;
-        //         }
-                
-        //         if (stickValue != 0.0) {
-        //             // Small increment for button-like digital control (left/right buttons on stick)
-        //             double incrementDegrees = 2.0; // 2 degrees per button press (at 20ms = ~100 deg/sec)
-                    
-        //             // Calculate increment in radians
-        //             double increment = Math.signum(stickValue) * Math.toRadians(incrementDegrees);
-                    
-        //             // Get current COMMANDED target (not actual position) and add increment
-        //             double currentTarget = turret.getTargetTurretAngleRad();
-        //             double newTarget = currentTarget + increment;
-                    
-        //             // Set new robot-relative target (will be clamped by turret subsystem)
-        //             turret.setRobotRelativeTarget(newTarget);
-        //         }
-        //     }, turret)
-        // );
         
         // ------ PRIMARY DRIVER CONTROLS ------
-        // Shooting controls (for testing purposes, will be replaced with vision-based shooting commands)
-        // primaryDriverController.rightTrigger().whileTrue(
-        //     Commands.run(
-        //         () -> shooter.setTunableVelocity(), shooter)
-        //     .finallyDo(() -> shooter.stop()));
         
         primaryDriverController.b().onTrue(overBumperIntake.deployCommand());
         
@@ -248,27 +216,14 @@ public class RobotContainer {
                 InBumperIntakeConstants.kBottomVoltage, 
                 InBumperIntakeConstants.kTopVoltage)
         );
-        primaryDriverController.rightTrigger().toggleOnTrue(
-                inBumperIntake.runHopperToShooter(
-                InBumperIntakeConstants.kOutsideVoltage, 
-                InBumperIntakeConstants.kBottomVoltage, 
-                InBumperIntakeConstants.kTopVoltage)
-        );
 
         primaryDriverController.povUp().onTrue(climber.goToPresetCommand());
         primaryDriverController.povDown().onTrue(climber.undoCommand());
 
         // Auto shoot
-        primaryDriverController.leftTrigger().whileTrue(new AutoShootCommand(drivetrain, shooter, turret, fuelSim));
+        primaryDriverController.rightTrigger().whileTrue(new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim));
 
         // ------ SECONDARY DRIVER CONTROLS ------
-        // Y: Hold to spin up at tunable RPM + pitch and aim at goal for LUT characterization.
-        //    While held, press A to fire a sim shot and log the data point.
-        // ShooterTableCharacterizationCommand charCmd =
-        //         new ShooterTableCharacterizationCommand(drivetrain, shooter, turret, fuelSim);
-        // secondaryDriverController.y().whileTrue(charCmd);
-        // secondaryDriverController.a().onTrue(
-        //         edu.wpi.first.wpilibj2.command.Commands.runOnce(charCmd::fire));
         secondaryDriverController.button(1).whileTrue(
             Commands.run(() -> shooter.setTunableVelocity(), shooter)
                 .finallyDo(() -> shooter.setVelocity(0))
@@ -279,31 +234,18 @@ public class RobotContainer {
             Commands.runOnce(() -> turret.startHoming(), turret)
         );
 
+        // Turret left/right: axis acts as a button, so bind whileTrue on each direction
+        secondaryDriverController.axisGreaterThan(0, 0.5).whileTrue(
+            Commands.run(() -> turret.setRobotRelativeTarget(
+                turret.getTargetTurretAngleRad() + Math.toRadians(2.0)), turret)
+        );
+        secondaryDriverController.axisLessThan(0, -0.5).whileTrue(
+            Commands.run(() -> turret.setRobotRelativeTarget(
+                turret.getTargetTurretAngleRad() - Math.toRadians(2.0)), turret)
+        );
+
+        // OverBumper Unjam Sequence
         
-        // POV Up: Hold turret at 0 degrees field-relative (due north)
-        // secondaryDriverController.povUp().onTrue(
-        //     Commands.runOnce(
-        //         () -> turret.setFieldRelativeTarget(0.0),
-        //         turret
-        //     )
-        // );
-
-        // POV Right: Hold turret at 90 degrees field-relative (due east)
-        // secondaryDriverController.povRight().onTrue(
-        //     Commands.runOnce(
-        //         () -> turret.setFieldRelativeTarget(-90.0),
-        //         turret
-        //     )
-        // );
-
-        // // POV Left: Hold turret at -90 degrees field-relative (due west)
-        // secondaryDriverController.povLeft().onTrue(
-        //     Commands.runOnce(
-        //         () -> turret.setFieldRelativeTarget(Math.toRadians(90.0)),
-        //         turret
-        //     )
-        // );
-
 
     }
 

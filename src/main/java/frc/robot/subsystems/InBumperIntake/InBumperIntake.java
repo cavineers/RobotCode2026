@@ -116,4 +116,8 @@ public class InBumperIntake extends SubsystemBase {
         });
     }
 
+    public void setState(IntakeState state) {
+        currentState = state;
+    }
+
 }
