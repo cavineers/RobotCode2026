@@ -68,11 +68,23 @@ public class ShotSolver {
 
     static {
         // distance (m), RPM, time of flight (s)
-        addEntry(2.17, 1600, 0.9);
-        addEntry(3.24, 1700, 0.9);
-        addEntry(1.59, 1600, 1.0);
-        addEntry(1.59, 1600, 1.0);
-        addEntry(3.81, 1800, 1.0);
+        // ------- SIMULATION -------
+        // addEntry(2.17, 1600, 0.9);
+        // addEntry(3.24, 1700, 0.9);
+        // addEntry(1.59, 1600, 1.0);
+        // addEntry(1.59, 1600, 1.0);
+        // addEntry(3.81, 1800, 1.0);
+
+        // ------- REAL --------
+        addEntry(4.145, 3800, 1.22);
+        addEntry(3.05, 3250, 0.97);
+        addEntry(2.541, 3000, 0.8);
+        addEntry(2.35, 2800, 0.78);
+        addEntry(4.924, 4250, 1.28);
+        addEntry(2.41, 2900, 0.80);
+
+
+
     }
 
     /**

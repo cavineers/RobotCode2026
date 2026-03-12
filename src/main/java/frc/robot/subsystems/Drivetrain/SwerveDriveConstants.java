@@ -68,7 +68,7 @@ public class SwerveDriveConstants {
         public static final boolean kBackLeftTurningEncoderReversed = false;
         public static final boolean kFrontRightTurningEncoderReversed = false;
         public static final boolean kBackRightTurningEncoderReversed = false;
-
+ 
         public static final boolean kFrontLeftDriveEncoderReversed = false;
         public static final boolean kBackLeftDriveEncoderReversed = true;
         public static final boolean kFrontRightDriveEncoderReversed = false;
@@ -79,7 +79,7 @@ public class SwerveDriveConstants {
                 / 2.0;
         
         // Linear acceleration limit (m/s²)
-        public static final double kTeleDriveMaxAccelerationMetersPerSecSq = 4.5;
+        public static final double kTeleDriveMaxAccelerationMetersPerSecSq = kPhysicalMaxSpeedMetersPerSecond;
         
         // Angular acceleration limit (rad/s²)
         public static final double kTeleDriveMaxAngularAccelerationRadPerSecSq = 12.0;
@@ -111,14 +111,14 @@ public class SwerveDriveConstants {
         public static final SwerveDriveKinematics kSwerveKinematics = new SwerveDriveKinematics(moduleTranslations);
 
         // Drive motor configuration
-        public static final int kDriveMotorCurrentLimit = 20;
+        public static final int kDriveMotorCurrentLimit = 30;
         public static final DCMotor kDriveGearbox = DCMotor.getKrakenX60(1);
 
         // Drive PID configuration
         public static final double kDriveKp = 0.0;
         public static final double kDriveKd = 0.0;
-        public static final double kDriveKs = 0.08877; // Static friction voltage
-        public static final double kDriveKv = 0.10606 ; // V per (rad/s) at motor shaft
+        public static final double kDriveKs = 0.10684; // Static friction voltage
+        public static final double kDriveKv = 0.1068 ; // V per (rad/s) at motor shaft
         
         public static final double kDriveSimP = 0.05; 
         public static final double kDriveSimD = 0.0;

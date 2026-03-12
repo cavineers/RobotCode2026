@@ -241,7 +241,7 @@ public class Turret extends SubsystemBase {
         // Check if current is above threshold
         boolean currentSpikeDetected = inputs.supplyCurrentAmps >= TurretConstants.kHomingCurrentThresholdAmps;
         
-        if (currentSpikeDetected) {
+        if (currentSpikeDetected){
             homingCurrentSpikeCount++;
         } else {
             homingCurrentSpikeCount = 0; // Reset if current drops

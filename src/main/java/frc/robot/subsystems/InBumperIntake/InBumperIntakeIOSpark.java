@@ -30,13 +30,13 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
     private final SparkMax outsideMotor = new SparkMax(kOutsideMotorCanID, MotorType.kBrushless); 
     private final RelativeEncoder outsideEncoder = outsideMotor.getEncoder();
 
-    private final SparkFlex spindexerMotor = new SparkFlex(kSpindexerMotorCanID, MotorType.kBrushless);
+    private final SparkMax spindexerMotor = new SparkMax(kSpindexerMotorCanID, MotorType.kBrushless);
     private final RelativeEncoder spindexerEncoder = spindexerMotor.getEncoder();
 
     private SparkMaxConfig bottomConfig;
     private SparkMaxConfig topConfig;
     private SparkMaxConfig outsideConfig;
-    private SparkFlexConfig spindexerConfig;
+    private SparkMaxConfig spindexerConfig;
 
     public InBumperIntakeIOSpark()  {
         bottomConfig = new SparkMaxConfig();
@@ -75,7 +75,7 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
             () -> outsideMotor.configure(outsideConfig, ResetMode.kResetSafeParameters,
                     PersistMode.kPersistParameters));
 
-        spindexerConfig = new SparkFlexConfig();
+        spindexerConfig = new SparkMaxConfig();
         spindexerConfig
             .idleMode(kSpindexerIdleMode)
             .smartCurrentLimit(kSpindexerCurrentLimit)

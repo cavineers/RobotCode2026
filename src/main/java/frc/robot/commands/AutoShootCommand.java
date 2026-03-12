@@ -49,6 +49,7 @@ public class AutoShootCommand extends Command {
         this.shooter = shooter;
         this.turret = turret;
         this.fuelSim = fuelSim;
+        // addRequirements(turret);
         addRequirements(shooter, turret);
     }
 

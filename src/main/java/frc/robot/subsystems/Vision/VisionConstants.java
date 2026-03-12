@@ -26,10 +26,10 @@ public class VisionConstants {
     // The actual robot-to-camera transform is calculated dynamically based on turret angle
     // Rotation: roll=0 (camera is upright), pitch=+20° (lens tilts down toward tags), yaw=0 (faces same direction as turret)
     public static Transform3d turretToCamera2 = new Transform3d(
-        Units.inchesToMeters(1.793),     // Forward from turret center
+        Units.inchesToMeters(-1.793),     // Forward from turret center
         Units.inchesToMeters(-5.006),   
         Units.inchesToMeters(0.293),    // Height above turret
-        new Rotation3d(0, Units.degreesToRadians(-20), 0) // pitch up 20°, no roll, no yaw
+        new Rotation3d(0, Units.degreesToRadians(-30), 0) // pitch up 30°, no roll, no yaw
     );
 
     // Turret position on robot (for calculating camera 2 position)
@@ -59,6 +59,6 @@ public class VisionConstants {
     // (Adjust to trust some cameras more than others)
     public static double[] cameraStdDevFactors = new double[] {
             0.5, // Camera 1
-            1.0  // Camera 2
+            4.0  // Camera 2
     };
 }

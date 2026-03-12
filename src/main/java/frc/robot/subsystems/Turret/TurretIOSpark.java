@@ -43,11 +43,11 @@ public class TurretIOSpark implements TurretIO {
             .positionConversionFactor(TurretConstants.kPositionConversionFactor)
             .velocityConversionFactor(TurretConstants.kVelocityConversionFactor);
 
-        config.softLimit
-            .forwardSoftLimit(TurretConstants.kMaxAngleRad)
-            .forwardSoftLimitEnabled(true)
-            .reverseSoftLimit(TurretConstants.kMinAngleRad)
-            .reverseSoftLimitEnabled(true);
+        // config.softLimit
+        //     .forwardSoftLimit(TurretConstants.kMaxAngleRad)
+        //     .forwardSoftLimitEnabled(true)
+        //     .reverseSoftLimit(TurretConstants.kMinAngleRad)
+        //     .reverseSoftLimitEnabled(true);
 
         config.signals
                 .primaryEncoderPositionAlwaysOn(true)

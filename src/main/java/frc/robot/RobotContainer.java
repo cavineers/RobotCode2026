@@ -108,24 +108,24 @@ public class RobotContainer {
                 vision = new Vision(
                     drivetrain::addVisionMeasurement,
                     drivetrain::resetOdometry,
-                    new VisionIOPhotonVision(VisionConstants.camera1Name, (timestamp) -> VisionConstants.robotToCamera1),
-                    new VisionIOPhotonVision(VisionConstants.camera2Name, (timestamp) -> {
-                        // Calculate turret-adjusted transform for moving camera using historical position
-                        Rotation2d turretAngle = turret.getTurretAngleAtTime(timestamp);
+                    new VisionIOPhotonVision(VisionConstants.camera1Name, (timestamp) -> VisionConstants.robotToCamera1));
+                //     new VisionIOPhotonVision(VisionConstants.camera2Name, (timestamp) -> {
+                //         // Calculate turret-adjusted transform for moving camera using historical position
+                //         Rotation2d turretAngle = turret.getTurretAngleAtTime(timestamp);
                         
-                        // Create a rotation-only transform at the turret center
-                        Transform3d turretRotation = new Transform3d(
-                            new Translation3d(), // No translation, just rotation
-                            new Rotation3d(0, 0, turretAngle.getRadians())
-                        );
+                //         // Create a rotation-only transform at the turret center
+                //         Transform3d turretRotation = new Transform3d(
+                //             new Translation3d(), // No translation, just rotation
+                //             new Rotation3d(0, 0, turretAngle.getRadians())
+                //         );
                         
-                        // Chain transforms: Robot->TurretCenter, then rotate, then Turret->Camera
-                        // This ensures turretToCamera2 is applied in the rotated turret's coordinate frame
-                        return VisionConstants.robotToTurretCenter
-                            .plus(turretRotation)
-                            .plus(VisionConstants.turretToCamera2);
-                    })
-                );
+                //         // Chain transforms: Robot->TurretCenter, then rotate, then Turret->Camera
+                //         // This ensures turretToCamera2 is applied in the rotated turret's coordinate frame
+                //         return VisionConstants.robotToTurretCenter
+                //             .plus(turretRotation)
+                //             .plus(VisionConstants.turretToCamera2);
+                //     })
+                
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -204,33 +204,33 @@ public class RobotContainer {
         
         // Set default turret command - manual control with secondary controller left/right stick
         // Increments the closed-loop setpoint based on stick position
-        turret.setDefaultCommand(
-            Commands.run(() -> {
-                // Get X axis (left/right) from secondary controller - typically axis 0
-                double stickValue = secondaryDriverController.getRawAxis(0);
+        // turret.setDefaultCommand(
+        //     Commands.run(() -> {
+        //         // Get X axis (left/right) from secondary controller - typically axis 0
+        //         double stickValue = secondaryDriverController.getRawAxis(0);
                 
-                // Apply deadband
-                double deadband = 0.1;
-                if (Math.abs(stickValue) < deadband) {
-                    stickValue = 0.0;
-                }
+        //         // Apply deadband
+        //         double deadband = 0.1;
+        //         if (Math.abs(stickValue) < deadband) {
+        //             stickValue = 0.0;
+        //         }
                 
-                if (stickValue != 0.0) {
-                    // Small increment for button-like digital control (left/right buttons on stick)
-                    double incrementDegrees = 2.0; // 2 degrees per button press (at 20ms = ~100 deg/sec)
+        //         if (stickValue != 0.0) {
+        //             // Small increment for button-like digital control (left/right buttons on stick)
+        //             double incrementDegrees = 2.0; // 2 degrees per button press (at 20ms = ~100 deg/sec)
                     
-                    // Calculate increment in radians
-                    double increment = Math.signum(stickValue) * Math.toRadians(incrementDegrees);
+        //             // Calculate increment in radians
+        //             double increment = Math.signum(stickValue) * Math.toRadians(incrementDegrees);
                     
-                    // Get current COMMANDED target (not actual position) and add increment
-                    double currentTarget = turret.getTargetTurretAngleRad();
-                    double newTarget = currentTarget + increment;
+        //             // Get current COMMANDED target (not actual position) and add increment
+        //             double currentTarget = turret.getTargetTurretAngleRad();
+        //             double newTarget = currentTarget + increment;
                     
-                    // Set new robot-relative target (will be clamped by turret subsystem)
-                    turret.setRobotRelativeTarget(newTarget);
-                }
-            }, turret)
-        );
+        //             // Set new robot-relative target (will be clamped by turret subsystem)
+        //             turret.setRobotRelativeTarget(newTarget);
+        //         }
+        //     }, turret)
+        // );
         
         // ------ PRIMARY DRIVER CONTROLS ------
         // Shooting controls (for testing purposes, will be replaced with vision-based shooting commands)

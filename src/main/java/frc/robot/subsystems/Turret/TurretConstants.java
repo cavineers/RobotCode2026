@@ -60,9 +60,9 @@ public final class TurretConstants {
     public static final double kHomingSearchMaxVoltage = 3.0; // Reduced voltage when not homed for safety
 
     // Current-based homing (hardstop detection)
-    public static final double kHomingVoltage = -0.75; // Voltage to apply during homing
-    public static final double kHomingCurrentThresholdAmps = 15; // Current threshold to detect hardstop
-    public static final int kHomingCurrentSpikeCountRequired = 5; // Number of consecutive readings above threshold (at 50Hz = 0.1s)
+    public static final double kHomingVoltage = -1.25; // Voltage to apply during homing
+    public static final double kHomingCurrentThresholdAmps = 25; // Current threshold to detect hardstop
+    public static final int kHomingCurrentSpikeCountRequired = 10; // Number of consecutive readings above threshold (at 50Hz = 0.1s)
     public static final double kHomingHardstopPositionRad = Units.degreesToRadians(-300.0); // -5.236 rad - encoder resets to this at hardstop
 
     // Simulation parameters
