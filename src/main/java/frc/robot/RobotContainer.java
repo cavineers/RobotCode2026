@@ -86,6 +86,9 @@ public class RobotContainer {
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
     private final CommandGenericHID secondaryDriverController = new CommandGenericHID(1);
 
+    // Manual override state
+    private double shooterRPMOverride = 3000.0; // Starting RPM for override mode
+
     // Auto chooser
     private LoggedDashboardChooser<Command> autoChooser;
 
@@ -220,8 +223,23 @@ public class RobotContainer {
                 InBumperIntakeConstants.kTopVoltage)
         );
 
-        // Auto shoot
-        primaryDriverController.rightTrigger().toggleOnTrue(new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim));
+        // TODO: PLACEHOLDER: replace with actual button
+        var manualOverrideSwitch = primaryDriverController.button(99);
+
+        // Right trigger: Auto shoot OR hopper to shooter (depending on manual override)
+        primaryDriverController.rightTrigger().toggleOnTrue(
+            Commands.deferredProxy(() ->
+                manualOverrideSwitch.getAsBoolean() ?
+                    // Manual override mode: toggle hopper to shooter
+                    inBumperIntake.runHopperToShooter(
+                        InBumperIntakeConstants.kOutsideVoltage,
+                        InBumperIntakeConstants.kBottomVoltage,
+                        InBumperIntakeConstants.kTopVoltage)
+                    :
+                    // Normal mode: auto shoot
+                    new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim)
+            )
+        );
 
         // ------ SECONDARY DRIVER CONTROLS ------
         
@@ -270,10 +288,30 @@ public class RobotContainer {
             Commands.deferredProxy(() -> overBumperIntake.unjamCommand())
         );
 
-        //Advance climber state (RESTING → DEPLOYED → ENGAGED)
-        secondaryDriverController.button(6).onTrue(climber.advanceCommand());
-        //Retreat climber state (ENGAGED → DEPLOYED → RESTING)
-        secondaryDriverController.button(4).onTrue(climber.retreatCommand());
+        //Advance climber state (RESTING → DEPLOYED → ENGAGED) OR increase shooter RPM by 100 in manual override
+        secondaryDriverController.button(6).onTrue(
+            Commands.deferredProxy(() ->
+                manualOverrideSwitch.getAsBoolean() ?
+                    Commands.runOnce(() -> {
+                        shooterRPMOverride += 100.0;
+                        shooter.setVelocity(shooterRPMOverride);
+                    }, shooter)
+                    :
+                    climber.advanceCommand()
+            )
+        );
+        //Retreat climber state (ENGAGED → DEPLOYED → RESTING) OR decrease shooter RPM by 100 in manual override
+        secondaryDriverController.button(4).onTrue(
+            Commands.deferredProxy(() ->
+                manualOverrideSwitch.getAsBoolean() ?
+                    Commands.runOnce(() -> {
+                        shooterRPMOverride = Math.max(0, shooterRPMOverride - 100.0);
+                        shooter.setVelocity(shooterRPMOverride);
+                    }, shooter)
+                    :
+                    climber.retreatCommand()
+            )
+        );
 
         // Turret Field-Relative Presets
         // Button 7: 0° (forward)
@@ -281,14 +319,14 @@ public class RobotContainer {
         //     Commands.runOnce(() -> turret.setFieldRelativeTarget(0), turret)
         // );
         
-        // // Button 8: 90° (left)
+        // // Button 8: 45 (left)
         // secondaryDriverController.button(8).onTrue(
-        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(90)), turret)
+        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(45)), turret)
         // );
         
-        // // Button 9: -90° (right)
+        // // Button 9: -45 (right)
         // secondaryDriverController.button(9).onTrue(
-        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(-90)), turret)
+        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(-45)), turret)
         // );
         
         // // Button 10: 180° (backward)
