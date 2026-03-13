@@ -17,7 +17,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
-
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.commands.ManualTurretVoltageCommand;
 import frc.robot.commands.TurretPresetCommand;
 import frc.robot.subsystems.Turret.Turret;
@@ -64,6 +65,7 @@ import frc.robot.subsystems.Climber.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberIO;
 import frc.robot.subsystems.Climber.ClimberIOKraken;
 import frc.robot.subsystems.Climber.ClimberIOSim;
+import frc.lib.Elastic; 
 
 public class RobotContainer {
 
@@ -190,6 +192,7 @@ public class RobotContainer {
         configureButtonBindings();
         configureNamedCommands();
         configureAutoChooser();
+        configureElasticWidgets();
 
     }
 
@@ -263,7 +266,9 @@ public class RobotContainer {
         );
 
         // OverBumper Unjam Sequence
-        secondaryDriverController.button(12).whileTrue(overBumperIntake.unjamCommand());
+        secondaryDriverController.button(12).toggleOnTrue(
+            Commands.deferredProxy(() -> overBumperIntake.unjamCommand())
+        );
 
         //Advance climber state (RESTING → DEPLOYED → ENGAGED)
         secondaryDriverController.button(6).onTrue(climber.advanceCommand());
@@ -335,6 +340,10 @@ public class RobotContainer {
         autoChooser.addOption(
                 "Rotation SysId (Dynamic Reverse)",
                 drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kReverse));
+    }
+
+    public void configureElasticWidgets(){
+        // Register Elastic widgets (see frc.lib.Elastic)
     }
 
     public void configureNamedCommands() {

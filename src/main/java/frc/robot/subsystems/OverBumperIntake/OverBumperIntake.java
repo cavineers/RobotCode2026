@@ -98,12 +98,15 @@ public class OverBumperIntake extends SubsystemBase {
             )
         ).finallyDo(() -> {
             // Return to initial state
-            io.setIntakeVoltage(0);
             if (initialState[0]) {
+                // Was deployed - redeploy and run intake
                 io.updateSetpoint(kDeployedRotations);
+                io.intake();
                 deployed = true;
             } else {
+                // Was retracted - retract and stop
                 io.updateSetpoint(kRetractedRotations);
+                io.setIntakeVoltage(0);
                 deployed = false;
             }
         }).withName("OTB Unjam");
