@@ -45,6 +45,10 @@ public final class ShooterConstants {
     // Tolerances
     public static final double kVelocityToleranceRPM = 150.0;
     public static final double kAtTargetDebounceTime = 0.1; // seconds
+
+    // Manual mode presets
+    public static final double kManualMidrangeRPM = 4200.0;
+    public static final double kManualCloseRPM = 3200.0;
     
     // Simulation
     public static final double kSimP = 0.0;

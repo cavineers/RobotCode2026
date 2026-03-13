@@ -38,6 +38,7 @@ public class AutoShootCommand extends Command {
 
     private ShotSolution lastSolution = null;
     private final Timer shotTimer = new Timer();
+    private boolean readyLatched = false;
 
     // For acceleration calculation
     private ChassisSpeeds lastSpeeds = new ChassisSpeeds();
@@ -71,6 +72,7 @@ public class AutoShootCommand extends Command {
     public void initialize() {
         turret.enableClosedLoop(true);
         shotTimer.restart();
+        readyLatched = false;
         lastSpeeds = drivetrain.getFieldRelativeChassisSpeeds();
         lastSpeedsTimestamp = Timer.getFPGATimestamp();
         Logger.recordOutput("AutoShoot/Active", true);
@@ -106,9 +108,12 @@ public class AutoShootCommand extends Command {
         lastSpeedsTimestamp = now;
 
         boolean ready = isReadyToFire(accel);
+        if (!readyLatched && ready) {
+            readyLatched = true;
+        }
 
         // Feed hopper into shooter only when all safeties pass
-        if (ready) {
+        if (readyLatched) {
             intake.setState(IntakeState.HOPPER_TO_SHOOTER);
             intake.setOutsideVoltage(-InBumperIntakeConstants.kOutsideVoltage);
             intake.setBottomVoltage(-InBumperIntakeConstants.kBottomVoltage);
@@ -123,7 +128,7 @@ public class AutoShootCommand extends Command {
         }
 
         Logger.recordOutput("AutoShoot/SolutionValid", solution.isValid());
-        Logger.recordOutput("AutoShoot/ReadyToFire", ready);
+    Logger.recordOutput("AutoShoot/ReadyToFire", readyLatched);
         Logger.recordOutput("AutoShoot/Acceleration", accel);
 
         // Fire a sim ball every 0.25 seconds regardless of ready state

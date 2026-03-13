@@ -368,11 +368,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         if (Constants.currentMode != Constants.Mode.REAL)
             return; 
 
-        Pose2d pose;
-        pose = new Pose2d(poseMeters.getX(), poseMeters.getY(),
-                DriverStation.isEnabled() ? poseMeters.getRotation() : poseMeters.getRotation());
-        poseEstimator.addVisionMeasurement(
-                pose, timestamp, visionMeasurementStdDevs);
+        // Only allow vision to adjust heading while disabled. Translation updates are always applied.
+        Rotation2d fusedRotation = DriverStation.isDisabled()
+                ? poseMeters.getRotation()
+                : poseEstimator.getEstimatedPosition().getRotation();
+
+        Pose2d pose = new Pose2d(poseMeters.getX(), poseMeters.getY(), fusedRotation);
+        poseEstimator.addVisionMeasurement(pose, timestamp, visionMeasurementStdDevs);
     }
 
     public void zeroHeading() {
