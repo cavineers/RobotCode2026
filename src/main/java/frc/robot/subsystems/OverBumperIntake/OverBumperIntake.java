@@ -80,10 +80,11 @@ public class OverBumperIntake extends SubsystemBase {
 
     /**
      * Unjam sequence: repeatedly deploys and retracts the OTB arm while running
-     * the OTB intake wheel, then retracts and stops on cancel.
+     * the OTB intake wheel, then returns to the state it was in when called.
      */
     public Command unjamCommand() {
         final double CYCLE_SECS = 1.0;
+        final boolean[] initialState = {deployed}; // Capture initial state in array
 
         Command cmd = Commands.sequence(
             // Start OTB intake wheel immediately
@@ -96,10 +97,15 @@ public class OverBumperIntake extends SubsystemBase {
                 Commands.waitSeconds(CYCLE_SECS)
             )
         ).finallyDo(() -> {
-            // Always retract and stop on end
-            io.updateSetpoint(kRetractedRotations);
+            // Return to initial state
             io.setIntakeVoltage(0);
-            deployed = false;
+            if (initialState[0]) {
+                io.updateSetpoint(kDeployedRotations);
+                deployed = true;
+            } else {
+                io.updateSetpoint(kRetractedRotations);
+                deployed = false;
+            }
         }).withName("OTB Unjam");
         cmd.addRequirements(this);
         return cmd;
