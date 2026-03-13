@@ -217,20 +217,13 @@ public class RobotContainer {
                 InBumperIntakeConstants.kTopVoltage)
         );
 
-        primaryDriverController.povUp().onTrue(climber.goToPresetCommand());
-        primaryDriverController.povDown().onTrue(climber.undoCommand());
-
         // Auto shoot
-        primaryDriverController.rightTrigger().whileTrue(new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim));
+        primaryDriverController.rightTrigger().toggleOnTrue(new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim));
 
         // ------ SECONDARY DRIVER CONTROLS ------
-        secondaryDriverController.button(1).whileTrue(
-            Commands.run(() -> shooter.setTunableVelocity(), shooter)
-                .finallyDo(() -> shooter.setVelocity(0))
-        );
         
         // Button 2: Start turret homing sequence (current-based hardstop detection)
-        secondaryDriverController.button(2).onTrue(
+        secondaryDriverController.button(11).onTrue(
             Commands.runOnce(() -> turret.startHoming(), turret)
         );
 
@@ -254,7 +247,7 @@ public class RobotContainer {
         );
 
         // Button 4: Toggle ground -> shooter (bypass hopper)
-        secondaryDriverController.button(4).toggleOnTrue(
+        secondaryDriverController.button(2).toggleOnTrue(
             inBumperIntake.runGroundToShooter(
                 InBumperIntakeConstants.kOutsideVoltage,
                 InBumperIntakeConstants.kBottomVoltage,
@@ -262,7 +255,7 @@ public class RobotContainer {
         );
 
         // Button 5: Toggle hopper -> shooter
-        secondaryDriverController.button(5).toggleOnTrue(
+        secondaryDriverController.button(1).toggleOnTrue(
             inBumperIntake.runHopperToShooter(
                 InBumperIntakeConstants.kOutsideVoltage,
                 InBumperIntakeConstants.kBottomVoltage,
@@ -270,14 +263,39 @@ public class RobotContainer {
         );
 
         // OverBumper Unjam Sequence
-        secondaryDriverController.button(6).whileTrue(overBumperIntake.unjamCommand());
+        secondaryDriverController.button(12).whileTrue(overBumperIntake.unjamCommand());
 
+        //Advance climber state (RESTING → DEPLOYED → ENGAGED)
+        secondaryDriverController.button(6).onTrue(climber.advanceCommand());
+        //Retreat climber state (ENGAGED → DEPLOYED → RESTING)
+        secondaryDriverController.button(4).onTrue(climber.retreatCommand());
+
+        // Turret Field-Relative Presets
+        // Button 7: 0° (forward)
+        // secondaryDriverController.button(7).onTrue(
+        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(0), turret)
+        // );
+        
+        // // Button 8: 90° (left)
+        // secondaryDriverController.button(8).onTrue(
+        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(90)), turret)
+        // );
+        
+        // // Button 9: -90° (right)
+        // secondaryDriverController.button(9).onTrue(
+        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(-90)), turret)
+        // );
+        
+        // // Button 10: 180° (backward)
+        // secondaryDriverController.button(10).onTrue(
+        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(180)), turret)
+        // );
 
     }
 
     public void configureAutoChooser() {
         // Set up auto routines for SysIds
-        autoChooser = new LoggedDashboardChooser<>("Auto Choices");// AutoBuilder.buildAutoChooser()
+        autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());// 
         // Set up SysId routines
         autoChooser.addOption("Shooter Characterization",
                 ShooterCharacterizationCommand.feedforwardCharacterization(shooter));
@@ -328,12 +346,10 @@ public class RobotContainer {
     }
 
     /**
-     * @brief Releases the climber to the extended position
-     * @Note Climber must have the setpoint set to kDeploy
+     * @brief Releases the climber to the resting position (used during auto-climb).
+     * @Note Only triggers if climber is currently in the ENGAGED state.
      */
     public void releaseAutoClimb() {
-        if (climber.getSetpoint() == ClimberConstants.kEngagedMotorRotations) {
-            CommandScheduler.getInstance().schedule(climber.releaseAutoCommand());
-        }
+        CommandScheduler.getInstance().schedule(climber.autoEndCommand());
     }
 }

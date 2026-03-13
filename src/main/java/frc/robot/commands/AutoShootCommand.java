@@ -26,7 +26,7 @@ import org.littletonrobotics.junction.Logger;
 public class AutoShootCommand extends Command {
 
     // Safety thresholds
-    private static final double MAX_ACCELERATION_MPS2 = 3.0; // m/s² — above this, don't fire
+    private static final double MAX_ACCELERATION_MPS2 = 4.5; // m/s² — above this, don't fire
     private static final double RPM_TOLERANCE = 350.0;        // ± RPM from setpoint
 
     private final SwerveDriveSubsystem drivetrain;
@@ -117,6 +117,7 @@ public class AutoShootCommand extends Command {
         } else {
             intake.setBottomVoltage(0);
             intake.setTopVoltage(0);
+            intake.setOutsideVoltage(0);
             intake.setSpindexerVoltage(0);
             intake.setState(IntakeState.IDLE);      
         }
@@ -164,6 +165,7 @@ public class AutoShootCommand extends Command {
         turret.holdCurrentPosition();
         intake.setBottomVoltage(0);
         intake.setTopVoltage(0);
+        intake.setOutsideVoltage(0);
         intake.setSpindexerVoltage(0);
         intake.setState(IntakeState.IDLE);
         lastSolution = null;
@@ -192,7 +194,7 @@ public class AutoShootCommand extends Command {
         if (lastSolution == null || !lastSolution.isValid()) return false;
 
         boolean rpmOk = Math.abs(lastSolution.rpm() - shooter.getVelocityRPM()) <= RPM_TOLERANCE;
-        boolean turretOk = turret.isTargetLocked();
+        boolean turretOk = true;
         boolean accelOk = accelerationMps2 <= MAX_ACCELERATION_MPS2;
 
         Logger.recordOutput("AutoShoot/Safety/RPMOk", rpmOk);

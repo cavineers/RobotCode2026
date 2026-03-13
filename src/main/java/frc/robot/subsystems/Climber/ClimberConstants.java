@@ -20,8 +20,8 @@ public class ClimberConstants {
     public static final double kManualSetpointDecrease = -0.5; //TODO: Update
 
     public static final double kRestMotorRotations = 0.0;
-    public static final double kDeployedMotorRotations = 42.0;
-    public static final double kEngagedMotorRotations = 10.0;
+    public static final double kDeployedMotorRotations = -60.65;
+    public static final double kEngagedMotorRotations = -23.0;
 
     public static final double kP = 1.0; //TODO: Update
     public static final double kI = 0.0; //TODO: Update
