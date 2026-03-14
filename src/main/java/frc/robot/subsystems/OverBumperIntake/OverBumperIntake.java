@@ -79,6 +79,17 @@ public class OverBumperIntake extends SubsystemBase {
     }
 
     /**
+     * Stop command: stops the intake wheel and retracts the arm.
+     */
+    public Command stopCommand() {
+        return Commands.runOnce(() -> {
+            io.setIntakeVoltage(0);
+            io.updateSetpoint(kRetractedRotations);
+            deployed = false;
+        }, this).withName("OTB Stop");
+    }
+
+    /**
      * Unjam sequence: repeatedly deploys and retracts the OTB arm while running
      * the OTB intake wheel, then returns to the state it was in when called.
      */
@@ -109,6 +120,7 @@ public class OverBumperIntake extends SubsystemBase {
                 io.setIntakeVoltage(0);
                 deployed = false;
             }
+            Logger.recordOutput("OverBumperIntake/deployed", deployed);
         }).withName("OTB Unjam");
         cmd.addRequirements(this);
         return cmd;

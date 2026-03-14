@@ -8,6 +8,8 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -275,8 +277,9 @@ public class Turret extends SubsystemBase {
             homingCurrentSpikeCount = 0; // Reset if current drops
         }
         
-        // Check if we've detected a sustained current spike
-        boolean homingComplete = homingCurrentSpikeCount >= TurretConstants.kHomingCurrentSpikeCountRequired;
+        // Check if we've detected a sustained current spike or in simulation (where we won't see real current spikes)
+        boolean homingComplete = homingCurrentSpikeCount >= TurretConstants.kHomingCurrentSpikeCountRequired
+                || Constants.currentMode == Constants.simMode;
         
         if (homingComplete) {
             // Stop the motor and reset encoder

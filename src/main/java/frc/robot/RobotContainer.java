@@ -3,7 +3,9 @@ package frc.robot;
 import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.kOutsideVoltage;
 
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -71,7 +73,7 @@ public class RobotContainer {
 
     // Subsystems
 
-    private final Turret turret;
+    public final Turret turret;
     public final SwerveDriveSubsystem drivetrain;
     public final Climber climber;
     public final OverBumperIntake overBumperIntake;
@@ -113,7 +115,8 @@ public class RobotContainer {
                 vision = new Vision(
                     drivetrain::addVisionMeasurement,
                     drivetrain::resetOdometry,
-                    new VisionIOPhotonVision(VisionConstants.camera1Name, (timestamp) -> VisionConstants.robotToCamera1));
+                    new VisionIOPhotonVision(VisionConstants.camera1Name, (timestamp) -> VisionConstants.robotToCamera1),
+                    new VisionIOPhotonVision(VisionConstants.camera2Name, (timestamp) -> VisionConstants.robotToCamera2));
                 //     new VisionIOPhotonVision(VisionConstants.camera2Name, (timestamp) -> {
                 //         // Calculate turret-adjusted transform for moving camera using historical position
                 //         Rotation2d turretAngle = turret.getTurretAngleAtTime(timestamp);
@@ -224,7 +227,7 @@ public class RobotContainer {
         );
 
         // TODO: PLACEHOLDER: replace with actual button
-        var manualOverrideSwitch = primaryDriverController.button(99);
+        var manualOverrideSwitch = primaryDriverController.button(8);
 
         // Right trigger: Auto shoot OR hopper to shooter (depending on manual override)
         primaryDriverController.rightTrigger().toggleOnTrue(
@@ -386,6 +389,17 @@ public class RobotContainer {
 
     public void configureNamedCommands() {
         // Register Named Commands
+        NamedCommands.registerCommand("unjam_otb", overBumperIntake.unjamCommand());
+        NamedCommands.registerCommand("intake_otb", overBumperIntake.deployCommand());
+        NamedCommands.registerCommand("stop_otb", overBumperIntake.stopCommand());
+        NamedCommands.registerCommand("auto_shoot", new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake));
+        NamedCommands.registerCommand("stop_shooter", 
+            Commands.parallel(
+                shooter.stopCommand(),
+                inBumperIntake.stopCommand()
+            )
+        );
+        NamedCommands.registerCommand("home_turret", Commands.runOnce(() -> turret.startHoming(), turret));
     }
 
     public Command getAutonomousCommand() {

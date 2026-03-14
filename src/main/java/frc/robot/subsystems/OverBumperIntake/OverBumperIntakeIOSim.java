@@ -22,7 +22,6 @@ public class OverBumperIntakeIOSim implements OverBumperIntakeIO {
     @AutoLogOutput(key="OverBumperIntake/motorSetpoint")
     private double motorSetpoint = 0;
 
-    @AutoLogOutput(key="OverBumperIntake/Deployed")
     public boolean deployed = false;
 
     @AutoLogOutput(key="OverBumperIntake/IsClosed")

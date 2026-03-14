@@ -12,6 +12,7 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.lib.ShotSolver;
 import edu.wpi.first.wpilibj.Timer;
@@ -25,7 +26,6 @@ import edu.wpi.first.wpilibj.Timer;
  * this project, you must also update the Main.java file in the project.
  */
 public class Robot extends LoggedRobot {
-    private Command m_autonomousCommand;
 
     private final RobotContainer m_robotContainer;
 
@@ -120,11 +120,19 @@ public class Robot extends LoggedRobot {
      */
     @Override
     public void autonomousInit() {
-        m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+        // Home the turret at the start of autonomous, wait for it to complete, then run the auto command
+        Command autonomousCommand = Commands.runOnce(() -> m_robotContainer.turret.startHoming())
+            .andThen(Commands.waitUntil(() -> m_robotContainer.turret.isHomed()))
+            .andThen(Commands.deferredProxy(() -> m_robotContainer.getAutonomousCommand()))
+            .finallyDo(() -> {
+                // Stop shooter and intake at end of autonomous
+                m_robotContainer.shooter.stop();
+                m_robotContainer.inBumperIntake.stopIntake();
+            });
 
-        // schedule the autonomous command (example)
-        if (m_autonomousCommand != null) {
-            CommandScheduler.getInstance().schedule(m_autonomousCommand);
+        // schedule the autonomous command
+        if (autonomousCommand != null) {
+            CommandScheduler.getInstance().schedule(autonomousCommand);
         }
     }
 
@@ -139,9 +147,7 @@ public class Robot extends LoggedRobot {
         // teleop starts running. If you want the autonomous to
         // continue until interrupted by another command, remove
         // this line or comment it out.
-        if (m_autonomousCommand != null) {
-            m_autonomousCommand.cancel();
-        }
+        CommandScheduler.getInstance().cancelAll();
         
         m_robotContainer.releaseAutoClimb();
     }

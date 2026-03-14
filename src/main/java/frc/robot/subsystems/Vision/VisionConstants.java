@@ -11,7 +11,7 @@ public class VisionConstants {
     public static AprilTagFieldLayout aprilTagLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
 
     public static String camera1Name = "Camera1";
-    public static String camera2Name = "Camera2"; // Turret-mounted camera
+    public static String camera2Name = "Camera3"; // Turret-mounted camera
 
     // Robot to camera transforms
     // Camera 1: Fixed to robot chassis, 7.64" forward, 8.25" left, facing left (90° CCW yaw)
@@ -23,10 +23,10 @@ public class VisionConstants {
     );
 
     public static Transform3d robotToCamera2 = new Transform3d(
-        Units.inchesToMeters(0.0),   // Forward from robot center
-        Units.inchesToMeters(0.0),   // Lateral from robot center
-        Units.inchesToMeters(0.0),  // Height above ground
-        new Rotation3d(0, 0, 0)
+        Units.inchesToMeters(7),   // Forward from robot center
+        Units.inchesToMeters(9),   // Lateral from robot center
+        Units.inchesToMeters(14),  // Height above ground
+        new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(-90))
     );
 
     // Camera 2: Mounted on turret - this transform is from turret center to camera
@@ -66,6 +66,6 @@ public class VisionConstants {
     // (Adjust to trust some cameras more than others)
     public static double[] cameraStdDevFactors = new double[] {
             1.0, // Camera 1
-            1.0  // Camera 2
+            3.0  // Camera 2
     };
 }

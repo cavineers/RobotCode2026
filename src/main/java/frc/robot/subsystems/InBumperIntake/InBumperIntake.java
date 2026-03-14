@@ -36,22 +36,18 @@ public class InBumperIntake extends SubsystemBase {
 
     public void setBottomVoltage(double volts) {
         io.setBottomVoltage(volts);
-        currentState = IntakeState.MANUAL_CONTROL;
     }
 
     public void setTopVoltage(double volts) {
         io.setTopVoltage(volts);
-        currentState = IntakeState.MANUAL_CONTROL;
     }
 
     public void setOutsideVoltage(double volts) {
         io.setOutsideVoltage(volts);
-        currentState = IntakeState.MANUAL_CONTROL;
     }
 
     public void setSpindexerVoltage(double volts) {
         io.setSpindexerVoltage(volts);
-        currentState = IntakeState.MANUAL_CONTROL;
     }
     
     public IntakeState getState() {
@@ -114,6 +110,14 @@ public class InBumperIntake extends SubsystemBase {
             io.setTopVoltage(0);
             io.setSpindexerVoltage(0);
         });
+    }
+
+    public void stopIntake() {
+        currentState = IntakeState.IDLE;
+        io.setOutsideVoltage(0);
+        io.setBottomVoltage(0);
+        io.setTopVoltage(0);
+        io.setSpindexerVoltage(0);
     }
 
     public void setState(IntakeState state) {

@@ -371,7 +371,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         // Only allow vision to adjust heading while disabled. Translation updates are always applied.
         Rotation2d fusedRotation = DriverStation.isDisabled()
                 ? poseMeters.getRotation()
-                : poseEstimator.getEstimatedPosition().getRotation();
+                :  poseMeters.getRotation();// poseEstimator.getEstimatedPosition().getRotation();
 
         Pose2d pose = new Pose2d(poseMeters.getX(), poseMeters.getY(), fusedRotation);
         poseEstimator.addVisionMeasurement(pose, timestamp, visionMeasurementStdDevs);
