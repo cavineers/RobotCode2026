@@ -118,12 +118,12 @@ public class AutoShootCommand extends Command {
             intake.setOutsideVoltage(-InBumperIntakeConstants.kOutsideVoltage);
             intake.setBottomVoltage(-InBumperIntakeConstants.kBottomVoltage);
             intake.setTopVoltage(InBumperIntakeConstants.kTopVoltage);
-            intake.setSpindexerVoltage(InBumperIntakeConstants.kSpindexerVoltage);
+            intake.setIndexerVoltage(InBumperIntakeConstants.kIndexerVoltage);
         } else {
             intake.setBottomVoltage(0);
             intake.setTopVoltage(0);
             intake.setOutsideVoltage(0);
-            intake.setSpindexerVoltage(0);
+            intake.setIndexerVoltage(0);
             intake.setState(IntakeState.IDLE);      
         }
 
@@ -171,7 +171,7 @@ public class AutoShootCommand extends Command {
         intake.setBottomVoltage(0);
         intake.setTopVoltage(0);
         intake.setOutsideVoltage(0);
-        intake.setSpindexerVoltage(0);
+        intake.setIndexerVoltage(0);
         intake.setState(IntakeState.IDLE);
         lastSolution = null;
         shotTimer.stop();

@@ -20,46 +20,46 @@ public class InBumperIntakeIOSim implements InBumperIntakeIO {
         LinearSystemId.createDCMotorSystem(DCMotor.getNEO(1), 0.004,1),
         DCMotor.getNEO(1));
 
-    private DCMotorSim spindexerMotor = new DCMotorSim(
+    private DCMotorSim indexerMotor = new DCMotorSim(
         LinearSystemId.createDCMotorSystem(DCMotor.getNeoVortex(1), 0.004,1),
         DCMotor.getNeoVortex(1));
 
     private double bottomMotorAppliedVolts = 0.0;
     private double topMotorAppliedVolts = 0.0;
     private double outsideMotorAppliedVolts = 0.0;
-    private double spindexerMotorAppliedVolts = 0.0;
+    private double indexerMotorAppliedVolts = 0.0;
 
     @Override
     public void updateInputs(InBumperIntakeIOInputs inputs) {
         bottomMotor.setInputVoltage(bottomMotorAppliedVolts);
         topMotor.setInputVoltage(topMotorAppliedVolts);
         outsideMotor.setInputVoltage(outsideMotorAppliedVolts);
-        spindexerMotor.setInputVoltage(spindexerMotorAppliedVolts);
+        indexerMotor.setInputVoltage(indexerMotorAppliedVolts);
 
         bottomMotor.update(0.02);
         topMotor.update(0.02);
         outsideMotor.update(0.02);
-        spindexerMotor.update(0.02);
+        indexerMotor.update(0.02);
 
-        inputs.bottomMotorPositionRad = bottomMotor.getAngularPositionRad();
-        inputs.bottomMotorVelocityRadPerSec = bottomMotor.getAngularVelocityRadPerSec();
+        inputs.bottomMotorPositionRotations = bottomMotor.getAngularPositionRotations();
+        inputs.bottomMotorVelocityRPM = bottomMotor.getAngularVelocityRPM();
         inputs.bottomMotorAppliedVolts = bottomMotorAppliedVolts;
         inputs.bottomMotorCurrentAmps = bottomMotor.getCurrentDrawAmps();
 
-        inputs.topMotorPositionRad = topMotor.getAngularPositionRad();
-        inputs.topMotorVelocityRadPerSec = topMotor.getAngularVelocityRadPerSec();
+        inputs.topMotorPositionRotations = topMotor.getAngularPositionRotations();
+        inputs.topMotorVelocityRPM = topMotor.getAngularVelocityRPM();
         inputs.topMotorAppliedVolts = topMotorAppliedVolts;
         inputs.topMotorCurrentAmps = topMotor.getCurrentDrawAmps();
 
-        inputs.outsideMotorPositionRad = outsideMotor.getAngularPositionRad();
-        inputs.outsideMotorVelocityRadPerSec = outsideMotor.getAngularVelocityRadPerSec();
+        inputs.outsideMotorPositionRotations = outsideMotor.getAngularPositionRotations();
+        inputs.outsideMotorVelocityRPM = outsideMotor.getAngularVelocityRPM();
         inputs.outsideMotorAppliedVolts = outsideMotorAppliedVolts;
         inputs.outsideMotorCurrentAmps = outsideMotor.getCurrentDrawAmps();
 
-        inputs.spindexerMotorPositionRad = spindexerMotor.getAngularPositionRad();
-        inputs.spindexerMotorVelocityRadPerSec = spindexerMotor.getAngularVelocityRadPerSec();
-        inputs.spindexerMotorAppliedVolts = spindexerMotorAppliedVolts;
-        inputs.spindexerMotorCurrentAmps = spindexerMotor.getCurrentDrawAmps();
+        inputs.indexerMotorPositionRotations = indexerMotor.getAngularPositionRotations();
+        inputs.indexerMotorVelocityRPM = indexerMotor.getAngularVelocityRPM();
+        inputs.indexerMotorAppliedVolts = indexerMotorAppliedVolts;
+        inputs.indexerMotorCurrentAmps = indexerMotor.getCurrentDrawAmps();
     }
 
     @Override
@@ -78,8 +78,8 @@ public class InBumperIntakeIOSim implements InBumperIntakeIO {
     }
 
     @Override
-    public void setSpindexerVoltage(double volts) {
-        spindexerMotorAppliedVolts = MathUtil.clamp(volts, -12, 12);
+    public void setIndexerVoltage(double volts) {
+        indexerMotorAppliedVolts = MathUtil.clamp(volts, -12, 12);
     }
 
 }

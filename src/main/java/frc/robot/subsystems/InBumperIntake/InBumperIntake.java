@@ -46,8 +46,8 @@ public class InBumperIntake extends SubsystemBase {
         io.setOutsideVoltage(volts);
     }
 
-    public void setSpindexerVoltage(double volts) {
-        io.setSpindexerVoltage(volts);
+    public void setIndexerVoltage(double volts) {
+        io.setIndexerVoltage(volts);
     }
     
     public IntakeState getState() {
@@ -60,13 +60,13 @@ public class InBumperIntake extends SubsystemBase {
             io.setOutsideVoltage(-outsideVolts);
             io.setBottomVoltage(bottomVolts);
             io.setTopVoltage(topVolts);
-            io.setSpindexerVoltage(0); // Spindexer off during ground to shooter
+            io.setIndexerVoltage(0); // Indexer off during ground to shooter
         }).finallyDo(interrupted -> {
             currentState = IntakeState.IDLE;
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
-            io.setSpindexerVoltage(0);
+            io.setIndexerVoltage(0);
         });
     }
 
@@ -76,13 +76,13 @@ public class InBumperIntake extends SubsystemBase {
             io.setOutsideVoltage(-outsideVolts);
             io.setBottomVoltage(bottomVolts);
             io.setTopVoltage(-topVolts);
-            io.setSpindexerVoltage(0); // Spindexer off during ground to hopper
+            io.setIndexerVoltage(0); // Indexer off during ground to hopper
         }).finallyDo(interrupted -> {
             currentState = IntakeState.IDLE;
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
-            io.setSpindexerVoltage(0);
+            io.setIndexerVoltage(0);
         });
     }
 
@@ -92,13 +92,13 @@ public class InBumperIntake extends SubsystemBase {
             io.setOutsideVoltage(-outsideVolts);
             io.setBottomVoltage(-bottomVolts);
             io.setTopVoltage(topVolts);
-            io.setSpindexerVoltage(kSpindexerVoltage); // Spindexer runs during hopper to shooter
+            io.setIndexerVoltage(kIndexerVoltage); // Indexer runs during hopper to shooter
         }).finallyDo(interrupted -> {
             currentState = IntakeState.IDLE;
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
-            io.setSpindexerVoltage(0);
+            io.setIndexerVoltage(0);
         });
     }
 
@@ -108,7 +108,7 @@ public class InBumperIntake extends SubsystemBase {
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
-            io.setSpindexerVoltage(0);
+            io.setIndexerVoltage(0);
         });
     }
 
@@ -117,7 +117,7 @@ public class InBumperIntake extends SubsystemBase {
         io.setOutsideVoltage(0);
         io.setBottomVoltage(0);
         io.setTopVoltage(0);
-        io.setSpindexerVoltage(0);
+        io.setIndexerVoltage(0);
     }
 
     public void setState(IntakeState state) {
