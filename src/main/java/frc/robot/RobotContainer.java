@@ -9,6 +9,9 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import frc.robot.subsystems.Turret.Turret;
 import frc.robot.subsystems.Turret.TurretIO;
 import frc.robot.subsystems.Turret.TurretIOSim;
@@ -86,23 +89,25 @@ public class RobotContainer {
                     drivetrain::addVisionMeasurement,
                     drivetrain::resetOdometry,
                     new VisionIOPhotonVision(VisionConstants.camera1Name, (timestamp) -> VisionConstants.robotToCamera1),
-                    new VisionIOPhotonVision(VisionConstants.camera2Name, (timestamp) -> VisionConstants.robotToCamera2));
-                //     new VisionIOPhotonVision(VisionConstants.camera2Name, (timestamp) -> {
-                //         // Calculate turret-adjusted transform for moving camera using historical position
-                //         Rotation2d turretAngle = turret.getTurretAngleAtTime(timestamp);
+                    new VisionIOPhotonVision(VisionConstants.camera2Name, (timestamp) -> {
+                        // Calculate turret-adjusted transform for moving camera using historical position
+                        Rotation2d turretAngle = turret.getTurretAngleAtTime(timestamp);
                         
-                //         // Create a rotation-only transform at the turret center
-                //         Transform3d turretRotation = new Transform3d(
-                //             new Translation3d(), // No translation, just rotation
-                //             new Rotation3d(0, 0, turretAngle.getRadians())
-                //         );
+                        // Create a rotation-only transform representing the turret's angle
+                        var turretRotation = new Transform3d(
+                            new Translation3d(), // Translation is zero
+                            new Rotation3d(0, 0, turretAngle.getRadians())
+                        );
                         
-                //         // Chain transforms: Robot->TurretCenter, then rotate, then Turret->Camera
-                //         // This ensures turretToCamera2 is applied in the rotated turret's coordinate frame
-                //         return VisionConstants.robotToTurretCenter
-                //             .plus(turretRotation)
-                //             .plus(VisionConstants.turretToCamera2);
-                //     })
+                        // Chain transforms: 
+                        // 1. Start with the transform from the robot's origin to the turret's center.
+                        // 2. Compose it with the turret's current rotation.
+                        // 3. Finally, compose it with the static transform from the turret's center to the camera.
+                        // This correctly places the camera in world space based on turret angle.
+                        return VisionConstants.robotToTurretCenter
+                            .plus(turretRotation)
+                            .plus(VisionConstants.turretToCamera2);
+                    }));
                 
                 break;
             case SIM:
@@ -254,6 +259,31 @@ public class RobotContainer {
         secondaryDriverController.button(12).toggleOnTrue(
             Commands.deferredProxy(() -> overBumperIntake.unjamCommand())
         );
+
+         secondaryDriverController.button(6).onTrue(
+            Commands.deferredProxy(() ->
+                manualOverrideSwitch.getAsBoolean() ?
+                    Commands.runOnce(() -> {
+                        shooterRPMOverride += 100.0;
+                        shooter.setVelocity(shooterRPMOverride);
+                    }, shooter)
+                    :
+                    new Command(){} //TODO: default is blank until we determine replacement controls
+            )
+        );
+        //Retreat climber state (ENGAGED → DEPLOYED → RESTING) OR decrease shooter RPM by 100 in manual override
+        secondaryDriverController.button(4).onTrue(
+            Commands.deferredProxy(() ->
+                manualOverrideSwitch.getAsBoolean() ?
+                    Commands.runOnce(() -> {
+                        shooterRPMOverride = Math.max(0, shooterRPMOverride - 100.0);
+                        shooter.setVelocity(shooterRPMOverride);
+                    }, shooter)
+                    :
+                    new Command(){} //TODO: default is blank until we determine replacement controls
+            )
+        );
+
     }
 
     public void configureAutoChooser() {

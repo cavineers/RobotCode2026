@@ -11,7 +11,7 @@ public class VisionConstants {
     public static AprilTagFieldLayout aprilTagLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
 
     public static String camera1Name = "Camera1";
-    public static String camera2Name = "Camera3"; // Turret-mounted camera
+    public static String camera2Name = "Camera2"; // Turret-mounted camera
 
     // Robot to camera transforms
     // Camera 1: Fixed to robot chassis, 7.64" forward, 8.25" left, facing left (90° CCW yaw)
@@ -50,7 +50,7 @@ public class VisionConstants {
     // Which cameras are mounted on the turret (moving)
     public static boolean[] cameraOnTurret = new boolean[] {
         false, // Camera 1 - fixed to chassis
-        false   // Camera 2 - on turret
+        true   // Camera 2 - on turret
     };
 
     // Basic filtering thresholds
