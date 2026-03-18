@@ -149,7 +149,6 @@ public class Robot extends LoggedRobot {
         // this line or comment it out.
         CommandScheduler.getInstance().cancelAll();
         
-        m_robotContainer.releaseAutoClimb();
     }
 
     /** This function is called periodically during operator control. */

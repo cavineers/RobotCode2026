@@ -183,9 +183,7 @@ public class RobotContainer {
                 primaryDriverController::getRightX,
                 () -> primaryDriverController.getRightTriggerAxis() > 0.5 ? 0.5 : 1.0)
             );
-        
-        // Set default turret command - manual control with secondary controller left/right stick
-        
+               
         // ------ PRIMARY DRIVER CONTROLS ------
         
         primaryDriverController.b().onTrue(overBumperIntake.deployCommand());
@@ -261,28 +259,7 @@ public class RobotContainer {
         // OverBumper Unjam Sequence
         secondaryDriverController.button(12).toggleOnTrue(
             Commands.deferredProxy(() -> overBumperIntake.unjamCommand())
-        )
-        // Turret Field-Relative Presets
-        // Button 7: 0° (forward)
-        // secondaryDriverController.button(7).onTrue(
-        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(0), turret)
-        // );
-        
-        // // Button 8: 45 (left)
-        // secondaryDriverController.button(8).onTrue(
-        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(45)), turret)
-        // );
-        
-        // // Button 9: -45 (right)
-        // secondaryDriverController.button(9).onTrue(
-        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(-45)), turret)
-        // );
-        
-        // // Button 10: 180° (backward)
-        // secondaryDriverController.button(10).onTrue(
-        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(180)), turret)
-        // );
-
+        );
     }
 
     public void configureAutoChooser() {
@@ -350,13 +327,5 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return this.autoChooser.get();
-    }
-
-    /**
-     * @brief Releases the climber to the resting position (used during auto-climb).
-     * @Note Only triggers if climber is currently in the ENGAGED state.
-     */
-    public void releaseAutoClimb() {
-        CommandScheduler.getInstance().schedule(climber.autoEndCommand());
     }
 }
