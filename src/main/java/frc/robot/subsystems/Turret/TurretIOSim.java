@@ -45,8 +45,7 @@ public class TurretIOSim implements TurretIO {
 		inputs.appliedVolts = appliedVolts;
 		inputs.supplyCurrentAmps = Math.abs(supplyCurrentAmps);
 		inputs.motorTempCelsius = 40.0; // placeholder temperature
-		inputs.zeroSwitchPressed = TurretConstants.kUseHomingSwitch
-				&& positionRad <= TurretConstants.kHomingSwitchZeroPositionRad + Math.toRadians(1.0);
+		
 		inputs.forwardLimit = positionRad >= TurretConstants.kMaxAngleRad - 1e-6;
 		inputs.reverseLimit = positionRad <= TurretConstants.kMinAngleRad + 1e-6;
 	}

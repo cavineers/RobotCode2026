@@ -2,10 +2,14 @@ package frc.robot.subsystems.Turret;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import java.util.function.DoubleSupplier;
+import frc.robot.Constants;
+
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -15,7 +19,8 @@ public class Turret extends SubsystemBase {
     private enum ControlMode {
         DISABLED,
         MANUAL,
-        POSITION
+        POSITION,
+        HOMING
     }
 
     private final TurretIO io;
@@ -35,17 +40,22 @@ public class Turret extends SubsystemBase {
     @AutoLogOutput(key = "Turret/ClosedLoopEnabled")
     private boolean closedLoopEnabled = true;
 
-    @AutoLogOutput(key = "Turret/Homed")
-    private boolean homed = !TurretConstants.kUseHomingSwitch;
-
     private final LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Turret/PositionKp", TurretConstants.kPositionKp);
     private final LoggedNetworkNumber tuningI = new LoggedNetworkNumber("/Tuning/Turret/PositionKi", TurretConstants.kPositionKi);
     private final LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Turret/PositionKd", TurretConstants.kPositionKd);
     private double currentKp = TurretConstants.kPositionKp;
     private double currentKi = TurretConstants.kPositionKi;
     private double currentKd = TurretConstants.kPositionKd;
-    
-    private boolean lastHomeSwitchState = false;
+
+    // Homing state variables
+    @AutoLogOutput(key = "Turret/Homed")
+    private boolean homed = false;
+    private int homingCurrentSpikeCount = 0;
+
+    // Turret angle history buffer for moving camera support
+    // Stores turret angles over time to allow retrospective camera position calculation
+    private final TimeInterpolatableBuffer<Rotation2d> turretAngleBuffer =
+        TimeInterpolatableBuffer.createBuffer(TurretConstants.kTurretAngleBufferSizeSec);
 
 
     public Turret(TurretIO io, Supplier<Pose3d> robotPoseSupplier) {
@@ -65,11 +75,14 @@ public class Turret extends SubsystemBase {
 
         Logger.processInputs("Turret", inputs);
 
-        handleHoming();
+        // Add current turret angle to history buffer for moving camera support
+        turretAngleBuffer.addSample(Timer.getFPGATimestamp(), new Rotation2d(getCurrentTurretAngleRad()));
+
 
         switch (controlMode) {
             case POSITION -> runClosedLoop();
             case MANUAL -> runManual();
+            case HOMING -> runHoming();
             case DISABLED -> stopOutputs();
         }
 
@@ -120,6 +133,13 @@ public class Turret extends SubsystemBase {
         manualDemandVolts = 0.0;
     }
 
+    public void startHoming() {
+        homed = false;
+        controlMode = ControlMode.HOMING;
+        homingCurrentSpikeCount = 0;
+        Logger.recordOutput("Turret/HomingStarted", true);
+    }
+
     public void resetEncoder(double positionRad) {
         io.resetEncoder(positionRad);
     }
@@ -143,6 +163,7 @@ public class Turret extends SubsystemBase {
         return positionOk && velocityOk;
     }
 
+    @AutoLogOutput(key="Turret/RobotRelativeAngle")
     public double getCurrentTurretAngleRad() {
         return inputs.positionRad;
     }
@@ -155,8 +176,22 @@ public class Turret extends SubsystemBase {
         return hasValidTarget() ? commandedFieldAngleRad : Double.NaN;
     }
 
+    public double getTargetTurretAngleRad() {
+        return hasValidTarget() ? commandedTurretAngleRad : getCurrentTurretAngleRad();
+    }
+
     public boolean isHomed() {
         return homed;
+    }
+
+    /**
+     * Get the turret angle at a specific timestamp from the history buffer.
+     * Used for calculating moving camera position when processing vision measurements.
+     * @param timestamp The timestamp to query
+     * @return The turret angle at that time, or current angle if timestamp not in buffer
+     */
+    public Rotation2d getTurretAngleAtTime(double timestamp) {
+        return turretAngleBuffer.getSample(timestamp).orElse(new Rotation2d(getCurrentTurretAngleRad()));
     }
 
     public double getPositionError() {
@@ -204,26 +239,72 @@ public class Turret extends SubsystemBase {
         io.setVoltage(applySoftLimits(manualDemandVolts));
     }
 
-    private void stopOutputs() {
-        io.stop();
+    private void runHoming() {
+        if (TurretConstants.kHomingMethod == TurretConstants.HomingMethod.LIMIT_SWITCH) {
+            runHomingLimitSwitch();
+        } else {
+            runHomingCurrentSpike();
+        }
     }
 
-    private void handleHoming() {
-        if (!TurretConstants.kUseHomingSwitch) {
-            return;
-        }
-
-        boolean pressed = inputs.zeroSwitchPressed;
-
-        // Home on rising edge OR if switch is pressed on first run (robot booted while on switch)
-        if (pressed && (!lastHomeSwitchState || !homed)) {
+    private void runHomingLimitSwitch() {
+        if (inputs.homeSwitchTriggered) {
+            // Switch hit — stop and zero encoder at the configured switch position
+            io.stop();
             io.resetEncoder(TurretConstants.kHomingSwitchZeroPositionRad);
             homed = true;
+            controlMode = ControlMode.DISABLED;
+
             commandedFieldAngleRad = getCurrentFieldAngleRad();
             commandedTurretAngleRad = getCurrentTurretAngleRad();
+
+            Logger.recordOutput("Turret/HomingComplete", true);
+        } else {
+            // Drive slowly toward the hardstop until the switch triggers
+            io.setVoltage(TurretConstants.kHomingVoltage);
         }
 
-        lastHomeSwitchState = pressed;
+        Logger.recordOutput("Turret/HomingSwitchTriggered", inputs.homeSwitchTriggered);
+    }
+
+    private void runHomingCurrentSpike() {
+        // Check if current is above threshold
+        boolean currentSpikeDetected = inputs.supplyCurrentAmps >= TurretConstants.kHomingCurrentThresholdAmps;
+        
+        if (currentSpikeDetected){
+            homingCurrentSpikeCount++;
+        } else {
+            homingCurrentSpikeCount = 0; // Reset if current drops
+        }
+        
+        // Check if we've detected a sustained current spike or in simulation (where we won't see real current spikes)
+        boolean homingComplete = homingCurrentSpikeCount >= TurretConstants.kHomingCurrentSpikeCountRequired
+                || Constants.currentMode == Constants.simMode;
+        
+        if (homingComplete) {
+            // Stop the motor and reset encoder
+            io.stop();
+            io.resetEncoder(TurretConstants.kHomingHardstopPositionRad);
+            homed = true;
+            controlMode = ControlMode.DISABLED;
+            homingCurrentSpikeCount = 0;
+            
+            // Set current position as commanded position
+            commandedFieldAngleRad = getCurrentFieldAngleRad();
+            commandedTurretAngleRad = getCurrentTurretAngleRad();
+            
+            Logger.recordOutput("Turret/HomingComplete", true);
+        } else {
+            // Continue moving slowly toward the hardstop
+            io.setVoltage(TurretConstants.kHomingVoltage);
+        }
+        
+        Logger.recordOutput("Turret/HomingCurrentSpikeCount", homingCurrentSpikeCount);
+        Logger.recordOutput("Turret/CurrentSpikeDetected", currentSpikeDetected);
+    }
+
+    private void stopOutputs() {
+        io.stop();
     }
 
     private double calculateRobotRelativeSetpoint(double fieldAngleRad) {
@@ -236,6 +317,13 @@ public class Turret extends SubsystemBase {
         // TurretAngle = FieldTarget - RobotHeading - TurretOffset
         double rawRel = normalizedField - robotHeading - TurretConstants.kTurretZeroOffsetRad;
         double robotRelative = wrapAngle(rawRel);
+        
+        // Handle wrapping into turret's range [-300°, 0°]
+        // If angle is positive (0° to 180°), wrap it to negative equivalent
+        if (robotRelative > 0) {
+            robotRelative -= 2 * Math.PI; 
+        }
+        
         double clamped = MathUtil.clamp(robotRelative, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
 
         return clamped;
@@ -257,8 +345,6 @@ public class Turret extends SubsystemBase {
 
     private static double wrapAngle(double angleRad) {
         // Normalize angle to the standard (-PI, +PI] range.
-        // Mechanical/allowed turret limits are enforced separately using kMinAngleRad and kMaxAngleRad.
-        // Using angleModulus avoids needing custom wrapping logic for 0-2PI (0-360 deg) ranges.
         return MathUtil.angleModulus(angleRad);
     }
 

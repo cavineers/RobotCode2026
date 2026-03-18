@@ -3,104 +3,127 @@ package frc.robot.subsystems.Climber;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
-import java.util.HashMap;
-
-import org.littletonrobotics.junction.AutoLogOutput;
 
 public class Climber extends SubsystemBase {
+
+    /**
+     * Climber state machine:
+     * "Advance" button: RESTING -> DEPLOYED -> ENGAGED
+     * "Retreat" button: ENGAGED -> DEPLOYED -> RESTING
+     */
+    public enum ClimbState {
+        /** All the way down — starting/stored position. */
+        RESTING,
+        /** All the way up — ready to grab peg. */
+        DEPLOYED,
+        /** Partially down - robot is hanging on peg. */
+        ENGAGED
+    }
+
     private final ClimberIO io;
     private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
+
+    @AutoLogOutput(key = "Climber/ClimbState")
+    private ClimbState climbState = ClimbState.RESTING;
 
     private double kP;
     private double kI;
     private double kD;
 
-    public enum ClimbState{
-        RESTING,
-        DEPLOYED,
-        ENGAGED
-    }
+    private final LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Climber/kP", ClimberConstants.kP);
+    private final LoggedNetworkNumber tuningI = new LoggedNetworkNumber("/Tuning/Climber/kI", ClimberConstants.kI);
+    private final LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Climber/kD", ClimberConstants.kD);
 
-    HashMap<Double, ClimbState> climbStater = new HashMap<>();
-    
-    @AutoLogOutput(key="Climber/ClimbState")
-    public ClimbState climbState = ClimbState.RESTING;
-
-    private LoggedNetworkNumber tuningP = new LoggedNetworkNumber("/Tuning/Climber/kP", ClimberConstants.kP);
-    private LoggedNetworkNumber tuningI = new LoggedNetworkNumber("/Tuning/Climber/kI", ClimberConstants.kI);
-    private LoggedNetworkNumber tuningD = new LoggedNetworkNumber("/Tuning/Climber/kD", ClimberConstants.kD);
-    
     public Climber(ClimberIO io) {
         this.io = io;
-        climbStater.put(ClimberConstants.kRestMotorRotations, ClimbState.RESTING);
-        climbStater.put(ClimberConstants.kDeployedMotorRotations, ClimbState.DEPLOYED);
-        climbStater.put(ClimberConstants.kEngagedMotorRotations, ClimbState.ENGAGED);
     }
 
     @Override
     public void periodic() {
         io.updateInputs(inputs);
+
         if (kP != tuningP.get() || kI != tuningI.get() || kD != tuningD.get()) {
             kP = tuningP.get();
             kI = tuningI.get();
             kD = tuningD.get();
-            this.io.setPID(kP, kI, kD);
+            io.setPID(kP, kI, kD);
         }
 
-        climbState = climbStater.get(getSetpoint());
         Logger.processInputs("Climber", inputs);
+        Logger.recordOutput("Climber/SetpointRotations", inputs.setpoint);
     }
 
-    public Command changeSetpointCommand(double rotations) {
-        return Commands.run(() -> {
-            io.updateClimberSetpoint(inputs.setpoint + rotations);
-        }, this);
-    } 
-    
-    public Command goToPresetCommand() {
-        return Commands.runOnce(() -> {
-        switch (climbState) {
-            case RESTING:
-                io.updateClimberSetpoint(ClimberConstants.kDeployedMotorRotations);
-                break;
-            case DEPLOYED:
-                io.updateClimberSetpoint(ClimberConstants.kEngagedMotorRotations);
-                break;
-            case ENGAGED:
-                io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
-                break;
-        }
-    }, this);
-}
-    public Command undoCommand() {
-        return Commands.runOnce(() -> {
-        switch (climbState) {
-            case RESTING:
-                io.updateClimberSetpoint(ClimberConstants.kEngagedMotorRotations);
-                break;
-            case DEPLOYED:
-                io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
-                break;
-            case ENGAGED:
-                io.updateClimberSetpoint(ClimberConstants.kDeployedMotorRotations);
-                break;
-        }
-    }, this);
-}
+    // ── State transitions ───────────────────────────────────────────────────
 
-    public Command releaseAutoCommand() {
+    /**
+     * Advance one step forward:
+     * RESTING -> DEPLOYED -> ENGAGED (no-op if already ENGAGED)
+     */
+    public Command advanceCommand() {
         return Commands.runOnce(() -> {
-        io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
+            switch (climbState) {
+                case RESTING:
+                    io.updateClimberSetpoint(ClimberConstants.kDeployedMotorRotations);
+                    climbState = ClimbState.DEPLOYED;
+                    break;
+                case DEPLOYED:
+                    io.updateClimberSetpoint(ClimberConstants.kEngagedMotorRotations);
+                    climbState = ClimbState.ENGAGED;
+                    break;
+                case ENGAGED:
+                    // Already at the final climb state — do nothing
+                    break;
+            }
         }, this);
+    }
+
+    /**
+     * Retreat one step back:
+     * ENGAGED -> DEPLOYED -> RESTING (no-op if already RESTING)
+     */
+    public Command retreatCommand() {
+        return Commands.runOnce(() -> {
+            switch (climbState) {
+                case ENGAGED:
+                    io.updateClimberSetpoint(ClimberConstants.kDeployedMotorRotations);
+                    climbState = ClimbState.DEPLOYED;
+                    break;
+                case DEPLOYED:
+                    io.updateClimberSetpoint(ClimberConstants.kRestMotorRotations);
+                    climbState = ClimbState.RESTING;
+                    break;
+                case RESTING:
+                    // Already at rest — do nothing
+                    break;
+            }
+        }, this);
+    }
+
+    /**
+     * If the climber is ENGAGED at the end of autonomous, raise it back up to
+     * DEPLOYED so the robot isn't hanging when teleop starts.
+     */
+    public Command autoEndCommand() {
+        return Commands.runOnce(() -> {
+            if (climbState == ClimbState.ENGAGED) {
+                io.updateClimberSetpoint(ClimberConstants.kDeployedMotorRotations);
+                climbState = ClimbState.DEPLOYED;
+            }
+        }, this);
+    }
+
+    public ClimbState getClimbState() {
+        return climbState;
     }
 
     public double getClimberPosition() {
         return inputs.climberPositionRotations;
     }
 
-    public double getSetpoint(){
+    public double getSetpoint() {
         return inputs.setpoint;
     }
 }

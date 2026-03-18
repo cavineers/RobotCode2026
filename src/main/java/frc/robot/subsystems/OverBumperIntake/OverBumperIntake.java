@@ -77,4 +77,52 @@ public class OverBumperIntake extends SubsystemBase {
     public Command outtakeCommand() {
         return Commands.run(() -> io.outtake(), this).finallyDo(interrupted -> io.setIntakeVoltage(0.0));
     }
+
+    /**
+     * Stop command: stops the intake wheel and retracts the arm.
+     */
+    public Command stopCommand() {
+        return Commands.runOnce(() -> {
+            io.setIntakeVoltage(0);
+            io.updateSetpoint(kRetractedRotations);
+            deployed = false;
+        }, this).withName("OTB Stop");
+    }
+
+    /**
+     * Unjam sequence: repeatedly deploys and retracts the OTB arm while running
+     * the OTB intake wheel, then returns to the state it was in when called.
+     */
+    public Command unjamCommand() {
+        final double CYCLE_SECS = 1.0;
+        final boolean[] initialState = {deployed}; // Capture initial state in array
+
+        Command cmd = Commands.sequence(
+            // Start OTB intake wheel immediately
+            Commands.runOnce(() -> io.intake()),
+            // Continuously cycle deploy -> retract until cancelled
+            Commands.repeatingSequence(
+                Commands.runOnce(() -> { io.updateSetpoint(kDeployedRotations); deployed = true; }),
+                Commands.waitSeconds(CYCLE_SECS),
+                Commands.runOnce(() -> { io.updateSetpoint(kRetractedRotations); deployed = false; }),
+                Commands.waitSeconds(CYCLE_SECS)
+            )
+        ).finallyDo(() -> {
+            // Return to initial state
+            if (initialState[0]) {
+                // Was deployed - redeploy and run intake
+                io.updateSetpoint(kDeployedRotations);
+                io.intake();
+                deployed = true;
+            } else {
+                // Was retracted - retract and stop
+                io.updateSetpoint(kRetractedRotations);
+                io.setIntakeVoltage(0);
+                deployed = false;
+            }
+            Logger.recordOutput("OverBumperIntake/deployed", deployed);
+        }).withName("OTB Unjam");
+        cmd.addRequirements(this);
+        return cmd;
+    }
 }

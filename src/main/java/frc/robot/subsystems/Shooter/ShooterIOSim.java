@@ -1,5 +1,6 @@
 package frc.robot.subsystems.Shooter;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
@@ -13,14 +14,16 @@ public class ShooterIOSim implements ShooterIO {
     
     private final DCMotorSim flywheelSim;
     private double appliedVolts = 0.0;
+    private double currentHoodAngleDegrees = 0.0;
+    private double currentServoPosition = 0.0;
 
     public ShooterIOSim() {
-        // Note: FOC is handled in hardware, simulation uses standard model
+        // kSimGearRatio = output/input (WPILib convention) = flywheel/motor = 1.33
         flywheelSim = new DCMotorSim(
             LinearSystemId.createDCMotorSystem(
-                DCMotor.getKrakenX44(2), 
-                kFlywheelMOI, 
-                kGearRatio
+                DCMotor.getKrakenX44(2),
+                kFlywheelMOI,
+                kSimGearRatio
             ),
             DCMotor.getKrakenX44(2)
         );
@@ -29,27 +32,34 @@ public class ShooterIOSim implements ShooterIO {
     @Override
     public void updateInputs(ShooterIOInputs inputs) {
         flywheelSim.update(0.02); // 20ms loop time
-        
-        inputs.flywheelVelocityRPM = flywheelSim.getAngularVelocityRPM();
+
+        // getAngularVelocityRPM returns motor shaft RPM — divide by kSimGearRatio to get flywheel RPM
+        inputs.flywheelVelocityRPM = flywheelSim.getAngularVelocityRPM() / kSimGearRatio;
         inputs.flywheelAppliedVolts = appliedVolts;
         inputs.flywheelCurrentAmps = flywheelSim.getCurrentDrawAmps();
-        inputs.flywheelTempCelsius = 25.0; // Simulated temp
-        
+        inputs.flywheelTempCelsius = 25.0;
+
         // Follower mirrors leader in sim
         inputs.followerVelocityRPM = inputs.flywheelVelocityRPM;
         inputs.followerAppliedVolts = appliedVolts;
         inputs.followerCurrentAmps = flywheelSim.getCurrentDrawAmps();
         inputs.followerTempCelsius = 25.0;
-        
         inputs.connected = true;
     }
 
     @Override
     public void setVelocity(double velocityRPM) {
-        // Simple P controller for sim
-        double error = velocityRPM - flywheelSim.getAngularVelocityRPM();
-        appliedVolts = error * kSimP;
-        appliedVolts = Math.max(-12.0, Math.min(12.0, appliedVolts)); // Clamp
+        // velocityRPM is flywheel RPM — convert to motor RPM for error and FF
+        double motorTargetRPM = velocityRPM * kSimGearRatio;
+        double motorCurrentRPM = flywheelSim.getAngularVelocityRPM();
+        double error = motorTargetRPM - motorCurrentRPM;
+
+        // kV is V/(motor rad/s)
+        double motorTargetRadPerSec = motorTargetRPM * 2.0 * Math.PI / 60.0;
+        double ffVolts = kSimKS * Math.signum(velocityRPM) + kSimKV * motorTargetRadPerSec;
+        double fbVolts = error * kSimP;
+
+        appliedVolts = Math.max(-12.0, Math.min(12.0, ffVolts + fbVolts));
         flywheelSim.setInputVoltage(appliedVolts);
     }
 

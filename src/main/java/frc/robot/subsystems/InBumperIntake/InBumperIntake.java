@@ -6,6 +6,8 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
+
 
 public class InBumperIntake extends SubsystemBase {
     public enum IntakeState {
@@ -34,17 +36,18 @@ public class InBumperIntake extends SubsystemBase {
 
     public void setBottomVoltage(double volts) {
         io.setBottomVoltage(volts);
-        currentState = IntakeState.MANUAL_CONTROL;
     }
 
     public void setTopVoltage(double volts) {
         io.setTopVoltage(volts);
-        currentState = IntakeState.MANUAL_CONTROL;
     }
 
     public void setOutsideVoltage(double volts) {
         io.setOutsideVoltage(volts);
-        currentState = IntakeState.MANUAL_CONTROL;
+    }
+
+    public void setSpindexerVoltage(double volts) {
+        io.setSpindexerVoltage(volts);
     }
     
     public IntakeState getState() {
@@ -57,11 +60,13 @@ public class InBumperIntake extends SubsystemBase {
             io.setOutsideVoltage(-outsideVolts);
             io.setBottomVoltage(bottomVolts);
             io.setTopVoltage(topVolts);
+            io.setSpindexerVoltage(0); // Spindexer off during ground to shooter
         }).finallyDo(interrupted -> {
             currentState = IntakeState.IDLE;
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
+            io.setSpindexerVoltage(0);
         });
     }
 
@@ -71,11 +76,13 @@ public class InBumperIntake extends SubsystemBase {
             io.setOutsideVoltage(-outsideVolts);
             io.setBottomVoltage(bottomVolts);
             io.setTopVoltage(-topVolts);
+            io.setSpindexerVoltage(0); // Spindexer off during ground to hopper
         }).finallyDo(interrupted -> {
             currentState = IntakeState.IDLE;
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
+            io.setSpindexerVoltage(0);
         });
     }
 
@@ -85,11 +92,13 @@ public class InBumperIntake extends SubsystemBase {
             io.setOutsideVoltage(-outsideVolts);
             io.setBottomVoltage(-bottomVolts);
             io.setTopVoltage(topVolts);
+            io.setSpindexerVoltage(kSpindexerVoltage); // Spindexer runs during hopper to shooter
         }).finallyDo(interrupted -> {
             currentState = IntakeState.IDLE;
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
+            io.setSpindexerVoltage(0);
         });
     }
 
@@ -99,7 +108,20 @@ public class InBumperIntake extends SubsystemBase {
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
+            io.setSpindexerVoltage(0);
         });
+    }
+
+    public void stopIntake() {
+        currentState = IntakeState.IDLE;
+        io.setOutsideVoltage(0);
+        io.setBottomVoltage(0);
+        io.setTopVoltage(0);
+        io.setSpindexerVoltage(0);
+    }
+
+    public void setState(IntakeState state) {
+        currentState = state;
     }
 
 }

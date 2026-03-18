@@ -20,6 +20,11 @@ public interface InBumperIntakeIO {
         public double outsideMotorAppliedVolts = 0.0;
         public double outsideMotorCurrentAmps = 0.0;
 
+        public double spindexerMotorPositionRad = 0.0;
+        public double spindexerMotorVelocityRadPerSec = 0.0;
+        public double spindexerMotorAppliedVolts = 0.0;
+        public double spindexerMotorCurrentAmps = 0.0;
+
     }
     
     public default void updateInputs(InBumperIntakeIOInputs inputs) {}
@@ -29,4 +34,6 @@ public interface InBumperIntakeIO {
     public default void setTopVoltage(double volts) {}
 
     public default void setOutsideVoltage(double volts) {}
+
+    public default void setSpindexerVoltage(double volts) {}
 } 

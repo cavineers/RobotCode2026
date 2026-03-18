@@ -1,6 +1,7 @@
 package frc.robot.subsystems.Shooter;
 
 import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
@@ -8,8 +9,11 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
+
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+
 
 import static frc.robot.subsystems.Shooter.ShooterConstants.*;
 
@@ -20,6 +24,8 @@ public class ShooterIOKraken implements ShooterIO {
     private final TalonFX followerMotor;
     private final VelocityVoltage velocityControl;
     private final VoltageOut voltageControl = new VoltageOut(0);
+    private final CANBus shooterCANBus = new CANBus(kFlywheelCanBus);
+
     
     // WPILib Alerts for error handling
     private final Alert leaderConfigAlert = new Alert("Shooter leader motor config failed", AlertType.kError);
@@ -28,9 +34,9 @@ public class ShooterIOKraken implements ShooterIO {
     private final Alert setFFAlert = new Alert("Shooter setFF failed", AlertType.kWarning);
 
     public ShooterIOKraken() {
-        leaderMotor = new TalonFX(kFlywheelLeaderMotorCanID);
-        followerMotor = new TalonFX(kFlywheelFollowerMotorCanID);
         
+        leaderMotor = new TalonFX(kFlywheelLeaderMotorCanID, shooterCANBus);
+        followerMotor = new TalonFX(kFlywheelFollowerMotorCanID, shooterCANBus);
         velocityControl = new VelocityVoltage(0)
             .withSlot(0)
             .withEnableFOC(kEnableFOC);
@@ -93,21 +99,23 @@ public class ShooterIOKraken implements ShooterIO {
 
     @Override
     public void updateInputs(ShooterIOInputs inputs) {
+        // getVelocity() returns motor shaft RPS — divide by kGearRatio (motor/flywheel) to get flywheel RPM
         inputs.flywheelVelocityRPM = leaderMotor.getVelocity().getValueAsDouble() * 60.0 / kGearRatio;
         inputs.flywheelAppliedVolts = leaderMotor.getMotorVoltage().getValueAsDouble();
         inputs.flywheelCurrentAmps = leaderMotor.getSupplyCurrent().getValueAsDouble();
         inputs.flywheelTempCelsius = leaderMotor.getDeviceTemp().getValueAsDouble();
-        
+
         inputs.followerVelocityRPM = followerMotor.getVelocity().getValueAsDouble() * 60.0 / kGearRatio;
         inputs.followerAppliedVolts = followerMotor.getMotorVoltage().getValueAsDouble();
         inputs.followerCurrentAmps = followerMotor.getSupplyCurrent().getValueAsDouble();
         inputs.followerTempCelsius = followerMotor.getDeviceTemp().getValueAsDouble();
-        
+
         inputs.connected = leaderMotor.isAlive() && followerMotor.isAlive();
     }
 
     @Override
     public void setVelocity(double velocityRPM) {
+        // velocityRPM is FLYWHEEL RPM — multiply by kGearRatio (motor/flywheel) to get motor shaft RPS for Phoenix 6
         double velocityRPS = (velocityRPM / 60.0) * kGearRatio;
         leaderMotor.setControl(velocityControl.withVelocity(velocityRPS));
     }

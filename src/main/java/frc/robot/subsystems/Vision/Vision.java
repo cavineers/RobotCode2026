@@ -12,19 +12,21 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.Vision.VisionIO.PoseObservationType;
 import java.util.LinkedList;
 import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
 public class Vision extends SubsystemBase {
     private final VisionConsumer consumer;
+    private final VisionResetConsumer resetConsumer;
     private final VisionIO[] io;
     private final VisionIOInputsAutoLogged[] inputs;
     private final Alert[] disconnectedAlerts;
+    private boolean hasResetPose = false;
 
-    public Vision(VisionConsumer consumer, VisionIO... io) {
+    public Vision(VisionConsumer consumer, VisionResetConsumer resetConsumer, VisionIO... io) {
         this.consumer = consumer;
+        this.resetConsumer = resetConsumer;
         this.io = io;
 
         // Initialize inputs
@@ -110,6 +112,12 @@ public class Vision extends SubsystemBase {
                     continue;
                 }
 
+                // On first accepted pose, reset odometry so wheel odometry starts from the right place
+                if (!hasResetPose) {
+                    resetConsumer.accept(observation.pose().toPose2d());
+                    hasResetPose = true;
+                }
+
                 // Calculate standard deviations
                 double stdDevFactor = Math.pow(observation.averageTagDistance(), 2.0) / observation.tagCount();
                 double linearStdDev = linearStdDevBaseline * stdDevFactor;
@@ -161,5 +169,10 @@ public class Vision extends SubsystemBase {
                 Pose2d visionRobotPoseMeters,
                 double timestampSeconds,
                 Matrix<N3, N1> visionMeasurementStdDevs);
+    }
+
+    @FunctionalInterface
+    public static interface VisionResetConsumer {
+        public void accept(Pose2d visionRobotPoseMeters);
     }
 }

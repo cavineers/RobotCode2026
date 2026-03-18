@@ -66,10 +66,10 @@ public class ClimberIOSim implements ClimberIO {
     }
 
     public double clipSetpoint(double rotations) {
-        if (rotations > ClimberConstants.kDeployedMotorRotations) {
+        if (rotations < ClimberConstants.kDeployedMotorRotations) {
             return ClimberConstants.kDeployedMotorRotations;
         }
-        else if (rotations < ClimberConstants.kRestMotorRotations) {
+        if (rotations > ClimberConstants.kRestMotorRotations) {
              return ClimberConstants.kRestMotorRotations;
         }
         return rotations;

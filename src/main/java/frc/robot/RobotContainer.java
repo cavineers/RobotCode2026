@@ -3,16 +3,24 @@ package frc.robot;
 import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.kOutsideVoltage;
 
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.geometry.Pose3d;
-
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.commands.ManualTurretVoltageCommand;
 import frc.robot.commands.TurretPresetCommand;
 import frc.robot.subsystems.Turret.Turret;
@@ -25,9 +33,10 @@ import frc.robot.subsystems.Vision.VisionIO;
 import frc.robot.subsystems.Vision.VisionIOPhotonVision;
 import frc.robot.subsystems.Turret.TurretConstants;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.commands.ContinuousShotCalculationCommand;
+import frc.robot.commands.AutoShootCommand;
 import frc.robot.commands.ShooterCharacterizationCommand;
 import frc.robot.commands.SwerveCommand;
+import frc.lib.FuelSim;
 
 import frc.robot.subsystems.Drivetrain.GyroIO;
 import frc.robot.subsystems.Drivetrain.GyroPigeonIO;
@@ -58,12 +67,13 @@ import frc.robot.subsystems.Climber.ClimberConstants;
 import frc.robot.subsystems.Climber.ClimberIO;
 import frc.robot.subsystems.Climber.ClimberIOKraken;
 import frc.robot.subsystems.Climber.ClimberIOSim;
+import frc.lib.Elastic; 
 
 public class RobotContainer {
 
     // Subsystems
 
-    private final Turret turret;
+    public final Turret turret;
     public final SwerveDriveSubsystem drivetrain;
     public final Climber climber;
     public final OverBumperIntake overBumperIntake;
@@ -71,9 +81,15 @@ public class RobotContainer {
     public final ShooterSubsystem shooter;
     public final Vision vision;
 
+    /** Fuel particle simulation — only non-null in SIM mode. */
+    public FuelSim fuelSim = null;
+
     // Controllers
     private final CommandXboxController primaryDriverController = new CommandXboxController(0);
-    private final CommandXboxController secondaryDriverController = new CommandXboxController(1);
+    private final CommandGenericHID secondaryDriverController = new CommandGenericHID(1);
+
+    // Manual override state
+    private double shooterRPMOverride = 3000.0; // Starting RPM for override mode
 
     // Auto chooser
     private LoggedDashboardChooser<Command> autoChooser;
@@ -96,7 +112,28 @@ public class RobotContainer {
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
                 shooter = new ShooterSubsystem(
                         new ShooterIOKraken());
-                vision = new Vision(drivetrain::addVisionMeasurement, new VisionIOPhotonVision(VisionConstants.camera1Name, VisionConstants.robotToCamera1));
+                vision = new Vision(
+                    drivetrain::addVisionMeasurement,
+                    drivetrain::resetOdometry,
+                    new VisionIOPhotonVision(VisionConstants.camera1Name, (timestamp) -> VisionConstants.robotToCamera1),
+                    new VisionIOPhotonVision(VisionConstants.camera2Name, (timestamp) -> VisionConstants.robotToCamera2));
+                //     new VisionIOPhotonVision(VisionConstants.camera2Name, (timestamp) -> {
+                //         // Calculate turret-adjusted transform for moving camera using historical position
+                //         Rotation2d turretAngle = turret.getTurretAngleAtTime(timestamp);
+                        
+                //         // Create a rotation-only transform at the turret center
+                //         Transform3d turretRotation = new Transform3d(
+                //             new Translation3d(), // No translation, just rotation
+                //             new Rotation3d(0, 0, turretAngle.getRadians())
+                //         );
+                        
+                //         // Chain transforms: Robot->TurretCenter, then rotate, then Turret->Camera
+                //         // This ensures turretToCamera2 is applied in the rotated turret's coordinate frame
+                //         return VisionConstants.robotToTurretCenter
+                //             .plus(turretRotation)
+                //             .plus(VisionConstants.turretToCamera2);
+                //     })
+                
                 break;
             case SIM:
                 drivetrain = new SwerveDriveSubsystem(
@@ -114,7 +151,19 @@ public class RobotContainer {
                 shooter = new ShooterSubsystem(
                         new ShooterIOSim());
                 
-                vision = new Vision(drivetrain::addVisionMeasurement, new VisionIO(){});
+                vision = new Vision(drivetrain::addVisionMeasurement, drivetrain::resetOdometry, new VisionIO(){});
+
+                // ---- FuelSim ----
+                fuelSim = new FuelSim("FuelSim/Fuel");
+                fuelSim.registerRobot(
+                        Constants.RobotDimensions.kWidthMeters,
+                        Constants.RobotDimensions.kLengthMeters,
+                        Constants.RobotDimensions.kBumperHeightMeters,
+                        drivetrain::getPose,
+                        drivetrain::getFieldRelativeChassisSpeeds);
+                fuelSim.setLoggingFrequency(100);
+                fuelSim.setSubticks(10);
+                fuelSim.start();
                 break;
             default:
                 drivetrain = new SwerveDriveSubsystem(
@@ -142,34 +191,33 @@ public class RobotContainer {
                         new ShooterIO() {
                         });
 
-                vision = new Vision(drivetrain::addVisionMeasurement, new VisionIO(){});
+                vision = new Vision(drivetrain::addVisionMeasurement, drivetrain::resetOdometry, new VisionIO(){});
                 break;
         }
 
         configureButtonBindings();
         configureNamedCommands();
         configureAutoChooser();
+        configureElasticWidgets();
 
     }
 
     private void configureButtonBindings() {
-        // Set default drivetrain command
+        // Set default drivetrain command — halve speed while auto-shooting (left trigger)
         drivetrain.setDefaultCommand(new SwerveCommand(
                 drivetrain,
                 primaryDriverController::getLeftY,
                 primaryDriverController::getLeftX,
-                primaryDriverController::getRightX)
+                primaryDriverController::getRightX,
+                () -> primaryDriverController.getRightTriggerAxis() > 0.5 ? 0.5 : 1.0)
             );
         
+        // Set default turret command - manual control with secondary controller left/right stick
+        
         // ------ PRIMARY DRIVER CONTROLS ------
-        // Shooting controls (for testing purposes, will be replaced with vision-based shooting commands)
-        // primaryDriverController.rightTrigger().whileTrue(
-        //     Commands.run(
-        //         () -> shooter.setTunableVelocity(), shooter)
-        //     .finallyDo(() -> shooter.stop()));
         
         primaryDriverController.b().onTrue(overBumperIntake.deployCommand());
-        
+                
         // Toggle InBumperIntake: Press to start runGroundToHopper, press again to stop
         primaryDriverController.x().toggleOnTrue(
             inBumperIntake.runGroundToHopper(
@@ -177,44 +225,123 @@ public class RobotContainer {
                 InBumperIntakeConstants.kBottomVoltage, 
                 InBumperIntakeConstants.kTopVoltage)
         );
+
+        // TODO: PLACEHOLDER: replace with actual button
+        var manualOverrideSwitch = secondaryDriverController.button(8);
+
+        // Right trigger: Auto shoot OR hopper to shooter (depending on manual override)
         primaryDriverController.rightTrigger().toggleOnTrue(
-                inBumperIntake.runHopperToShooter(
-                InBumperIntakeConstants.kOutsideVoltage, 
-                InBumperIntakeConstants.kBottomVoltage, 
+            Commands.deferredProxy(() ->
+                manualOverrideSwitch.getAsBoolean() ?
+                    // Manual override mode: toggle hopper to shooter
+                    inBumperIntake.runHopperToShooter(
+                        InBumperIntakeConstants.kOutsideVoltage,
+                        InBumperIntakeConstants.kBottomVoltage,
+                        InBumperIntakeConstants.kTopVoltage)
+                    :
+                    // Normal mode: auto shoot
+                    new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim)
+            )
+        );
+
+        // ------ SECONDARY DRIVER CONTROLS ------
+        
+        // Button 2: Start turret homing sequence (current-based hardstop detection)
+        secondaryDriverController.button(11).onTrue(
+            Commands.runOnce(() -> turret.startHoming(), turret)
+        );
+
+        // Turret left/right: axis acts as a button, so bind whileTrue on each direction
+        secondaryDriverController.axisGreaterThan(0, 0.5).whileTrue(
+            Commands.run(() -> turret.setRobotRelativeTarget(
+                turret.getTargetTurretAngleRad() + Math.toRadians(2.0)), turret)
+        );
+        secondaryDriverController.axisLessThan(0, -0.5).whileTrue(
+            Commands.run(() -> turret.setRobotRelativeTarget(
+                turret.getTargetTurretAngleRad() - Math.toRadians(2.0)), turret)
+        );
+
+        // ------ IN-BUMPER INTAKE MODES (secondary buttons 3/4/5) ------
+        // Button 3: Toggle ground -> hopper
+        secondaryDriverController.button(3).toggleOnTrue(
+            inBumperIntake.runGroundToHopper(
+                InBumperIntakeConstants.kOutsideVoltage,
+                InBumperIntakeConstants.kBottomVoltage,
                 InBumperIntakeConstants.kTopVoltage)
         );
 
-        // ------ SECONDARY DRIVER CONTROLS (Turret) ------
-        // POV Up: Hold turret at 0 degrees field-relative (due north)
-        secondaryDriverController.povUp().onTrue(
-            Commands.runOnce(
-                () -> turret.setFieldRelativeTarget(0.0),
-                turret
+        // Button 4: Toggle ground -> shooter (bypass hopper)
+        secondaryDriverController.button(2).toggleOnTrue(
+            inBumperIntake.runGroundToShooter(
+                InBumperIntakeConstants.kOutsideVoltage,
+                InBumperIntakeConstants.kBottomVoltage,
+                InBumperIntakeConstants.kTopVoltage)
+        );
+
+        // Button 5: Toggle hopper -> shooter
+        secondaryDriverController.button(1).toggleOnTrue(
+            inBumperIntake.runHopperToShooter(
+                InBumperIntakeConstants.kOutsideVoltage,
+                InBumperIntakeConstants.kBottomVoltage,
+                InBumperIntakeConstants.kTopVoltage)
+        );
+
+        // OverBumper Unjam Sequence
+        secondaryDriverController.button(12).toggleOnTrue(
+            Commands.deferredProxy(() -> overBumperIntake.unjamCommand())
+        );
+
+        //Advance climber state (RESTING → DEPLOYED → ENGAGED) OR increase shooter RPM by 100 in manual override
+        secondaryDriverController.button(6).onTrue(
+            Commands.deferredProxy(() ->
+                manualOverrideSwitch.getAsBoolean() ?
+                    Commands.runOnce(() -> {
+                        shooterRPMOverride += 100.0;
+                        shooter.setVelocity(shooterRPMOverride);
+                    }, shooter)
+                    :
+                    climber.advanceCommand()
+            )
+        );
+        //Retreat climber state (ENGAGED → DEPLOYED → RESTING) OR decrease shooter RPM by 100 in manual override
+        secondaryDriverController.button(4).onTrue(
+            Commands.deferredProxy(() ->
+                manualOverrideSwitch.getAsBoolean() ?
+                    Commands.runOnce(() -> {
+                        shooterRPMOverride = Math.max(0, shooterRPMOverride - 100.0);
+                        shooter.setVelocity(shooterRPMOverride);
+                    }, shooter)
+                    :
+                    climber.retreatCommand()
             )
         );
 
-        // POV Right: Hold turret at 90 degrees field-relative (due east)
-        secondaryDriverController.povRight().onTrue(
-            Commands.runOnce(
-                () -> turret.setFieldRelativeTarget(-90.0),
-                turret
-            )
-        );
-
-        // POV Left: Hold turret at -90 degrees field-relative (due west)
-        secondaryDriverController.povLeft().onTrue(
-            Commands.runOnce(
-                () -> turret.setFieldRelativeTarget(Math.toRadians(90.0)),
-                turret
-            )
-        );
-
+        // Turret Field-Relative Presets
+        // Button 7: 0° (forward)
+        // secondaryDriverController.button(7).onTrue(
+        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(0), turret)
+        // );
+        
+        // // Button 8: 45 (left)
+        // secondaryDriverController.button(8).onTrue(
+        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(45)), turret)
+        // );
+        
+        // // Button 9: -45 (right)
+        // secondaryDriverController.button(9).onTrue(
+        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(-45)), turret)
+        // );
+        
+        // // Button 10: 180° (backward)
+        // secondaryDriverController.button(10).onTrue(
+        //     Commands.runOnce(() -> turret.setFieldRelativeTarget(Math.toRadians(180)), turret)
+        // );
 
     }
 
     public void configureAutoChooser() {
         // Set up auto routines for SysIds
-        autoChooser = new LoggedDashboardChooser<>("Auto Choices");// AutoBuilder.buildAutoChooser()
+        autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());// 
         // Set up SysId routines
         autoChooser.addOption("Shooter Characterization",
                 ShooterCharacterizationCommand.feedforwardCharacterization(shooter));
@@ -256,8 +383,23 @@ public class RobotContainer {
                 drivetrain.sysIdRotationDynamic(SysIdRoutine.Direction.kReverse));
     }
 
+    public void configureElasticWidgets(){
+        // Register Elastic widgets (see frc.lib.Elastic)
+    }
+
     public void configureNamedCommands() {
         // Register Named Commands
+        NamedCommands.registerCommand("unjam_otb", overBumperIntake.unjamCommand());
+        NamedCommands.registerCommand("intake_otb", overBumperIntake.deployCommand());
+        NamedCommands.registerCommand("stop_otb", overBumperIntake.stopCommand());
+        NamedCommands.registerCommand("auto_shoot", new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake));
+        NamedCommands.registerCommand("stop_shooter", 
+            Commands.parallel(
+                shooter.stopCommand(),
+                inBumperIntake.stopCommand()
+            )
+        );
+        NamedCommands.registerCommand("home_turret", Commands.runOnce(() -> turret.startHoming(), turret));
     }
 
     public Command getAutonomousCommand() {
@@ -265,12 +407,10 @@ public class RobotContainer {
     }
 
     /**
-     * @brief Releases the climber to the extended position
-     * @Note Climber must have the setpoint set to kDeploy
+     * @brief Releases the climber to the resting position (used during auto-climb).
+     * @Note Only triggers if climber is currently in the ENGAGED state.
      */
     public void releaseAutoClimb() {
-        if (climber.getSetpoint() == ClimberConstants.kEngagedMotorRotations) {
-            CommandScheduler.getInstance().schedule(climber.releaseAutoCommand());
-        }
+        CommandScheduler.getInstance().schedule(climber.autoEndCommand());
     }
 }

@@ -9,6 +9,17 @@ import edu.wpi.first.math.util.Units;
  */
 public final class TurretConstants {
 
+    /** Selects which homing strategy to use. */
+    public enum HomingMethod {
+        /** Detect the mechanical hardstop via a sustained motor current spike. */
+        CURRENT_SPIKE,
+        /** Detect the home position via a physical limit switch on a DIO port. */
+        LIMIT_SWITCH
+    }
+
+    /** Active homing method — change this to switch between strategies. */
+    public static final HomingMethod kHomingMethod = HomingMethod.CURRENT_SPIKE;
+
     // CAN IDs / hardware
     public static final int kTurretMotorId = 51; // TODO: Update with real CAN ID
     public static final boolean kMotorInverted = true;
@@ -24,12 +35,13 @@ public final class TurretConstants {
 
     // Mechanical limits
     // Defined as Robot-Relative angles (0 is Front/North)
-    // Range: -175 degrees (Right) to +175 degrees (Left)
-    public static final double kMinAngleRad = Units.degreesToRadians(-110.0);
-    public static final double kMaxAngleRad = Units.degreesToRadians(110.0);
+    // Range: 0 rad (minimum) to -5.236 rad (maximum, -300 degrees)
+    public static final double kMinAngleRad = Units.degreesToRadians(-300.0); // -5.236 rad
+    public static final double kMaxAngleRad = Units.degreesToRadians(0.0); // 0 rad
     
     // Offset from the robot's front (0 degrees) to the turret's "Mechanical Zero"
-    public static final double kTurretZeroOffsetRad = 0.0;
+    // Mechanical zero is at 0 rad (front of robot)
+    public static final double kTurretZeroOffsetRad = Units.degreesToRadians(0);
 
     // Preset positions (robot-relative angles)
     public static final double kPresetOneRad = Units.degreesToRadians(0.0); // Front
@@ -49,15 +61,23 @@ public final class TurretConstants {
     public static final double kPositionToleranceRad = Math.toRadians(1.0);
     public static final double kVelocityToleranceRadPerSec = Math.toRadians(5.0);
 
+    // Moving camera support - turret angle history buffer
+    public static final double kTurretAngleBufferSizeSec = 2.0; // Store 2 seconds of turret angle history
+
     // Homing / limit switch
-    public static final boolean kUseHomingSwitch = false;
     public static final boolean kHomingSwitchNormallyOpen = false;
-    public static final int kHomingSwitchDioPort = 5; // TODO: Update with actual DIO port
+    public static final int kHomingSwitchDioPort = 4; // TODO: Update with actual DIO port
     public static final double kHomingSwitchZeroPositionRad = 0;
     public static final double kHomingSearchMaxVoltage = 3.0; // Reduced voltage when not homed for safety
 
+    // Current-based homing (hardstop detection)
+    public static final double kHomingVoltage = -1.25; // Voltage to apply during homing
+    public static final double kHomingCurrentThresholdAmps = 25; // Current threshold to detect hardstop
+    public static final int kHomingCurrentSpikeCountRequired = 10; // Number of consecutive readings above threshold (at 50Hz = 0.1s)
+    public static final double kHomingHardstopPositionRad = Units.degreesToRadians(-300.0); // -5.236 rad - encoder resets to this at hardstop
+
     // Simulation parameters
-    public static final double kSimStartingAngleRad = 0.0;
+    public static final double kSimStartingAngleRad = 0.0; // Start at 0 rad (front of robot)
     public static final double kSimDtSeconds = 0.02; // 20 ms loop time
     public static final double kSimMomentOfInertia = 0.05; // kg * m^2 (placeholder)
     public static final double kSimFrictionTorquePerRadPerSec = 0.02; // N*m per rad/s of velocity

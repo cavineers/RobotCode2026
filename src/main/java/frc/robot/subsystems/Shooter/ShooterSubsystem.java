@@ -1,6 +1,8 @@
 package frc.robot.subsystems.Shooter;
 
 import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
@@ -22,6 +24,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private boolean velocityMode = false;
     
     private final Debouncer atTargetDebouncer = new Debouncer(kAtTargetDebounceTime);
+    
     
     // Tunable shooter RPM value that can be adjusted from NetworkTables/AdvantageScope
     private final LoggedNetworkNumber tunableShooterRPM = 
@@ -158,9 +161,9 @@ public class ShooterSubsystem extends SubsystemBase {
     public double getTunableRPM() {
         return tunableShooterRPM.get();
     }
-
+    
     /**
-     * @brief Set shooter to the tunable RPM value from NetworkTables.
+     * @brief Set shooter to the tunable RPM from NetworkTables.
      */
     public void setTunableVelocity() {
         setVelocity(tunableShooterRPM.get());
@@ -214,6 +217,13 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     public double getCharacterizationVelocity() {
         return (inputs.flywheelVelocityRPM / 60.0) * kGearRatio;
+    }
+
+    /**
+     * @brief Stop the shooter (command version).
+     */
+    public Command stopCommand() {
+        return Commands.runOnce(this::stop, this).withName("Shooter Stop");
     }
 }
 

@@ -27,11 +27,12 @@ public class TurretIOSpark implements TurretIO {
     private final SparkMax motor;
     private final RelativeEncoder encoder;
     private final SparkClosedLoopController closedLoopController;
-    private final DigitalInput homeSwitch;
     private final SparkMaxConfig config;
+    private final DigitalInput homingLimitSwitch;
 
     public TurretIOSpark() {
         motor = new SparkMax(TurretConstants.kTurretMotorId, MotorType.kBrushless);
+        homingLimitSwitch = new DigitalInput(TurretConstants.kHomingSwitchDioPort);
 
         config = new SparkMaxConfig();
         config
@@ -44,11 +45,11 @@ public class TurretIOSpark implements TurretIO {
             .positionConversionFactor(TurretConstants.kPositionConversionFactor)
             .velocityConversionFactor(TurretConstants.kVelocityConversionFactor);
 
-        config.softLimit
-            .forwardSoftLimit(TurretConstants.kMaxAngleRad)
-            .forwardSoftLimitEnabled(true)
-            .reverseSoftLimit(TurretConstants.kMinAngleRad)
-            .reverseSoftLimitEnabled(true);
+        // config.softLimit
+        //     .forwardSoftLimit(TurretConstants.kMaxAngleRad)
+        //     .forwardSoftLimitEnabled(true)
+        //     .reverseSoftLimit(TurretConstants.kMinAngleRad)
+        //     .reverseSoftLimitEnabled(true);
 
         config.signals
                 .primaryEncoderPositionAlwaysOn(true)
@@ -79,11 +80,6 @@ public class TurretIOSpark implements TurretIO {
 
         closedLoopController = motor.getClosedLoopController();
 
-        if (TurretConstants.kUseHomingSwitch) {
-            homeSwitch = new DigitalInput(TurretConstants.kHomingSwitchDioPort);
-        } else {
-            homeSwitch = null;
-        }
     }
 
     @Override
@@ -97,9 +93,11 @@ public class TurretIOSpark implements TurretIO {
         ifOk(motor, motor::getOutputCurrent, value -> inputs.supplyCurrentAmps = value);
         ifOk(motor, motor::getMotorTemperature, value -> inputs.motorTempCelsius = value);
 
-        inputs.zeroSwitchPressed = isHomeSwitchPressed();
         inputs.forwardLimit = inputs.positionRad >= TurretConstants.kMaxAngleRad;
         inputs.reverseLimit = inputs.positionRad <= TurretConstants.kMinAngleRad;
+
+        boolean rawSwitch = homingLimitSwitch.get();
+        inputs.homeSwitchTriggered = TurretConstants.kHomingSwitchNormallyOpen ? !rawSwitch : rawSwitch;
     }
 
     @Override
@@ -156,14 +154,5 @@ public class TurretIOSpark implements TurretIO {
                 5,
                 () -> motor.configure(
                         config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters));
-    }
-
-    private boolean isHomeSwitchPressed() {
-        if (homeSwitch == null) {
-            return false;
-        }
-
-        boolean rawState = homeSwitch.get();
-        return TurretConstants.kHomingSwitchNormallyOpen ? !rawState : rawState;
     }
 }

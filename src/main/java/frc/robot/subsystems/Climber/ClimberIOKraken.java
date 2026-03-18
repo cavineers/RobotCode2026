@@ -94,11 +94,12 @@ public class ClimberIOKraken implements ClimberIO {
     }
 
     public double clipSetpoint(double rotations) {
-        if (rotations > ClimberConstants.kDeployedMotorRotations) {
+        // Clamp between the most-negative deployed position and the zero resting position.
+        if (rotations < ClimberConstants.kDeployedMotorRotations) {
             return ClimberConstants.kDeployedMotorRotations;
         }
-        else if (rotations < ClimberConstants.kRestMotorRotations) {
-             return ClimberConstants.kRestMotorRotations;
+        if (rotations > ClimberConstants.kRestMotorRotations) {
+            return ClimberConstants.kRestMotorRotations;
         }
         return rotations;
     }

@@ -15,9 +15,10 @@ public interface TurretIO {
 		public double appliedVolts = 0.0;
 		public double supplyCurrentAmps = 0.0;
 		public double motorTempCelsius = 0.0;
-		public boolean zeroSwitchPressed = false;
 		public boolean forwardLimit = false;
 		public boolean reverseLimit = false;
+		/** True when the homing limit switch is triggered (already accounts for normally-open/closed). */
+		public boolean homeSwitchTriggered = false;
 	}
 
 	default void updateInputs(TurretIOInputs inputs) {}
