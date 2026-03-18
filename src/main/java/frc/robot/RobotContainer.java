@@ -227,7 +227,7 @@ public class RobotContainer {
         );
 
         // TODO: PLACEHOLDER: replace with actual button
-        var manualOverrideSwitch = primaryDriverController.button(8);
+        var manualOverrideSwitch = secondaryDriverController.button(8);
 
         // Right trigger: Auto shoot OR hopper to shooter (depending on manual override)
         primaryDriverController.rightTrigger().toggleOnTrue(

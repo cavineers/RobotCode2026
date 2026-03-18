@@ -5,6 +5,7 @@
   "pathFolders": [
     "CenterLine",
     "LeftSide",
+    "RightSide",
     "TestAuto"
   ],
   "autoFolders": [],

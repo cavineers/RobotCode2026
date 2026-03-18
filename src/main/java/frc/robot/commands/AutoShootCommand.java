@@ -107,7 +107,7 @@ public class AutoShootCommand extends Command {
         lastSpeeds = currentSpeeds;
         lastSpeedsTimestamp = now;
 
-        boolean ready = isReadyToFire(accel);
+        boolean ready = true;
         if (!readyLatched && ready) {
             readyLatched = true;
         }
