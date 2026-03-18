@@ -1,15 +1,10 @@
 package frc.robot;
 
-import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.kOutsideVoltage;
-
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -27,7 +22,6 @@ import frc.robot.commands.AutoShootCommand;
 import frc.robot.commands.ShooterCharacterizationCommand;
 import frc.robot.commands.SwerveCommand;
 import frc.lib.FuelSim;
-
 import frc.robot.subsystems.Drivetrain.GyroIO;
 import frc.robot.subsystems.Drivetrain.GyroPigeonIO;
 import frc.robot.subsystems.Drivetrain.ModuleIO;
@@ -307,7 +301,6 @@ public class RobotContainer {
     }
 
     public void configureElasticWidgets(){
-        // Register Elastic widgets (see frc.lib.Elastic)
     }
 
     public void configureNamedCommands() {
