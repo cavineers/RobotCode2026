@@ -11,18 +11,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import frc.robot.commands.ManualTurretVoltageCommand;
-import frc.robot.commands.TurretPresetCommand;
 import frc.robot.subsystems.Turret.Turret;
 import frc.robot.subsystems.Turret.TurretIO;
 import frc.robot.subsystems.Turret.TurretIOSim;
@@ -31,7 +22,6 @@ import frc.robot.subsystems.Vision.Vision;
 import frc.robot.subsystems.Vision.VisionConstants;
 import frc.robot.subsystems.Vision.VisionIO;
 import frc.robot.subsystems.Vision.VisionIOPhotonVision;
-import frc.robot.subsystems.Turret.TurretConstants;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.AutoShootCommand;
 import frc.robot.commands.ShooterCharacterizationCommand;
@@ -49,7 +39,6 @@ import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSim;
 import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIOSpark;
 import frc.robot.subsystems.Drivetrain.ModuleIOTalonFX;
 import frc.robot.commands.SystemIdCommands;
-
 import frc.robot.subsystems.InBumperIntake.InBumperIntake;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSim;
@@ -60,22 +49,11 @@ import frc.robot.subsystems.Shooter.ShooterIOKraken;
 import frc.robot.subsystems.Shooter.ShooterIOSim;
 import frc.robot.subsystems.Shooter.ShooterSubsystem;
 
-import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
-
-import frc.robot.subsystems.Climber.Climber;
-import frc.robot.subsystems.Climber.ClimberConstants;
-import frc.robot.subsystems.Climber.ClimberIO;
-import frc.robot.subsystems.Climber.ClimberIOKraken;
-import frc.robot.subsystems.Climber.ClimberIOSim;
-import frc.lib.Elastic; 
-
 public class RobotContainer {
 
     // Subsystems
-
     public final Turret turret;
     public final SwerveDriveSubsystem drivetrain;
-    public final Climber climber;
     public final OverBumperIntake overBumperIntake;
     public final InBumperIntake inBumperIntake;
     public final ShooterSubsystem shooter;
@@ -105,8 +83,6 @@ public class RobotContainer {
                         new ModuleIOTalonFX(1),
                         new ModuleIOTalonFX(2),
                         new ModuleIOTalonFX(3));
-                climber = new Climber(
-                        new ClimberIOKraken());
                 overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSpark());
                 turret = new Turret(new TurretIOSpark(), () -> new Pose3d(drivetrain.getPose()));
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSpark());
@@ -145,7 +121,6 @@ public class RobotContainer {
                         new ModuleIOSim());
 
                 turret = new Turret(new TurretIOSim(), () -> new Pose3d(drivetrain.getPose()));
-                climber = new Climber(new ClimberIOSim());
                 overBumperIntake = new OverBumperIntake(new OverBumperIntakeIOSim());
                 inBumperIntake = new InBumperIntake(new InBumperIntakeIOSim());
                 shooter = new ShooterSubsystem(
@@ -176,9 +151,6 @@ public class RobotContainer {
                         new ModuleIO() {
                         },
                         new ModuleIO() {
-                        });
-                climber = new Climber(
-                        new ClimberIO() {
                         });
                 overBumperIntake = new OverBumperIntake(new OverBumperIntakeIO() {
                 });
@@ -289,33 +261,7 @@ public class RobotContainer {
         // OverBumper Unjam Sequence
         secondaryDriverController.button(12).toggleOnTrue(
             Commands.deferredProxy(() -> overBumperIntake.unjamCommand())
-        );
-
-        //Advance climber state (RESTING → DEPLOYED → ENGAGED) OR increase shooter RPM by 100 in manual override
-        secondaryDriverController.button(6).onTrue(
-            Commands.deferredProxy(() ->
-                manualOverrideSwitch.getAsBoolean() ?
-                    Commands.runOnce(() -> {
-                        shooterRPMOverride += 100.0;
-                        shooter.setVelocity(shooterRPMOverride);
-                    }, shooter)
-                    :
-                    climber.advanceCommand()
-            )
-        );
-        //Retreat climber state (ENGAGED → DEPLOYED → RESTING) OR decrease shooter RPM by 100 in manual override
-        secondaryDriverController.button(4).onTrue(
-            Commands.deferredProxy(() ->
-                manualOverrideSwitch.getAsBoolean() ?
-                    Commands.runOnce(() -> {
-                        shooterRPMOverride = Math.max(0, shooterRPMOverride - 100.0);
-                        shooter.setVelocity(shooterRPMOverride);
-                    }, shooter)
-                    :
-                    climber.retreatCommand()
-            )
-        );
-
+        )
         // Turret Field-Relative Presets
         // Button 7: 0° (forward)
         // secondaryDriverController.button(7).onTrue(
