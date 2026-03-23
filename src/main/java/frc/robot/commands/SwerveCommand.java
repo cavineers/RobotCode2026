@@ -1,39 +1,52 @@
 package frc.robot.commands;
 
-import edu.wpi.first.wpilibj2.command.Command;
-
-import java.lang.Math;
 import java.util.function.Supplier;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
-import static frc.robot.subsystems.Drivetrain.SwerveDriveConstants.*;
-import frc.robot.Constants.OIConstants;
-import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants.OIConstants;
+import frc.robot.subsystems.Drivetrain.SwerveDriveConstants.DriveConstants;
+import frc.robot.subsystems.Climber.ClimberConstants;
+import frc.robot.subsystems.Drivetrain.SwerveDriveConstants;
+import frc.robot.subsystems.Drivetrain.SwerveDriveSubsystem;
+import edu.wpi.first.math.controller.PIDController;
 
 public class SwerveCommand extends Command {
 
     private final SwerveDriveSubsystem swerveSubsystem;
 
+    private final Supplier<Boolean> alignTrench;
     private final Supplier<Double> xSpdFunction, ySpdFunction, turningSpdFunction;
     private final Supplier<Double> speedMultiplier;
     private final SlewRateLimiter xLimiter, yLimiter, turningLimiter;
+    private double trenchP = 5.0;
+    private double angle;
+    private double desiredAngle;
+    private final LoggedNetworkNumber tuningTrenchP = new LoggedNetworkNumber("/Tuning/Drivetrain/kTrenchP", trenchP);
+    PIDController trenchPID = new PIDController(tuningTrenchP.get(),0,0);
 
     public SwerveCommand(SwerveDriveSubsystem swerveSubsystem,
+            Supplier<Boolean> alignTrench,
             Supplier<Double> xSpdFunction, 
             Supplier<Double> ySpdFunction, 
             Supplier<Double> turningSpdFunction){
-        this(swerveSubsystem, xSpdFunction, ySpdFunction, turningSpdFunction, () -> 1.0);
+        this(swerveSubsystem, alignTrench, xSpdFunction, ySpdFunction, turningSpdFunction, () -> 1.0);
     }
 
     public SwerveCommand(SwerveDriveSubsystem swerveSubsystem,
+            Supplier<Boolean> alignTrench,
             Supplier<Double> xSpdFunction, 
             Supplier<Double> ySpdFunction, 
             Supplier<Double> turningSpdFunction,
             Supplier<Double> speedMultiplier){
         // Instance Variables
         this.swerveSubsystem = swerveSubsystem;
+        this.alignTrench = alignTrench;
         this.xSpdFunction = xSpdFunction;
         this.ySpdFunction = ySpdFunction;
         this.turningSpdFunction = turningSpdFunction;
@@ -72,6 +85,15 @@ public class SwerveCommand extends Command {
         xSpeed = xLimiter.calculate(xSpeed);
         ySpeed = yLimiter.calculate(ySpeed);
         turningSpeed = turningLimiter.calculate(turningSpeed);
+
+        if (alignTrench.get() && angle >= Rotation2d.kCW_Pi_2.getRadians()){
+            turningSpeed = this.getTrenchTurningVelocity();
+            desiredAngle = Rotation2d.kPi.getRadians();
+        }
+        else if (alignTrench.get() && angle <= Rotation2d.kCCW_Pi_2.getRadians()){
+            turningSpeed = this.getTrenchTurningVelocity();
+            desiredAngle = Rotation2d.kZero.getRadians();
+        }
      
         // Flipped
         boolean flipped = swerveSubsystem.shouldFlipPose();
@@ -92,5 +114,14 @@ public class SwerveCommand extends Command {
     @Override
     public boolean isFinished() {
         return false;
+    }
+    
+    public double getTrenchTurningVelocity() {
+        angle = swerveSubsystem.getRotation().getRadians();
+
+        trenchPID.enableContinuousInput(-Math.PI, Math.PI);
+        trenchPID.setTolerance(Math.toRadians(2));
+
+        return (trenchPID.calculate(angle, desiredAngle));
     }
 }

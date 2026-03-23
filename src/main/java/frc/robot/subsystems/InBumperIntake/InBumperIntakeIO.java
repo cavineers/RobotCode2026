@@ -20,11 +20,6 @@ public interface InBumperIntakeIO {
         public double outsideMotorAppliedVolts = 0.0;
         public double outsideMotorCurrentAmps = 0.0;
 
-        public double indexerMotorPositionRotations = 0.0;
-        public double indexerMotorVelocityRPM = 0.0;
-        public double indexerMotorAppliedVolts = 0.0;
-        public double indexerMotorCurrentAmps = 0.0;
-
         public double rollerMotorPositionRotations = 0.0;
         public double rollerMotorVelocityRPM = 0.0;
         public double rollerMotorAppliedVolts = 0.0;
@@ -40,8 +35,6 @@ public interface InBumperIntakeIO {
     public default void setTopVoltage(double volts) {}
 
     public default void setOutsideVoltage(double volts) {}
-
-    public default void setIndexerVoltage(double volts) {}
 
     public default void setRollerVoltage(double volts) {}
 } 

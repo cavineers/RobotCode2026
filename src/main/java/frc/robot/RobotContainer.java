@@ -178,6 +178,7 @@ public class RobotContainer {
         // Set default drivetrain command — halve speed while auto-shooting (left trigger)
         drivetrain.setDefaultCommand(new SwerveCommand(
                 drivetrain,
+                drivetrain::getAlignTrench,
                 primaryDriverController::getLeftY,
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX,

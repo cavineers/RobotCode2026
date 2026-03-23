@@ -34,6 +34,7 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.PathPlannerLogging;
+import frc.lib.TrenchZones;
 
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.wpilibj.Alert;
@@ -47,6 +48,9 @@ import org.littletonrobotics.junction.Logger;
 public class SwerveDriveSubsystem extends SubsystemBase {
     static final Lock odometryLock = new ReentrantLock();
     public AutoBuilder autoBuilder;
+    
+    @AutoLogOutput(key = "Trenching/Align Trench")
+    public boolean alignTrench = false;
 
     private SysIdRoutine sysId;
     private SysIdRoutine sysIdRotation;
@@ -77,6 +81,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     private SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(kinematics, rawGyroRotation,
             lastModulePositions, new Pose2d());
+
+    private final TrenchZones[] trenchZones = {
+        new TrenchZones(4.25, 5.55, 0.0, 0.85),
+        new TrenchZones(4.25, 5.55, 7.20, 8.05),
+        new TrenchZones(11.75, 13.05, 0, 0.85),
+        new TrenchZones(11.75, 13.05, 7.20, 8.05)
+    };
 
     public SwerveDriveSubsystem(
             GyroIO gyroIO,
@@ -391,6 +402,18 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     public Rotation2d getRotation() {
         return getPose().getRotation();
     }
+
+    public boolean getAlignTrench() {
+        for (TrenchZones zone : trenchZones) {
+            if (zone.contains(this.getPose())) {
+                alignTrench = true;
+                return true;
+            }
+        }
+        alignTrench = false;
+        return false;
+    }
+    
 
     /**
      * Resets the odometry of the robot

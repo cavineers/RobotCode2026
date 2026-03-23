@@ -30,13 +30,9 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
     private final SparkMax outsideMotor = new SparkMax(kOutsideMotorCanID, MotorType.kBrushless); 
     private final RelativeEncoder outsideEncoder = outsideMotor.getEncoder();
 
-    private final SparkMax indexerMotor = new SparkMax(kIndexerMotorCanID, MotorType.kBrushless);
-    private final RelativeEncoder indexerEncoder = indexerMotor.getEncoder();
-
     private SparkMaxConfig bottomConfig;
     private SparkMaxConfig topConfig;
     private SparkMaxConfig outsideConfig;
-    private SparkMaxConfig indexerConfig;
 
     public InBumperIntakeIOSpark()  {
         bottomConfig = new SparkMaxConfig();
@@ -74,18 +70,6 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
             5,
             () -> outsideMotor.configure(outsideConfig, ResetMode.kResetSafeParameters,
                     PersistMode.kPersistParameters));
-
-        indexerConfig = new SparkMaxConfig();
-        indexerConfig
-            .idleMode(kIndexerIdleMode)
-            .smartCurrentLimit(kIndexerCurrentLimit)
-            .voltageCompensation(12)
-            .inverted(kIndexerInverted);
-        tryUntilOk(
-            indexerMotor,
-            5,
-            () -> indexerMotor.configure(indexerConfig, ResetMode.kResetSafeParameters,
-                    PersistMode.kPersistParameters));
     }
 
     @Override
@@ -115,14 +99,6 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
             new DoubleSupplier[] {outsideMotor::getAppliedOutput, outsideMotor::getBusVoltage},
             (values) -> inputs.outsideMotorAppliedVolts = values[0] * values[1]);
         ifOk(outsideMotor, outsideMotor::getOutputCurrent, (value) -> inputs.outsideMotorCurrentAmps = value);
-
-        ifOk(indexerMotor, indexerEncoder::getPosition, (value) -> inputs.indexerMotorPositionRotations = value);
-        ifOk(indexerMotor, indexerEncoder::getVelocity, (value) -> inputs.indexerMotorVelocityRPM = value);
-        ifOk(
-            indexerMotor,
-            new DoubleSupplier[] {indexerMotor::getAppliedOutput, indexerMotor::getBusVoltage},
-            (values) -> inputs.indexerMotorAppliedVolts = values[0] * values[1]);
-        ifOk(indexerMotor, indexerMotor::getOutputCurrent, (value) -> inputs.indexerMotorCurrentAmps = value);
     }
 
     @Override
@@ -138,11 +114,6 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
     @Override
     public void setOutsideVoltage(double volts) {
         outsideMotor.setVoltage(volts);
-    }
-
-    @Override
-    public void setIndexerVoltage(double volts) {
-        indexerMotor.setVoltage(volts);
     }
 
 }
