@@ -311,18 +311,11 @@ public class Turret extends SubsystemBase {
         double normalizedField = wrapAngle(fieldAngleRad);
         double robotHeading = wrapAngle(robotPoseSupplier.get().getRotation().getZ());
         
-        
         // To find the necessary turret angle:
         // FieldTarget = RobotHeading + TurretOffset + TurretAngle
         // TurretAngle = FieldTarget - RobotHeading - TurretOffset
         double rawRel = normalizedField - robotHeading - TurretConstants.kTurretZeroOffsetRad;
         double robotRelative = wrapAngle(rawRel);
-        
-        // Handle wrapping into turret's range [-300°, 0°]
-        // If angle is positive (0° to 180°), wrap it to negative equivalent
-        if (robotRelative > 0) {
-            robotRelative -= 2 * Math.PI; 
-        }
         
         double clamped = MathUtil.clamp(robotRelative, TurretConstants.kMinAngleRad, TurretConstants.kMaxAngleRad);
 

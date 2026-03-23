@@ -10,31 +10,23 @@ import edu.wpi.first.math.util.Units;
 public class VisionConstants {
     public static AprilTagFieldLayout aprilTagLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
 
-    public static String camera1Name = "Camera1";
-    public static String camera2Name = "Camera2"; // Turret-mounted camera
+    public static String camera1Name = "LeftSideCamera";
+    public static String camera2Name = "TurretCamera"; // Turret-mounted camera
 
     // Robot to camera transforms
-    // Camera 1: Fixed to robot chassis, 7.64" forward, 8.25" left, facing left (90° CCW yaw)
     public static Transform3d robotToCamera1 = new Transform3d(
-        Units.inchesToMeters(7),    // +X: forward from robot center
+        Units.inchesToMeters(7.5),    // +X: forward from robot center
         Units.inchesToMeters(8.736),    // +Y: left from robot center
         Units.inchesToMeters(9.725-0.68),    // +Z: height above robot base
         new Rotation3d(0, Units.degreesToRadians(-23), Units.degreesToRadians(90))
-    );
-
-    public static Transform3d robotToCamera2 = new Transform3d(
-        Units.inchesToMeters(7),   // Forward from robot center
-        Units.inchesToMeters(9),   // Lateral from robot center
-        Units.inchesToMeters(14),  // Height above ground
-        new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(-90))
     );
 
     // Camera 2: Mounted on turret - this transform is from turret center to camera
     // The actual robot-to-camera transform is calculated dynamically based on turret angle
     // Rotation: roll=0 (camera is upright), pitch=+20° (lens tilts down toward tags), yaw=0 (faces same direction as turret)
     public static Transform3d turretToCamera2 = new Transform3d(
-        Units.inchesToMeters(2.177),     // Forward from turret center
-        Units.inchesToMeters(-5.006),   
+        Units.inchesToMeters(0.78),     // Forward from turret center
+        Units.inchesToMeters(-5.006),      // Right from turret center
         Units.inchesToMeters(0),    // Height above turret
         new Rotation3d(0, Units.degreesToRadians(-30), 0) // pitch up 30°, no roll, no yaw
     );
