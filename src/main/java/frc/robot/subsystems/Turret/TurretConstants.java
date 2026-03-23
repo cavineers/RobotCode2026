@@ -35,14 +35,10 @@ public final class TurretConstants {
 
     // Mechanical limits
     // Defined as Robot-Relative angles (0 is Front/North)
-    // Range: 0 rad (minimum) to -5.236 rad (maximum, -300 degrees)
-    public static final double kMinAngleRad = Units.degreesToRadians(-300.0); // -5.236 rad
-    public static final double kMaxAngleRad = Units.degreesToRadians(0.0); // 0 rad
-    
+    public static final double kMinAngleRad = Units.degreesToRadians(-210.0);
+    public static final double kMaxAngleRad = Units.degreesToRadians(150.0);
     // Offset from the robot's front (0 degrees) to the turret's "Mechanical Zero"
-    // Mechanical zero is at 0 rad (front of robot)
-    public static final double kTurretZeroOffsetRad = Units.degreesToRadians(0);
-
+    public static final double kTurretZeroOffsetRad = 0.0; // Encoder zero is at robot front (north)
     // Preset positions (robot-relative angles)
     public static final double kPresetOneRad = Units.degreesToRadians(0.0); // Front
     public static final double kPresetTwoRad = Units.degreesToRadians(45.0); // Left Diagonal
@@ -74,7 +70,7 @@ public final class TurretConstants {
     public static final double kHomingVoltage = -1.25; // Voltage to apply during homing
     public static final double kHomingCurrentThresholdAmps = 25; // Current threshold to detect hardstop
     public static final int kHomingCurrentSpikeCountRequired = 10; // Number of consecutive readings above threshold (at 50Hz = 0.1s)
-    public static final double kHomingHardstopPositionRad = Units.degreesToRadians(-300.0); // -5.236 rad - encoder resets to this at hardstop
+    public static final double kHomingHardstopPositionRad = kMaxAngleRad; // -5.236 rad - encoder resets to this at hardstop
 
     // Simulation parameters
     public static final double kSimStartingAngleRad = 0.0; // Start at 0 rad (front of robot)
