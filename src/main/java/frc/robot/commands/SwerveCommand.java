@@ -86,13 +86,13 @@ public class SwerveCommand extends Command {
         ySpeed = yLimiter.calculate(ySpeed);
         turningSpeed = turningLimiter.calculate(turningSpeed);
 
-        if (alignTrench.get() && angle >= Rotation2d.kCW_Pi_2.getRadians()){
-            turningSpeed = this.getTrenchTurningVelocity();
-            desiredAngle = Rotation2d.kPi.getRadians();
-        }
-        else if (alignTrench.get() && angle <= Rotation2d.kCCW_Pi_2.getRadians()){
-            turningSpeed = this.getTrenchTurningVelocity();
-            desiredAngle = Rotation2d.kZero.getRadians();
+        if (alignTrench.get()) {
+            if (angle > -Math.PI/2 && angle < Math.PI/2) {
+                desiredAngle = Rotation2d.kZero.getRadians();
+            } else {
+                desiredAngle = Rotation2d.kPi.getRadians();
+            }
+            turningSpeed = getTrenchTurningVelocity();
         }
      
         // Flipped
