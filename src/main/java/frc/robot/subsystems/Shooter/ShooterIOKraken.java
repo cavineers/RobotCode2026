@@ -10,7 +10,6 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 
@@ -25,6 +24,10 @@ public class ShooterIOKraken implements ShooterIO {
     private final VelocityVoltage velocityControl;
     private final VoltageOut voltageControl = new VoltageOut(0);
     private final CANBus shooterCANBus = new CANBus(kFlywheelCanBus);
+    
+    // Deadband management to prevent oscillations
+    private double targetVelocityRPM = 0.0;
+    private double lastFeedbackVelocityRPM = 0.0;
 
     
     // WPILib Alerts for error handling
@@ -52,13 +55,23 @@ public class ShooterIOKraken implements ShooterIO {
         leaderConfig.CurrentLimits.StatorCurrentLimit = kStatorCurrentLimit;
         leaderConfig.CurrentLimits.StatorCurrentLimitEnable = true;
         
-        // PID + Feedforward (kV is V/(rot/s) at motor shaft)
+        // PID + Feedforward configuration
+        // Slot 0: High P for aggressive response, clamped by motor's 12V output limits
+        // Slot 1: Feedforward only (kP=0) for use in deadband phase
         leaderConfig.Slot0.kP = kP;
         leaderConfig.Slot0.kI = kI;
         leaderConfig.Slot0.kD = kD;
         leaderConfig.Slot0.kS = kS;
         leaderConfig.Slot0.kV = kV;
         leaderConfig.Slot0.kA = kA;
+        
+        // Slot 1: Same feedforward, but zero P (disables PID correction)
+        leaderConfig.Slot1.kP = kP_FFOnly;
+        leaderConfig.Slot1.kI = kI_FFOnly;
+        leaderConfig.Slot1.kD = kD_FFOnly;
+        leaderConfig.Slot1.kS = kS;
+        leaderConfig.Slot1.kV = kV;
+        leaderConfig.Slot1.kA = kA;
         
         // Follower motor setup (minimal config - just current limits)
         followerConfig.MotorOutput.NeutralMode = kNeutralMode;
@@ -111,13 +124,37 @@ public class ShooterIOKraken implements ShooterIO {
         inputs.followerTempCelsius = followerMotor.getDeviceTemp().getValueAsDouble();
 
         inputs.connected = leaderMotor.isAlive() && followerMotor.isAlive();
+        
+        // Store feedback velocity for deadband logic
+        lastFeedbackVelocityRPM = inputs.flywheelVelocityRPM;
+        
+        // Apply deadband logic: switch control slot based on error
+        // Slot 0: High kP for aggressive response (far from target)
+        // Slot 1: kP=0, feedforward only (near target, prevents oscillations)
+        if (targetVelocityRPM > 0) {
+            double error = Math.abs(targetVelocityRPM - lastFeedbackVelocityRPM);
+            
+            if (error <= kVelocityErrorDeadbandRPM) {
+                // Within deadband: use Slot 1 (feedforward only, kP=0)
+                double velocityRPS = (targetVelocityRPM / 60.0) * kGearRatio;
+                leaderMotor.setControl(velocityControl.withVelocity(velocityRPS).withSlot(1));
+            } else {
+                // Outside deadband: use Slot 0 (high kP for aggressive response)
+                double velocityRPS = (targetVelocityRPM / 60.0) * kGearRatio;
+                leaderMotor.setControl(velocityControl.withVelocity(velocityRPS).withSlot(0));
+            }
+        }
     }
 
     @Override
     public void setVelocity(double velocityRPM) {
-        // velocityRPM is FLYWHEEL RPM — multiply by kGearRatio (motor/flywheel) to get motor shaft RPS for Phoenix 6
+        // Store target for deadband logic in updateInputs
+        targetVelocityRPM = velocityRPM;
+        
+        // Convert RPM to RPS for Phoenix 6
         double velocityRPS = (velocityRPM / 60.0) * kGearRatio;
-        leaderMotor.setControl(velocityControl.withVelocity(velocityRPS));
+        // Default to Slot 0 (high kP). Will switch to Slot 1 in updateInputs if within deadband.
+        leaderMotor.setControl(velocityControl.withVelocity(velocityRPS).withSlot(0));
     }
 
     @Override
@@ -127,6 +164,7 @@ public class ShooterIOKraken implements ShooterIO {
 
     @Override
     public void stop() {
+        targetVelocityRPM = 0.0;
         leaderMotor.stopMotor();
     }
 

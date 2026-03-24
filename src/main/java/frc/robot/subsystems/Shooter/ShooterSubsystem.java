@@ -98,7 +98,7 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     /**
-     * @brief Set shooter velocity in RPM (closed-loop).
+     * @brief Set shooter velocity in RPM (closed-loop with deadband to prevent oscillations).
      * @param velocityRPM Target velocity in RPM
      */
     public void setVelocity(double velocityRPM) {

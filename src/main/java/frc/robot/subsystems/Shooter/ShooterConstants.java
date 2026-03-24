@@ -29,18 +29,28 @@ public final class ShooterConstants {
     public static final double kSupplyCurrentLimit = 40.0;
     public static final double kStatorCurrentLimit = 80.0;
     
-    // PID gains (Slot 0)
-    public static final double kP = 0.0; // TODO: Tune
-    public static final double kI = 0.0;
-    public static final double kD = 0.0;
+    // PID gains (Slot 0) - Aggressive response with high P
+    // kV feedforward provides steady-state control, kP provides error correction
+    public static final double kP = 0.1;  // High P for fast response (clamped to 12V by TalonFX)
+    public static final double kI = 0.0;  // No integral to avoid lag and windup
+    public static final double kD = 0.0;  // Feedforward dominates, so minimal derivative needed
     
-    // Kraken x44: ~5800 RPM free speed = ~97 RPS @ 12V → kV ≈ 0.12
+    // PID gains (Slot 1) - Feedforward only (kP=0) for deadband phase
+    // Used when within error deadband - only feedforward runs on motor controller's high-frequency loop
+    public static final double kP_FFOnly = 0.0;    // Zero P to disable PID in deadband
+    public static final double kI_FFOnly = 0.0;    // No integral
+    public static final double kD_FFOnly = 0.0;    // No derivative
+    
+    // When error is within this deadband, Slot 1 (kP=0) is used, letting feedforward dominate
+    public static final double kVelocityErrorDeadbandRPM = 100.0;
+    
+    // Feedforward gains (both slots use these)
     public static final double kS = 0.19832; // Static friction - TODO: Characterize with SysId
     public static final double kV = 0.09380; // Velocity feedforward
-    public static final double kA = 0.0; // Acceleration feedforward - TODO: Tune if needed
+    public static final double kA = 0.0;     // Acceleration feedforward - TODO: Tune if needed
     
     // Control
-    public static final boolean kEnableFOC = true; // Kraken x44 includes FOC
+    public static final boolean kEnableFOC = false; // Kraken x44 includes FOC
     
     // Tolerances
     public static final double kVelocityToleranceRPM = 150.0;

@@ -1,5 +1,6 @@
 package frc.robot;
 
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -65,6 +66,7 @@ public class RobotContainer {
     private final CommandGenericHID secondaryDriverController = new CommandGenericHID(1);
 
     // Manual override state
+    @AutoLogOutput(key="Shooter/RPMOverrideSetpoint")
     private double shooterRPMOverride = 3000.0; // Starting RPM for override mode
 
     // Auto chooser
