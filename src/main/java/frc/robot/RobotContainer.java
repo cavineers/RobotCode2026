@@ -215,6 +215,11 @@ public class RobotContainer {
             )
         );
 
+        // POV Down: Disable/enable trench alignment
+        primaryDriverController.povDown().toggleOnTrue(
+            Commands.runOnce(() -> drivetrain.switchTrenchToggle(), drivetrain)
+        );
+
         // ------ SECONDARY DRIVER CONTROLS ------
         
         // Button 2: Start turret homing sequence (current-based hardstop detection)

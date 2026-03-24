@@ -24,7 +24,7 @@ public class SwerveCommand extends Command {
     private final Supplier<Double> xSpdFunction, ySpdFunction, turningSpdFunction;
     private final Supplier<Double> speedMultiplier;
     private final SlewRateLimiter xLimiter, yLimiter, turningLimiter;
-    private double trenchP = 5.0;
+    private double trenchP = 0.1;
     private double angle;
     private double desiredAngle;
     private final LoggedNetworkNumber tuningTrenchP = new LoggedNetworkNumber("/Tuning/Drivetrain/kTrenchP", trenchP);
@@ -92,7 +92,7 @@ public class SwerveCommand extends Command {
             } else {
                 desiredAngle = Rotation2d.kPi.getRadians();
             }
-            turningSpeed = getTrenchTurningVelocity();
+            turningSpeed += getTrenchTurningVelocity();
         }
      
         // Flipped

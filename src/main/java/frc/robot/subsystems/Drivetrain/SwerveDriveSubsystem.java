@@ -52,6 +52,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     @AutoLogOutput(key = "Trenching/Align Trench")
     public boolean alignTrench = false;
 
+    @AutoLogOutput(key = "Trenching/Align Trench")
+    public boolean trenchToggle = false;
+
     private SysIdRoutine sysId;
     private SysIdRoutine sysIdRotation;
 
@@ -83,10 +86,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
             lastModulePositions, new Pose2d());
 
     private final TrenchZones[] trenchZones = {
-        new TrenchZones(4.25, 5.55, 0.0, 0.85),
-        new TrenchZones(4.25, 5.55, 7.20, 8.05),
-        new TrenchZones(11.75, 13.05, 0, 0.85),
-        new TrenchZones(11.75, 13.05, 7.20, 8.05)
+        new TrenchZones(3.4, 6.0, 0.0, 1.3),
+        new TrenchZones(3.4, 6.0, 6.70, 8.2),
+        new TrenchZones(10.6, 13.05, 0.0, 1.3),
+        new TrenchZones(10.6, 13.05, 6.70, 8.2)
     };
 
     public SwerveDriveSubsystem(
@@ -403,9 +406,14 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         return getPose().getRotation();
     }
 
+    /**
+     * Checks if robot is in a trench zone
+     * 
+     * @return boolean alignTrench
+     */
     public boolean getAlignTrench() {
         for (TrenchZones zone : trenchZones) {
-            if (zone.contains(this.getPose())) {
+            if (zone.contains(this.getPose()) && trenchToggle) {
                 alignTrench = true;
                 return true;
             }
@@ -414,6 +422,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         return false;
     }
     
+    public void switchTrenchToggle(){
+        trenchToggle = !trenchToggle;
+    }
 
     /**
      * Resets the odometry of the robot
