@@ -46,59 +46,63 @@ public class InBumperIntake extends SubsystemBase {
         io.setOutsideVoltage(volts);
     }
 
+    public void setHopperVoltage(double volts) {
+        io.setHopperVoltage(volts);
+    }
+
     public void setSpindexerVoltage(double volts) {
-        io.setSpindexerVoltage(volts);
+        io.setHopperVoltage(volts);
     }
     
     public IntakeState getState() {
         return currentState;
     }
 
-    public Command runGroundToShooter(double outsideVolts, double bottomVolts, double topVolts) {
+    public Command runGroundToShooter() {
         return this.run(() -> {
             currentState = IntakeState.GROUND_TO_SHOOTER;
-            io.setOutsideVoltage(-outsideVolts);
-            io.setBottomVoltage(bottomVolts);
-            io.setTopVoltage(topVolts);
-            io.setSpindexerVoltage(0); // Spindexer off during ground to shooter
+            io.setOutsideVoltage(-kOutsideVoltage);
+            io.setBottomVoltage(kBottomVoltage);
+            io.setTopVoltage(kTopVoltage);
+            io.setHopperVoltage(0); // Hopper off during ground to shooter
         }).finallyDo(interrupted -> {
             currentState = IntakeState.IDLE;
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
-            io.setSpindexerVoltage(0);
+            io.setHopperVoltage(0);
         });
     }
 
-    public Command runGroundToHopper(double outsideVolts, double bottomVolts, double topVolts) {
+    public Command runGroundToHopper() {
         return this.run(() -> {
             currentState = IntakeState.GROUND_TO_HOPPER;
-            io.setOutsideVoltage(-outsideVolts);
-            io.setBottomVoltage(bottomVolts);
-            io.setTopVoltage(-topVolts);
-            io.setSpindexerVoltage(0); // Spindexer off during ground to hopper
+            io.setOutsideVoltage(-kOutsideVoltage);
+            io.setBottomVoltage(kBottomVoltage);
+            io.setTopVoltage(-kTopVoltage);
+            io.setHopperVoltage(-kHopperVoltage);
         }).finallyDo(interrupted -> {
             currentState = IntakeState.IDLE;
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
-            io.setSpindexerVoltage(0);
+            io.setHopperVoltage(0);
         });
     }
 
-    public Command runHopperToShooter(double outsideVolts, double bottomVolts, double topVolts) {
+    public Command runHopperToShooter() {
         return this.run(() -> {
             currentState = IntakeState.HOPPER_TO_SHOOTER;
-            io.setOutsideVoltage(-outsideVolts);
-            io.setBottomVoltage(-bottomVolts);
-            io.setTopVoltage(topVolts);
-            io.setSpindexerVoltage(kSpindexerVoltage); // Spindexer runs during hopper to shooter
+            io.setOutsideVoltage(-kOutsideVoltage);
+            io.setBottomVoltage(-kBottomVoltage);
+            io.setTopVoltage(kTopVoltage);
+            io.setHopperVoltage(kHopperVoltage); // Hopper runs during hopper to shooter
         }).finallyDo(interrupted -> {
             currentState = IntakeState.IDLE;
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
-            io.setSpindexerVoltage(0);
+            io.setHopperVoltage(0);
         });
     }
 
@@ -108,7 +112,7 @@ public class InBumperIntake extends SubsystemBase {
             io.setOutsideVoltage(0);
             io.setBottomVoltage(0);
             io.setTopVoltage(0);
-            io.setSpindexerVoltage(0);
+            io.setHopperVoltage(0);
         });
     }
 
@@ -117,7 +121,7 @@ public class InBumperIntake extends SubsystemBase {
         io.setOutsideVoltage(0);
         io.setBottomVoltage(0);
         io.setTopVoltage(0);
-        io.setSpindexerVoltage(0);
+        io.setHopperVoltage(0);
     }
 
     public void setState(IntakeState state) {

@@ -6,6 +6,8 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -192,10 +194,7 @@ public class RobotContainer {
                 
         // Toggle InBumperIntake: Press to start runGroundToHopper, press again to stop
         primaryDriverController.x().toggleOnTrue(
-            inBumperIntake.runGroundToHopper(
-                InBumperIntakeConstants.kOutsideVoltage, 
-                InBumperIntakeConstants.kBottomVoltage, 
-                InBumperIntakeConstants.kTopVoltage)
+            inBumperIntake.runGroundToHopper()
         );
 
         // TODO: PLACEHOLDER: replace with actual button
@@ -206,10 +205,7 @@ public class RobotContainer {
             Commands.deferredProxy(() ->
                 manualOverrideSwitch.getAsBoolean() ?
                     // Manual override mode: toggle hopper to shooter
-                    inBumperIntake.runHopperToShooter(
-                        InBumperIntakeConstants.kOutsideVoltage,
-                        InBumperIntakeConstants.kBottomVoltage,
-                        InBumperIntakeConstants.kTopVoltage)
+                    inBumperIntake.runHopperToShooter()
                     :
                     // Normal mode: auto shoot
                     new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim)
@@ -236,26 +232,17 @@ public class RobotContainer {
         // ------ IN-BUMPER INTAKE MODES (secondary buttons 3/4/5) ------
         // Button 3: Toggle ground -> hopper
         secondaryDriverController.button(3).toggleOnTrue(
-            inBumperIntake.runGroundToHopper(
-                InBumperIntakeConstants.kOutsideVoltage,
-                InBumperIntakeConstants.kBottomVoltage,
-                InBumperIntakeConstants.kTopVoltage)
+            inBumperIntake.runGroundToHopper()
         );
 
-        // Button 4: Toggle ground -> shooter (bypass hopper)
-        secondaryDriverController.button(2).toggleOnTrue(
-            inBumperIntake.runGroundToShooter(
-                InBumperIntakeConstants.kOutsideVoltage,
-                InBumperIntakeConstants.kBottomVoltage,
-                InBumperIntakeConstants.kTopVoltage)
+        // Button 4: Quick unjam inner hopper
+        secondaryDriverController.button(2).onTrue((
+            new SequentialCommandGroup(inBumperIntake.runGroundToHopper(), new WaitCommand(0.5), inBumperIntake.stopCommand()))
         );
 
         // Button 5: Toggle hopper -> shooter
         secondaryDriverController.button(1).toggleOnTrue(
-            inBumperIntake.runHopperToShooter(
-                InBumperIntakeConstants.kOutsideVoltage,
-                InBumperIntakeConstants.kBottomVoltage,
-                InBumperIntakeConstants.kTopVoltage)
+            inBumperIntake.runHopperToShooter()
         );
 
         // OverBumper Unjam Sequence

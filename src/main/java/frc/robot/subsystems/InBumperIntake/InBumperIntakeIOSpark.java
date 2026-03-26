@@ -16,6 +16,11 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.controls.VoltageOut;
+
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO.InBumperIntakeIOInputs;
 
 import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
@@ -30,13 +35,13 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
     private final SparkMax outsideMotor = new SparkMax(kOutsideMotorCanID, MotorType.kBrushless); 
     private final RelativeEncoder outsideEncoder = outsideMotor.getEncoder();
 
-    private final SparkMax spindexerMotor = new SparkMax(kSpindexerMotorCanID, MotorType.kBrushless);
-    private final RelativeEncoder spindexerEncoder = spindexerMotor.getEncoder();
+    private final TalonFX hopperMotor = new TalonFX(kHopperMotorCanID);
 
     private SparkMaxConfig bottomConfig;
     private SparkMaxConfig topConfig;
     private SparkMaxConfig outsideConfig;
-    private SparkMaxConfig spindexerConfig;
+    private TalonFXConfiguration hopperConfig;
+    private VoltageOut hopperVoltageControl = new VoltageOut(0);
 
     public InBumperIntakeIOSpark()  {
         bottomConfig = new SparkMaxConfig();
@@ -75,17 +80,17 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
             () -> outsideMotor.configure(outsideConfig, ResetMode.kResetSafeParameters,
                     PersistMode.kPersistParameters));
 
-        spindexerConfig = new SparkMaxConfig();
-        spindexerConfig
-            .idleMode(kSpindexerIdleMode)
-            .smartCurrentLimit(kSpindexerCurrentLimit)
-            .voltageCompensation(12)
-            .inverted(kSpindexerInverted);
-        tryUntilOk(
-            spindexerMotor,
-            5,
-            () -> spindexerMotor.configure(spindexerConfig, ResetMode.kResetSafeParameters,
-                    PersistMode.kPersistParameters));
+        hopperConfig = new TalonFXConfiguration();
+        hopperConfig.MotorOutput.NeutralMode = kHopperIdleMode == IdleMode.kBrake ? 
+            NeutralModeValue.Brake : NeutralModeValue.Coast;
+        hopperConfig.MotorOutput.Inverted = kHopperInverted ? 
+            com.ctre.phoenix6.signals.InvertedValue.Clockwise_Positive : 
+            com.ctre.phoenix6.signals.InvertedValue.CounterClockwise_Positive;
+        hopperConfig.CurrentLimits.SupplyCurrentLimit = kHopperCurrentLimit;
+        hopperConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        hopperConfig.Voltage.PeakForwardVoltage = 12;
+        hopperConfig.Voltage.PeakReverseVoltage = -12;
+        hopperMotor.getConfigurator().apply(hopperConfig);
     }
 
     @Override
@@ -116,13 +121,11 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
             (values) -> inputs.outsideMotorAppliedVolts = values[0] * values[1]);
         ifOk(outsideMotor, outsideMotor::getOutputCurrent, (value) -> inputs.outsideMotorCurrentAmps = value);
 
-        ifOk(spindexerMotor, spindexerEncoder::getPosition, (value) -> inputs.spindexerMotorPositionRad = value);
-        ifOk(spindexerMotor, spindexerEncoder::getVelocity, (value) -> inputs.spindexerMotorVelocityRadPerSec = value);
-        ifOk(
-            spindexerMotor,
-            new DoubleSupplier[] {spindexerMotor::getAppliedOutput, spindexerMotor::getBusVoltage},
-            (values) -> inputs.spindexerMotorAppliedVolts = values[0] * values[1]);
-        ifOk(spindexerMotor, spindexerMotor::getOutputCurrent, (value) -> inputs.spindexerMotorCurrentAmps = value);
+        // Hopper (Kraken X60 via TalonFX)
+        inputs.hopperMotorPositionRad = hopperMotor.getPosition().getValueAsDouble();
+        inputs.hopperMotorVelocityRadPerSec = hopperMotor.getVelocity().getValueAsDouble();
+        inputs.hopperMotorAppliedVolts = hopperMotor.getMotorVoltage().getValueAsDouble();
+        inputs.hopperMotorCurrentAmps = hopperMotor.getSupplyCurrent().getValueAsDouble();
     }
 
     @Override
@@ -141,8 +144,8 @@ public class InBumperIntakeIOSpark implements InBumperIntakeIO {
     }
 
     @Override
-    public void setSpindexerVoltage(double volts) {
-        spindexerMotor.setVoltage(volts);
+    public void setHopperVoltage(double volts) {
+        hopperMotor.setControl(hopperVoltageControl.withOutput(volts));
     }
 
 }

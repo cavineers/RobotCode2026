@@ -54,7 +54,7 @@ public final class TurretConstants {
     public static final double kPositionKi = 0.0;
     public static final double kPositionKd = 0.0;
 
-    public static final double kPositionToleranceRad = Math.toRadians(1.0);
+    public static final double kPositionToleranceRad = Math.toRadians(4.0);
     public static final double kVelocityToleranceRadPerSec = Math.toRadians(5.0);
 
     // Moving camera support - turret angle history buffer

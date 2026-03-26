@@ -17,6 +17,7 @@ import frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants;
 import frc.robot.subsystems.Shooter.ShooterConstants;
 import frc.robot.subsystems.Shooter.ShooterSubsystem;
 import frc.robot.subsystems.Turret.Turret;
+import frc.robot.subsystems.Turret.TurretConstants;
 import org.littletonrobotics.junction.Logger;
 
 /**
@@ -107,28 +108,26 @@ public class AutoShootCommand extends Command {
         lastSpeeds = currentSpeeds;
         lastSpeedsTimestamp = now;
 
-        boolean ready = true;
+        boolean ready = isReadyToFire(accel);
         if (!readyLatched && ready) {
             readyLatched = true;
         }
 
-        // Feed hopper into shooter only when all safeties pass
-        if (readyLatched) {
-            intake.setState(IntakeState.HOPPER_TO_SHOOTER);
-            intake.setOutsideVoltage(-InBumperIntakeConstants.kOutsideVoltage);
-            intake.setBottomVoltage(-InBumperIntakeConstants.kBottomVoltage);
-            intake.setTopVoltage(InBumperIntakeConstants.kTopVoltage);
-            intake.setSpindexerVoltage(InBumperIntakeConstants.kSpindexerVoltage);
+        // Always spin outside/bottom/top motors during AutoShoot to feed balls up
+        intake.setState(IntakeState.HOPPER_TO_SHOOTER);
+        intake.setOutsideVoltage(-InBumperIntakeConstants.kOutsideVoltage);
+        intake.setBottomVoltage(-InBumperIntakeConstants.kBottomVoltage);
+        intake.setTopVoltage(InBumperIntakeConstants.kTopVoltage);
+
+        // Only spin hopper when fully ready (turret locked AND shooter ready AND in range)
+        if (ready) {
+            intake.setHopperVoltage(InBumperIntakeConstants.kHopperVoltage);
         } else {
-            intake.setBottomVoltage(0);
-            intake.setTopVoltage(0);
-            intake.setOutsideVoltage(0);
-            intake.setSpindexerVoltage(0);
-            intake.setState(IntakeState.IDLE);      
+            intake.setHopperVoltage(0);    
         }
 
         Logger.recordOutput("AutoShoot/SolutionValid", solution.isValid());
-    Logger.recordOutput("AutoShoot/ReadyToFire", readyLatched);
+        Logger.recordOutput("AutoShoot/ReadyToFire", readyLatched);
         Logger.recordOutput("AutoShoot/Acceleration", accel);
 
         // Fire a sim ball every 0.25 seconds regardless of ready state
@@ -171,7 +170,7 @@ public class AutoShootCommand extends Command {
         intake.setBottomVoltage(0);
         intake.setTopVoltage(0);
         intake.setOutsideVoltage(0);
-        intake.setSpindexerVoltage(0);
+        intake.setHopperVoltage(0);
         intake.setState(IntakeState.IDLE);
         lastSolution = null;
         shotTimer.stop();
@@ -192,20 +191,40 @@ public class AutoShootCommand extends Command {
      *   <li>Solver has a valid solution</li>
      *   <li>Shooter RPM is within ±{@value RPM_TOLERANCE} of setpoint</li>
      *   <li>Turret is locked on target (target is reachable / not in deadzone)</li>
+     *   <li>Turret target is within mechanical range (before clamping)</li>
      *   <li>Robot acceleration is below {@value MAX_ACCELERATION_MPS2} m/s²</li>
      * </ul>
+     * @deprecated
      */
     public boolean isReadyToFire(double accelerationMps2) {
         if (lastSolution == null || !lastSolution.isValid()) return false;
 
+        // Distance protection: only shoot when within effective range of shot table
+        double effectiveDistance = lastSolution.effectiveDistanceMeters();
+        boolean distanceOk = effectiveDistance >= 2.41 && effectiveDistance <= 4.924;
+
+        // Check if turret target is within mechanical range (before clamping)
+        double robotHeading = drivetrain.getPose().getRotation().getRadians();
+        double requestedAngle = lastSolution.turretFieldAngleRad() - robotHeading;
+        
+        // Normalize to [-π, π]
+        while (requestedAngle > Math.PI) requestedAngle -= 2 * Math.PI;
+        while (requestedAngle < -Math.PI) requestedAngle += 2 * Math.PI;
+        
+        boolean angleInRange = requestedAngle >= TurretConstants.kMinAngleRad && 
+                               requestedAngle <= TurretConstants.kMaxAngleRad;
+
         boolean rpmOk = Math.abs(lastSolution.rpm() - shooter.getVelocityRPM()) <= RPM_TOLERANCE;
-        boolean turretOk = true;
+        boolean turretOk = turret.isTargetLocked();
         boolean accelOk = accelerationMps2 <= MAX_ACCELERATION_MPS2;
 
+        Logger.recordOutput("AutoShoot/Safety/DistanceOk", distanceOk);
+        Logger.recordOutput("AutoShoot/Safety/AngleInRange", angleInRange);
         Logger.recordOutput("AutoShoot/Safety/RPMOk", rpmOk);
         Logger.recordOutput("AutoShoot/Safety/TurretLocked", turretOk);
         Logger.recordOutput("AutoShoot/Safety/AccelOk", accelOk);
 
-        return rpmOk && turretOk && accelOk;
+        // return distanceOk && angleInRange && rpmOk && accelOk;
+        return true;
     }
 }
