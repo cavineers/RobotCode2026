@@ -1,10 +1,8 @@
 package frc.robot.commands;
 
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.FuelSim;
@@ -29,6 +27,24 @@ public class AutoShootCommand extends Command {
     // Safety thresholds
     private static final double MAX_ACCELERATION_MPS2 = 4.5; // m/s² — above this, don't fire
     private static final double RPM_TOLERANCE = 350.0;        // ± RPM from setpoint
+
+    // Field geometry constants
+    private static final double FIELD_WIDTH_X = 16.52;        // FRC field width in meters
+    private static final double FIELD_CENTER_Y = 4.021;       // Field center Y coordinate
+    
+    // Passing goal locations
+    private static final double PASSING_GOAL_X_BLUE = 2.31;
+    private static final double PASSING_GOAL_Y_BLUE_BOTTOM = 2.017;
+    private static final double PASSING_GOAL_Y_BLUE_TOP = 2 * FIELD_CENTER_Y - PASSING_GOAL_Y_BLUE_BOTTOM; // = 6.025 m (reflected)
+    
+    // Red side passing goals (reflected across center X)
+    private static final double PASSING_GOAL_X_RED = FIELD_WIDTH_X - PASSING_GOAL_X_BLUE; // = 14.21 m
+    private static final double PASSING_GOAL_Y_RED_BOTTOM = PASSING_GOAL_Y_BLUE_TOP;      // = 6.025 m
+    private static final double PASSING_GOAL_Y_RED_TOP = PASSING_GOAL_Y_BLUE_BOTTOM;      // = 2.017 m
+    
+    // Neutral zone boundary (Blue: x > 4.61, Red: x < 11.91)
+    private static final double NEUTRAL_ZONE_BOUNDARY_X_BLUE = 4.61;   // For blue alliance
+    private static final double NEUTRAL_ZONE_BOUNDARY_X_RED = FIELD_WIDTH_X - NEUTRAL_ZONE_BOUNDARY_X_BLUE; // = 11.91 m
 
     private final SwerveDriveSubsystem drivetrain;
     private final ShooterSubsystem shooter;
@@ -81,9 +97,30 @@ public class AutoShootCommand extends Command {
 
     @Override
     public void execute() {
-        ShotSolution solution = ShotSolver.solveDynamic(
-                drivetrain.getPose(),
-                drivetrain.getFieldRelativeChassisSpeeds());
+        // Determine if we're on red or blue alliance
+        boolean isRed = DriverStation.getAlliance()
+                .map(a -> a == DriverStation.Alliance.Red)
+                .orElse(true); // Default to red if unknown
+        
+        // Check if robot is in neutral zone and should pass instead of shoot
+        double robotX = drivetrain.getPose().getX();
+        boolean inNeutralZone = isRed 
+                ? robotX < NEUTRAL_ZONE_BOUNDARY_X_RED  // Red
+                : robotX > NEUTRAL_ZONE_BOUNDARY_X_BLUE; // Blue
+        Logger.recordOutput("AutoShoot/InNeutralZone", inNeutralZone);
+        Logger.recordOutput("AutoShoot/IsRedAlliance", isRed);
+        
+        ShotSolution solution;
+        if (inNeutralZone) {
+            // Use passing goal instead of regular shot
+            solution = solvePassingShot(drivetrain.getPose(), drivetrain.getFieldRelativeChassisSpeeds(), isRed);
+        } else {
+            // Regular shot at the speaker
+            solution = ShotSolver.solveDynamic(
+                    drivetrain.getPose(),
+                    drivetrain.getFieldRelativeChassisSpeeds());
+            Logger.recordOutput("AutoShoot/PassingMode", false);
+        }
 
         lastSolution = solution;
 
@@ -226,5 +263,49 @@ public class AutoShootCommand extends Command {
 
         // return distanceOk && angleInRange && rpmOk && accelOk;
         return true;
+    }
+
+    /**
+     * Solve for passing shot parameters to a passing goal in the neutral zone.
+     * Uses ShotSolver.solveDynamic with the passing goal instead of the speaker.
+     * Determines which passing goal (bottom or top) based on robot's y position.
+     * Goals are selected based on alliance (red vs blue) and reflected accordingly.
+     */
+    private ShotSolution solvePassingShot(edu.wpi.first.math.geometry.Pose2d robotPose, ChassisSpeeds fieldSpeeds, boolean isRed) {
+        double robotY = robotPose.getY();
+        
+        // Select passing goal coordinates based on alliance
+        double passingGoalX;
+        double passingGoalYBottom;
+        double passingGoalYTop;
+        
+        if (isRed) {
+            passingGoalX = PASSING_GOAL_X_RED;        // x = 14.21 m
+            passingGoalYBottom = PASSING_GOAL_Y_RED_BOTTOM;  // y = 6.025 m
+            passingGoalYTop = PASSING_GOAL_Y_RED_TOP;        // y = 2.017 m
+        } else {
+            passingGoalX = PASSING_GOAL_X_BLUE;       // x = 2.31 m
+            passingGoalYBottom = PASSING_GOAL_Y_BLUE_BOTTOM; // y = 2.017 m
+            passingGoalYTop = PASSING_GOAL_Y_BLUE_TOP;       // y = 6.025 m
+        }
+        
+        // Determine which passing goal is closer based on robot y position
+        double passingGoalY;
+        if (Math.abs(robotY - passingGoalYBottom) < Math.abs(robotY - passingGoalYTop)) {
+            passingGoalY = passingGoalYBottom;
+        } else {
+            passingGoalY = passingGoalYTop;
+        }
+        
+        // Use ShotSolver.solveDynamic with the passing goal as the target
+        Translation3d passingGoal3d = new Translation3d(passingGoalX, passingGoalY, 0.5); // Height ~0.5m for passing
+        ShotSolution solution = ShotSolver.solveDynamic(robotPose, fieldSpeeds, passingGoal3d);
+        
+        Logger.recordOutput("AutoShoot/PassingMode", true);
+        Logger.recordOutput("AutoShoot/PassingGoalY", passingGoalY);
+        Logger.recordOutput("AutoShoot/PassingDistance", solution.effectiveDistanceMeters());
+        Logger.recordOutput("AutoShoot/PassingRPM", solution.rpm());
+        
+        return solution;
     }
 }

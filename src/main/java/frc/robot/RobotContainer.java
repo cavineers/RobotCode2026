@@ -49,6 +49,9 @@ import frc.robot.subsystems.Shooter.ShooterIO;
 import frc.robot.subsystems.Shooter.ShooterIOKraken;
 import frc.robot.subsystems.Shooter.ShooterIOSim;
 import frc.robot.subsystems.Shooter.ShooterSubsystem;
+import frc.robot.subsystems.LED.LEDIOReal;
+import frc.robot.subsystems.LED.LEDSubsystem;
+import frc.robot.subsystems.LED.LEDConstants;
 
 public class RobotContainer {
 
@@ -59,6 +62,7 @@ public class RobotContainer {
     public final InBumperIntake inBumperIntake;
     public final ShooterSubsystem shooter;
     public final Vision vision;
+    public final LEDSubsystem leds;
 
     /** Fuel particle simulation — only non-null in SIM mode. */
     public FuelSim fuelSim = null;
@@ -113,6 +117,7 @@ public class RobotContainer {
                             .plus(turretRotation)
                             .plus(VisionConstants.turretToCamera2);
                     }));
+                leds = new LEDSubsystem(new LEDIOReal(LEDConstants.kLEDPort));
                 
                 break;
             case SIM:
@@ -143,6 +148,8 @@ public class RobotContainer {
                 fuelSim.setLoggingFrequency(100);
                 fuelSim.setSubticks(10);
                 fuelSim.start();
+                
+                leds = new LEDSubsystem(new LEDIOReal(LEDConstants.kLEDPort));
                 break;
             default:
                 drivetrain = new SwerveDriveSubsystem(
@@ -168,6 +175,7 @@ public class RobotContainer {
                         });
 
                 vision = new Vision(drivetrain::addVisionMeasurement, drivetrain::resetOdometry, new VisionIO(){});
+                leds = new LEDSubsystem(new LEDIOReal(LEDConstants.kLEDPort));
                 break;
         }
 
@@ -212,6 +220,11 @@ public class RobotContainer {
             )
         );
 
+        // Right Bumper: Unjam and then also restart autoshoot
+          // Button 4: Quick unjam inner hopper
+        primaryDriverController.rightBumper().onTrue((
+            new SequentialCommandGroup(inBumperIntake.runGroundToHopper().withDeadline(new WaitCommand(0.25)),  new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim)))
+        );
         // ------ SECONDARY DRIVER CONTROLS ------
         
         // Button 2: Start turret homing sequence (current-based hardstop detection)
@@ -237,7 +250,7 @@ public class RobotContainer {
 
         // Button 4: Quick unjam inner hopper
         secondaryDriverController.button(2).onTrue((
-            new SequentialCommandGroup(inBumperIntake.runGroundToHopper(), new WaitCommand(0.5), inBumperIntake.stopCommand()))
+            new SequentialCommandGroup(inBumperIntake.runGroundToHopper().withDeadline(new WaitCommand(0.25)), inBumperIntake.stopCommand()))
         );
 
         // Button 5: Toggle hopper -> shooter

@@ -115,6 +115,23 @@ public class ShotSolver {
      */
     public static ShotSolution solveDynamic(Pose2d robotPose, ChassisSpeeds fieldSpeeds) {
         Translation3d goal = getGoal();
+        return solveDynamic(robotPose, fieldSpeeds, goal);
+    }
+
+    /**
+     * Shoot-on-the-fly with velocity compensation to a custom goal.
+     * 
+     * Works by calculating where the shooter will be when the fuel arrives at the goal.
+     * Uses that "lookahead" position to look up shot parameters instead of current position.
+     * This naturally compensates for robot velocity.
+     * 
+     * @param robotPose the robot's current pose
+     * @param fieldSpeeds the robot's field-relative velocity
+     * @param customGoal the 3D goal position (e.g., passing goal or speaker)
+     * @return a ShotSolution with RPM and turret angle calculated for the custom goal
+     */
+    public static ShotSolution solveDynamic(Pose2d robotPose, ChassisSpeeds fieldSpeeds, Translation3d customGoal) {
+        Translation3d goal = customGoal;
         Translation3d shooter = getShooterPosition(robotPose);
 
         double dr = distanceTo(shooter, goal);
