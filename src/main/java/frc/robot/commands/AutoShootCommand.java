@@ -65,7 +65,9 @@ public class AutoShootCommand extends Command {
     
     private static final double HOPPER_STARTUP_DELAY_SECONDS = 0.5;
     private static final double HOPPER_UNJAM_INTERVAL_SECONDS = 2.5; // Run unjam every 2.5 seconds
+    private static final double HOPPER_UNJAM_TRANSITION_SECONDS = 0.1; // Stop for 0.1 seconds before reversing
     private static final double HOPPER_UNJAM_DURATION_SECONDS = 0.15; // Run hopper backwards for 0.15 seconds
+    private static final double HOPPER_REVERSE_TRANSITION_SECONDS = 0.1; // Stop for 0.1 seconds after reversing before going forward
 
     /**
      * Convenience constructor — no FuelSim (real robot or testing without sim).
@@ -169,14 +171,22 @@ public class AutoShootCommand extends Command {
         // Also periodically unjam by running hopper backwards
         boolean hopperDelayPassed = hopperDelayTimer.hasElapsed(HOPPER_STARTUP_DELAY_SECONDS);
         
-        // Check if we should unjam (every HOPPER_UNJAM_INTERVAL_SECONDS, run backwards for HOPPER_UNJAM_DURATION_SECONDS)
+        // Check if we should unjam (every HOPPER_UNJAM_INTERVAL_SECONDS)
         boolean shouldUnjam = hopperUnjamTimer.hasElapsed(HOPPER_UNJAM_INTERVAL_SECONDS);
-        boolean unjamActive = hopperUnjamTimer.get() % HOPPER_UNJAM_INTERVAL_SECONDS < HOPPER_UNJAM_DURATION_SECONDS;
+        double timeSinceUnjamStart = hopperUnjamTimer.get() % HOPPER_UNJAM_INTERVAL_SECONDS;
         
-        if (shouldUnjam && unjamActive) {
+        // Unjam cycle: transition (0.1s) + reverse (0.15s) = 0.25s total
+        boolean inTransition = timeSinceUnjamStart < HOPPER_UNJAM_TRANSITION_SECONDS;
+        boolean unjamActive = timeSinceUnjamStart >= HOPPER_UNJAM_TRANSITION_SECONDS && 
+                             timeSinceUnjamStart < (HOPPER_UNJAM_TRANSITION_SECONDS + HOPPER_UNJAM_DURATION_SECONDS);
+        
+        if (shouldUnjam && inTransition) {
+            // Transition period: stop the hopper
+            intake.setHopperVoltage(0);
+        } else if (shouldUnjam && unjamActive) {
             // Run hopper backwards during unjam
             intake.setHopperVoltage(-InBumperIntakeConstants.kHopperVoltage);
-        } else if (ready && hopperDelayPassed && !unjamActive) {
+        } else if (ready && hopperDelayPassed) {
             // Normal hopper operation when not unjamming
             intake.setHopperVoltage(InBumperIntakeConstants.kHopperVoltage);
         } else {
