@@ -222,7 +222,7 @@ public class RobotContainer {
         );
         
         // Left Bumper: Align to trench with manual X control via left stick
-        primaryDriverController.x().whileTrue(
+        primaryDriverController.leftBumper().whileTrue(
             new AlignToTrenchCommand(drivetrain, primaryDriverController::getLeftY)
         );
         
