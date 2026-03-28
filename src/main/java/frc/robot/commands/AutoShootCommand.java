@@ -55,11 +55,14 @@ public class AutoShootCommand extends Command {
 
     private ShotSolution lastSolution = null;
     private final Timer shotTimer = new Timer();
+    private final Timer hopperDelayTimer = new Timer();
     private boolean readyLatched = false;
 
     // For acceleration calculation
     private ChassisSpeeds lastSpeeds = new ChassisSpeeds();
     private double lastSpeedsTimestamp = 0.0;
+    
+    private static final double HOPPER_STARTUP_DELAY_SECONDS = 0.5;
 
     /**
      * Convenience constructor — no FuelSim (real robot or testing without sim).
@@ -89,6 +92,7 @@ public class AutoShootCommand extends Command {
     public void initialize() {
         turret.enableClosedLoop(true);
         shotTimer.restart();
+        hopperDelayTimer.restart();
         readyLatched = false;
         lastSpeeds = drivetrain.getFieldRelativeChassisSpeeds();
         lastSpeedsTimestamp = Timer.getFPGATimestamp();
@@ -157,7 +161,9 @@ public class AutoShootCommand extends Command {
         intake.setTopVoltage(InBumperIntakeConstants.kTopVoltage);
 
         // Only spin hopper when fully ready (turret locked AND shooter ready AND in range)
-        if (ready) {
+        // AND after the startup delay has passed
+        boolean hopperDelayPassed = hopperDelayTimer.hasElapsed(HOPPER_STARTUP_DELAY_SECONDS);
+        if (ready && hopperDelayPassed) {
             intake.setHopperVoltage(InBumperIntakeConstants.kHopperVoltage);
         } else {
             intake.setHopperVoltage(0);    
@@ -233,6 +239,7 @@ public class AutoShootCommand extends Command {
      * </ul>
      * @deprecated
      */
+    @Deprecated
     public boolean isReadyToFire(double accelerationMps2) {
         if (lastSolution == null || !lastSolution.isValid()) return false;
 
@@ -298,13 +305,15 @@ public class AutoShootCommand extends Command {
         }
         
         // Use ShotSolver.solveDynamic with the passing goal as the target
-        Translation3d passingGoal3d = new Translation3d(passingGoalX, passingGoalY, 0.5); // Height ~0.5m for passing
+        // Height is set low so distance stays within characterized range (< 5m)
+        Translation3d passingGoal3d = new Translation3d(passingGoalX, passingGoalY, 0.1); // Low height for passing
         ShotSolution solution = ShotSolver.solveDynamic(robotPose, fieldSpeeds, passingGoal3d);
         
         Logger.recordOutput("AutoShoot/PassingMode", true);
         Logger.recordOutput("AutoShoot/PassingGoalY", passingGoalY);
         Logger.recordOutput("AutoShoot/PassingDistance", solution.effectiveDistanceMeters());
         Logger.recordOutput("AutoShoot/PassingRPM", solution.rpm());
+        Logger.recordOutput("AutoShoot/PassingSolution", solution.toString()); // Debug: log entire solution
         
         return solution;
     }

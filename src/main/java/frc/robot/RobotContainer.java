@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.AutoShootCommand;
 import frc.robot.commands.ShooterCharacterizationCommand;
 import frc.robot.commands.SwerveCommand;
+import frc.robot.commands.AlignToTrenchCommand;
 import frc.lib.FuelSim;
 import frc.robot.subsystems.Drivetrain.GyroIO;
 import frc.robot.subsystems.Drivetrain.GyroPigeonIO;
@@ -44,7 +45,6 @@ import frc.robot.subsystems.InBumperIntake.InBumperIntake;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSim;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSpark;
-import frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants;
 import frc.robot.subsystems.Shooter.ShooterIO;
 import frc.robot.subsystems.Shooter.ShooterIOKraken;
 import frc.robot.subsystems.Shooter.ShooterIOSim;
@@ -199,11 +199,6 @@ public class RobotContainer {
         // ------ PRIMARY DRIVER CONTROLS ------
         
         primaryDriverController.b().onTrue(overBumperIntake.deployCommand());
-                
-        // Toggle InBumperIntake: Press to start runGroundToHopper, press again to stop
-        primaryDriverController.x().toggleOnTrue(
-            inBumperIntake.runGroundToHopper()
-        );
 
         // TODO: PLACEHOLDER: replace with actual button
         var manualOverrideSwitch = secondaryDriverController.button(8);
@@ -223,8 +218,14 @@ public class RobotContainer {
         // Right Bumper: Unjam and then also restart autoshoot
           // Button 4: Quick unjam inner hopper
         primaryDriverController.rightBumper().onTrue((
-            new SequentialCommandGroup(inBumperIntake.runGroundToHopper().withDeadline(new WaitCommand(0.25)),  new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim)))
+            new SequentialCommandGroup(inBumperIntake.runGroundToHopper().withDeadline(new WaitCommand(0.15)),  new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim)))
         );
+        
+        // Left Bumper: Align to trench with manual X control via left stick
+        primaryDriverController.x().whileTrue(
+            new AlignToTrenchCommand(drivetrain, primaryDriverController::getLeftY)
+        );
+        
         // ------ SECONDARY DRIVER CONTROLS ------
         
         // Button 2: Start turret homing sequence (current-based hardstop detection)
@@ -250,7 +251,7 @@ public class RobotContainer {
 
         // Button 4: Quick unjam inner hopper
         secondaryDriverController.button(2).onTrue((
-            new SequentialCommandGroup(inBumperIntake.runGroundToHopper().withDeadline(new WaitCommand(0.25)), inBumperIntake.stopCommand()))
+            new SequentialCommandGroup(inBumperIntake.runGroundToHopper().withDeadline(new WaitCommand(0.15)), inBumperIntake.stopCommand()))
         );
 
         // Button 5: Toggle hopper -> shooter
