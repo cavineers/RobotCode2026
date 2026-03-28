@@ -56,6 +56,7 @@ public class AutoShootCommand extends Command {
     private ShotSolution lastSolution = null;
     private final Timer shotTimer = new Timer();
     private final Timer hopperDelayTimer = new Timer();
+    private final Timer hopperUnjamTimer = new Timer();
     private boolean readyLatched = false;
 
     // For acceleration calculation
@@ -63,6 +64,8 @@ public class AutoShootCommand extends Command {
     private double lastSpeedsTimestamp = 0.0;
     
     private static final double HOPPER_STARTUP_DELAY_SECONDS = 0.5;
+    private static final double HOPPER_UNJAM_INTERVAL_SECONDS = 2.5; // Run unjam every 2.5 seconds
+    private static final double HOPPER_UNJAM_DURATION_SECONDS = 0.15; // Run hopper backwards for 0.15 seconds
 
     /**
      * Convenience constructor — no FuelSim (real robot or testing without sim).
@@ -93,6 +96,7 @@ public class AutoShootCommand extends Command {
         turret.enableClosedLoop(true);
         shotTimer.restart();
         hopperDelayTimer.restart();
+        hopperUnjamTimer.restart();
         readyLatched = false;
         lastSpeeds = drivetrain.getFieldRelativeChassisSpeeds();
         lastSpeedsTimestamp = Timer.getFPGATimestamp();
@@ -162,8 +166,18 @@ public class AutoShootCommand extends Command {
 
         // Only spin hopper when fully ready (turret locked AND shooter ready AND in range)
         // AND after the startup delay has passed
+        // Also periodically unjam by running hopper backwards
         boolean hopperDelayPassed = hopperDelayTimer.hasElapsed(HOPPER_STARTUP_DELAY_SECONDS);
-        if (ready && hopperDelayPassed) {
+        
+        // Check if we should unjam (every HOPPER_UNJAM_INTERVAL_SECONDS, run backwards for HOPPER_UNJAM_DURATION_SECONDS)
+        boolean shouldUnjam = hopperUnjamTimer.hasElapsed(HOPPER_UNJAM_INTERVAL_SECONDS);
+        boolean unjamActive = hopperUnjamTimer.get() % HOPPER_UNJAM_INTERVAL_SECONDS < HOPPER_UNJAM_DURATION_SECONDS;
+        
+        if (shouldUnjam && unjamActive) {
+            // Run hopper backwards during unjam
+            intake.setHopperVoltage(-InBumperIntakeConstants.kHopperVoltage);
+        } else if (ready && hopperDelayPassed && !unjamActive) {
+            // Normal hopper operation when not unjamming
             intake.setHopperVoltage(InBumperIntakeConstants.kHopperVoltage);
         } else {
             intake.setHopperVoltage(0);    
@@ -172,6 +186,8 @@ public class AutoShootCommand extends Command {
         Logger.recordOutput("AutoShoot/SolutionValid", solution.isValid());
         Logger.recordOutput("AutoShoot/ReadyToFire", readyLatched);
         Logger.recordOutput("AutoShoot/Acceleration", accel);
+        Logger.recordOutput("AutoShoot/HopperUnjamActive", unjamActive);
+        Logger.recordOutput("AutoShoot/HopperUnjamTimer", hopperUnjamTimer.get());
 
         // Fire a sim ball every 0.25 seconds regardless of ready state
         if (fuelSim != null && solution.isValid() && shotTimer.advanceIfElapsed(0.25)) {

@@ -121,8 +121,8 @@ public class AlignToTrenchCommand extends Command {
         );
         
         // Clamp velocities to reasonable values
-        yVelocity = Math.max(-2.0, Math.min(2.0, yVelocity)); // ±2 m/s
-        rotationVelocity = Math.max(-3.0, Math.min(3.0, rotationVelocity)); // ±3 rad/s
+        yVelocity = Math.max(-2.0, Math.min(2.0, yVelocity)); // 2 m/s
+        rotationVelocity = Math.max(-3.0, Math.min(3.0, rotationVelocity)); // 3 rad/s
         
         // Get the robot's rotation for field-relative conversion
         // Don't flip the pose - just use the actual robot rotation
