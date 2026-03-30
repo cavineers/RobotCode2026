@@ -11,7 +11,8 @@ public class OverBumperIntakeConstants {
     public static final IdleMode kIdleMode = IdleMode.kBrake;
     public static final int kCurrentLimit = 40;
     
-    public static final double kIntakeVoltage = 0.35;
+    public static final double kIntakeVoltage = 0.50;
+    
     public static final double kDeployVoltage = 0.1;
 
     public static final double kDeployedRotations = -3.45;

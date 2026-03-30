@@ -76,7 +76,7 @@ public class TurretIOSpark implements TurretIO {
                 () -> motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
 
         encoder = motor.getEncoder();
-        encoder.setPosition(TurretConstants.kHomingSwitchZeroPositionRad);
+        encoder.setPosition(TurretConstants.kHomingHardstopPositionRad);
 
         closedLoopController = motor.getClosedLoopController();
 

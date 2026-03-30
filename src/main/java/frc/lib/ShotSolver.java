@@ -76,12 +76,16 @@ public class ShotSolver {
         // addEntry(3.81, 1800, 1.0);
 
         // ------- REAL --------
-        addEntry(4.145, 3800, 1.22);
-        addEntry(3.05, 3250, 0.97);
-        addEntry(2.541, 3000, 0.8);
-        addEntry(2.35, 2800, 0.78);
-        addEntry(4.924, 4250, 1.28);
-        addEntry(2.41, 2900, 0.80);
+        // addEntry(4.145, 3800, 1.22);
+        // addEntry(3.05, 3250, 0.97);
+        // addEntry(2.541, 3000, 0.8);
+        // addEntry(2.35, 2800, 0.78);
+        // addEntry(4.924, 4250, 1.28);
+        // addEntry(2.41, 2900, 0.80);
+        // ---- NEW POINTS ----
+        addEntry(3.397, 3600, 1.07);
+        addEntry(2.597, 3200, 0.86);
+        addEntry(4.434, 4150, 1.275);
 
 
 

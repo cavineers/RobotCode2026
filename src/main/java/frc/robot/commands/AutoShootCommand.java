@@ -64,9 +64,9 @@ public class AutoShootCommand extends Command {
     private double lastSpeedsTimestamp = 0.0;
     
     private static final double HOPPER_STARTUP_DELAY_SECONDS = 0.5;
-    private static final double HOPPER_UNJAM_INTERVAL_SECONDS = 4; 
+    private static final double HOPPER_UNJAM_INTERVAL_SECONDS = 2.5; 
     private static final double HOPPER_UNJAM_TRANSITION_SECONDS = 0.25; // Stop for 0.1 seconds before reversing
-    private static final double HOPPER_UNJAM_DURATION_SECONDS = 0.25; // Run hopper backwards for 0.15 seconds
+    private static final double HOPPER_UNJAM_DURATION_SECONDS = 0.15; // Run hopper backwards for 0.15 seconds
     private static final double HOPPER_REVERSE_TRANSITION_SECONDS = 0.1; // Stop for 0.1 seconds after reversing before going forward
 
     /**
@@ -154,8 +154,8 @@ public class AutoShootCommand extends Command {
         }
         lastSpeeds = currentSpeeds;
         lastSpeedsTimestamp = now;
-
-        boolean ready = isReadyToFire(accel);
+ 
+        boolean ready = true;
         if (!readyLatched && ready) {
             readyLatched = true;
         }
