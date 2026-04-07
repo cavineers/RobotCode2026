@@ -83,9 +83,14 @@ public class ShotSolver {
         // addEntry(4.924, 4250, 1.28);
         // addEntry(2.41, 2900, 0.80);
         // ---- NEW POINTS ----
-        addEntry(3.397, 3600, 1.07);
-        addEntry(2.597, 3200, 0.86);
-        addEntry(4.434, 4150, 1.275);
+        // addEntry(3.397, 3600, 1.07);
+        // addEntry(2.597, 3200, 0.86);
+        // addEntry(4.434, 4150, 1.275);
+
+        // // ---- 4/3 ----
+        addEntry(4.402, 4300, 1.259);
+        addEntry(2.38, 3250, 0.8266);
+
 
 
 
