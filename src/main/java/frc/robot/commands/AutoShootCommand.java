@@ -169,13 +169,14 @@ public class AutoShootCommand extends Command {
         // Only spin hopper when fully ready (turret locked AND shooter ready AND in range)
         // AND after the startup delay has passed
         // Also periodically unjam by running hopper backwards
+        // ---- UNJAMMING CODE ----
         boolean hopperDelayPassed = hopperDelayTimer.hasElapsed(HOPPER_STARTUP_DELAY_SECONDS);
         
         // Check if we should unjam (every HOPPER_UNJAM_INTERVAL_SECONDS)
         boolean shouldUnjam = hopperUnjamTimer.hasElapsed(HOPPER_UNJAM_INTERVAL_SECONDS);
         double timeSinceUnjamStart = hopperUnjamTimer.get() % HOPPER_UNJAM_INTERVAL_SECONDS;
         
-        // Unjam cycle: transition (0.1s) + reverse (0.15s) = 0.25s total
+        // Unjam cycle: transition (0.25s) + reverse (0.15s) with periodic intervals
         boolean inTransition = timeSinceUnjamStart < HOPPER_UNJAM_TRANSITION_SECONDS;
         boolean unjamActive = timeSinceUnjamStart >= HOPPER_UNJAM_TRANSITION_SECONDS && 
                              timeSinceUnjamStart < (HOPPER_UNJAM_TRANSITION_SECONDS + HOPPER_UNJAM_DURATION_SECONDS);
