@@ -20,7 +20,8 @@ public class LEDIOReal implements LEDIO {
         led = new AddressableLED(port);
         buffer = new AddressableLEDBuffer(55);
         led.setLength(buffer.getLength());
-        setPattern(LEDPattern.solid(Color.kBlack));
+        setPattern(LEDPattern.solid(Color.kWhite));
+        led.start();
     }
     
     @Override

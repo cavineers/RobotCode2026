@@ -11,6 +11,7 @@ import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -36,6 +37,7 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
     private SparkMaxConfig deployConfig;
     private SparkFlexConfig intakeConfig;
 
+    private LoggedNetworkNumber tuningVoltage = new LoggedNetworkNumber("/Tuning/OTB/Voltage", kIntakeVoltage);
     PIDController controller = new PIDController(kProportionalGainSpark, kIntegralTermSpark, kDerivativeTermSpark);
 
     public boolean isClosed = false;
@@ -55,8 +57,8 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
         
         intakeConfig = new SparkFlexConfig();
         intakeConfig
-            .idleMode(IdleMode.kBrake)
-            .smartCurrentLimit(60)
+            .idleMode(IdleMode.kCoast)
+            .smartCurrentLimit(40)
             .inverted(true)
             .voltageCompensation(12);
             
@@ -135,12 +137,12 @@ public class OverBumperIntakeIOSpark implements OverBumperIntakeIO {
 
     @Override
     public void intake() {
-        setIntakeVoltage(kIntakeVoltage * 12.0);
+        setIntakeVoltage(kIntakeVoltage);
     }
 
     @Override
     public void outtake() {
-        setIntakeVoltage(-kIntakeVoltage * 12.0);
+        setIntakeVoltage(-kIntakeVoltage);
     }
 
     @Override

@@ -11,7 +11,7 @@ public class OverBumperIntakeConstants {
     public static final IdleMode kIdleMode = IdleMode.kBrake;
     public static final int kCurrentLimit = 40;
     
-    public static final double kIntakeVoltage = 0.50;
+    public static final double kIntakeVoltage = 6.5;
     
     public static final double kDeployVoltage = 0.1;
 
@@ -21,7 +21,7 @@ public class OverBumperIntakeConstants {
     //PID Gains (Slot 0)
     public static final double kProportionalGainSpark = 1.2; //TODO: tune
     public static final double kIntegralTermSpark = 0.0;
-    public static final double kDerivativeTermSpark = 0.025;
+    public static final double kDerivativeTermSpark = 0.05;
 
     //Simulation Constants
     public static final double kSimP = 0.55; //TODO: tune
