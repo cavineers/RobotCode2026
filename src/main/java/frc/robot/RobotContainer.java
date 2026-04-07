@@ -45,6 +45,7 @@ import frc.robot.subsystems.InBumperIntake.InBumperIntake;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSim;
 import frc.robot.subsystems.InBumperIntake.InBumperIntakeIOSpark;
+import frc.robot.subsystems.InBumperIntake.InBumperIntake.IntakeState;
 import frc.robot.subsystems.Shooter.ShooterIO;
 import frc.robot.subsystems.Shooter.ShooterIOKraken;
 import frc.robot.subsystems.Shooter.ShooterIOSim;
@@ -187,13 +188,28 @@ public class RobotContainer {
     }
 
     private void configureButtonBindings() {
-        // Set default drivetrain command — halve speed while auto-shooting (left trigger)
+        // Set default drivetrain command — digital switch at 75% threshold
+        // If left trigger > 75%: reduce to 50% speed
+        // If in hopper to shooter mode: reduce to 33% speed
+        // Otherwise: 100% speed
         drivetrain.setDefaultCommand(new SwerveCommand(
                 drivetrain,
                 primaryDriverController::getLeftY,
                 primaryDriverController::getLeftX,
                 primaryDriverController::getRightX,
-                () -> primaryDriverController.getRightTriggerAxis() > 0.5 ? 0.5 : 1.0)
+                () -> {
+                    double leftTrigger = primaryDriverController.getLeftTriggerAxis();
+                    boolean triggerPressed = leftTrigger > 0.75;
+                    boolean hopperToShooter = inBumperIntake.getState() == IntakeState.HOPPER_TO_SHOOTER;
+                    
+                    if (hopperToShooter) {
+                        return 0.67; // 33% reduction for hopper to shooter
+                    } else if (triggerPressed) {
+                        return 0.5; // 50% reduction when trigger pressed (digital switch)
+                    } else {
+                        return 1.0; // Full speed
+                    }
+                })
             );
                
         // ------ PRIMARY DRIVER CONTROLS ------
@@ -268,7 +284,7 @@ public class RobotContainer {
             Commands.deferredProxy(() ->
                 manualOverrideSwitch.getAsBoolean() ?
                     Commands.runOnce(() -> {
-                        shooterRPMOverride += 100.0;
+                        shooterRPMOverride += 50.0;
                         shooter.setVelocity(shooterRPMOverride);
                     }, shooter)
                     :
@@ -280,7 +296,7 @@ public class RobotContainer {
             Commands.deferredProxy(() ->
                 manualOverrideSwitch.getAsBoolean() ?
                     Commands.runOnce(() -> {
-                        shooterRPMOverride = Math.max(0, shooterRPMOverride - 100.0);
+                        shooterRPMOverride = Math.max(0, shooterRPMOverride - 50.0);
                         shooter.setVelocity(shooterRPMOverride);
                     }, shooter)
                     :
