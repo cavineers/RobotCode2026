@@ -230,11 +230,14 @@ public class RobotContainer {
             )
         );
 
+        // TODO: VERIFICATION
         // Right Bumper: Unjam and then also restart autoshoot
-          // Button 4: Quick unjam inner hopper
-        primaryDriverController.rightBumper().onTrue((
-            new SequentialCommandGroup(inBumperIntake.runGroundToHopper().withDeadline(new WaitCommand(0.15)),  new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim)))
-        );
+        primaryDriverController.rightBumper().toggleOnTrue((
+            new SequentialCommandGroup(
+                inBumperIntake.runGroundToHopper().withDeadline(new WaitCommand(0.15)),
+                new AutoShootCommand(drivetrain, shooter, turret, inBumperIntake, fuelSim)
+            )
+        ));
         
         // Left Bumper: Align to trench with manual X control via left stick
         primaryDriverController.leftBumper().whileTrue(
