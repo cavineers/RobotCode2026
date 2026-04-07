@@ -188,7 +188,6 @@ public class RobotContainer {
     }
 
     private void configureButtonBindings() {
-        // Set default drivetrain command — digital switch at 75% threshold
         // If left trigger > 75%: reduce to 50% speed
         // If in hopper to shooter mode: reduce to 33% speed
         // Otherwise: 100% speed
@@ -202,10 +201,10 @@ public class RobotContainer {
                     boolean triggerPressed = leftTrigger > 0.75;
                     boolean hopperToShooter = inBumperIntake.getState() == IntakeState.HOPPER_TO_SHOOTER;
                     
-                    if (hopperToShooter) {
-                        return 0.67; // 33% reduction for hopper to shooter
-                    } else if (triggerPressed) {
+                    if (triggerPressed) {
                         return 0.5; // 50% reduction when trigger pressed (digital switch)
+                    } else if (hopperToShooter) {
+                        return 0.67; // 33% reduction for hopper to shooter
                     } else {
                         return 1.0; // Full speed
                     }
