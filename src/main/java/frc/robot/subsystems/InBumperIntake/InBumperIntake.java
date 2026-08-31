@@ -4,6 +4,7 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
@@ -64,7 +65,7 @@ public class InBumperIntake extends SubsystemBase {
             io.setOutsideVoltage(-kOutsideVoltage);
             io.setBottomVoltage(kBottomVoltage);
             io.setTopVoltage(kTopVoltage);
-            io.setHopperVoltage(0); // Hopper off during ground to shooter
+            io.setHopperVoltage(kHopperVoltage);
         }).finallyDo(interrupted -> {
             currentState = IntakeState.IDLE;
             io.setOutsideVoltage(0);
@@ -104,6 +105,15 @@ public class InBumperIntake extends SubsystemBase {
             io.setTopVoltage(0);
             io.setHopperVoltage(0);
         });
+    }
+
+    public Command runIntakeAgitateSequence() {
+    return Commands.sequence(
+        runHopperToShooter().withTimeout(2.0),
+        Commands.waitSeconds(0.25),
+        runGroundToHopper().withTimeout(0.2),
+        Commands.waitSeconds(0.25)
+    ).repeatedly();
     }
 
     public Command stopCommand() {

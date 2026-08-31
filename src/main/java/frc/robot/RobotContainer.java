@@ -268,8 +268,8 @@ public class RobotContainer {
         );
 
         // Button 4: Quick unjam inner hopper
-        secondaryDriverController.button(2).onTrue((
-            new SequentialCommandGroup(inBumperIntake.runGroundToHopper().withDeadline(new WaitCommand(0.15)), inBumperIntake.stopCommand()))
+        secondaryDriverController.button(2).toggleOnTrue(
+            inBumperIntake.runIntakeAgitateSequence()
         );
 
         // Button 5: Toggle hopper -> shooter
