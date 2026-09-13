@@ -4,7 +4,10 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.Shooter.ShooterIO.ShooterIOInputsAutoLogged;
+
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.inputs.LoggableInputs;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 import static frc.robot.subsystems.Shooter.ShooterConstants.*;
@@ -64,7 +67,7 @@ public class ShooterSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         io.updateInputs(inputs);
-        Logger.processInputs("Shooter", inputs);
+        Logger.processInputs("Shooter", (LoggableInputs) inputs);
         
         // Check if PID values have changed and update if needed
         double currentKP = tunableKP.get();

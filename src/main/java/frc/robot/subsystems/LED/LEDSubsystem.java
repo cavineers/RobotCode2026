@@ -3,7 +3,10 @@ package frc.robot.subsystems.LED;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.LED.LEDIO.LEDIOInputsAutoLogged;
+
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 import static frc.robot.subsystems.LED.LEDConstants.*;
 
@@ -29,7 +32,7 @@ public class LEDSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         io.updateInputs(inputs);
-        Logger.processInputs("LED", inputs);
+        Logger.processInputs("LED", (LoggableInputs) inputs);
         
         // Update LED pattern to match current alliance color
         updateAlliancePattern();

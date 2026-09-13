@@ -163,7 +163,7 @@ public class ModuleIOSpark implements ModuleIO {
     }
 
     @Override
-    public void updateInputs(ModuleIOInputs inputs) {
+    public void updateInputs(ModuleIOInputsAutoLogged inputs) {
         // Update drive inputs
         sparkStickyFault = false; // controlled by the sparkUtil class
         

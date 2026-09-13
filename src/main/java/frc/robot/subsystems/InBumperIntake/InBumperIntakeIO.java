@@ -4,7 +4,7 @@ import org.littletonrobotics.junction.AutoLog;
 
 public interface InBumperIntakeIO {
     @AutoLog
-    public static class InBumperIntakeIOInputs {
+    public static class InBumperIntakeIOInputsAutoLogged {
         public double bottomMotorPositionRad = 0.0;
         public double bottomMotorVelocityRadPerSec = 0.0;
         public double bottomMotorAppliedVolts = 0.0;
@@ -27,7 +27,7 @@ public interface InBumperIntakeIO {
 
     }
     
-    public default void updateInputs(InBumperIntakeIOInputs inputs) {}
+    public default void updateInputs(InBumperIntakeIOInputsAutoLogged inputs) {}
     
     public default void setBottomVoltage(double volts) {}
 

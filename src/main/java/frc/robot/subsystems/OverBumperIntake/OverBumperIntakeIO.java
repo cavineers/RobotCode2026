@@ -4,7 +4,7 @@ import org.littletonrobotics.junction.AutoLog;
 
 public interface OverBumperIntakeIO {
     @AutoLog
-    public static class OverBumperIntakeIOInputs {
+    public static class OverBumperIntakeIOInputsAutoLogged {
         public double deployPositionRotations = 0.0;
         public double deployAppliedVolts = 0.0;
         public double deployCurrentAmps = 0.0;
@@ -17,7 +17,7 @@ public interface OverBumperIntakeIO {
         public boolean isClosed = false;
     }
     
-    public default void updateInputs(OverBumperIntakeIOInputs inputs) {}
+    public default void updateInputs(OverBumperIntakeIOInputsAutoLogged inputs) {}
 
     public default void intake() {}
 

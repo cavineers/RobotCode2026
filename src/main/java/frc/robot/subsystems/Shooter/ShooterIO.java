@@ -8,7 +8,7 @@ import org.littletonrobotics.junction.AutoLog;
 public interface ShooterIO {
     
     @AutoLog
-    public static class ShooterIOInputs {
+    public static class ShooterIOInputsAutoLogged {
         /** Flywheel (output shaft) velocity in RPM. Already converted from motor shaft by the IO layer. */
         public double flywheelVelocityRPM = 0.0;
         public double flywheelAppliedVolts = 0.0;
@@ -28,7 +28,7 @@ public interface ShooterIO {
      * @brief Update inputs from hardware.
      * @param inputs Input object to populate
      */
-    default void updateInputs(ShooterIOInputs inputs) {}
+    default void updateInputs(ShooterIOInputsAutoLogged inputs) {}
 
     /**
      * @brief Set flywheel velocity in RPM.

@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.LocalADStarAK;
+import frc.robot.subsystems.Drivetrain.GyroIO.GyroIOInputsAutoLogged;
 import frc.robot.subsystems.Drivetrain.SwerveDriveConstants.DriveConstants;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -43,6 +44,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 public class SwerveDriveSubsystem extends SubsystemBase {
     static final Lock odometryLock = new ReentrantLock();
@@ -159,7 +161,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     public void periodic() {
         odometryLock.lock(); // Prevents odometry updates while reading data
         gyroIO.updateInputs(gyroInputs); // Update gyro values
-        Logger.processInputs("Drivetrain/Gyro", gyroInputs);
+        Logger.processInputs("Drivetrain/Gyro", (LoggableInputs) gyroInputs);
         for (var module : modules) {
             module.periodic();
         }

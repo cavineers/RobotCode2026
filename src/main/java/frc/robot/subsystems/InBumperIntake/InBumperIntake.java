@@ -2,9 +2,11 @@ package frc.robot.subsystems.InBumperIntake;
 
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.InBumperIntake.InBumperIntakeIO.InBumperIntakeIOInputsAutoLogged;
 
 import static frc.robot.subsystems.InBumperIntake.InBumperIntakeConstants.*;
 
@@ -31,7 +33,7 @@ public class InBumperIntake extends SubsystemBase {
     @Override
     public void periodic() {
         io.updateInputs(inputs);
-        Logger.processInputs("InBumperIntake", inputs);
+        Logger.processInputs("InBumperIntake", (LoggableInputs) inputs);
     }
 
     public void setBottomVoltage(double volts) {

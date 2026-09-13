@@ -9,10 +9,12 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.subsystems.Turret.TurretIO.TurretIOInputsAutoLogged;
 
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.inputs.LoggableInputs;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 public class Turret extends SubsystemBase {
@@ -73,7 +75,7 @@ public class Turret extends SubsystemBase {
 
         updateTunableGains();
 
-        Logger.processInputs("Turret", inputs);
+        Logger.processInputs("Turret", (LoggableInputs) inputs);
 
         // Add current turret angle to history buffer for moving camera support
         turretAngleBuffer.addSample(Timer.getFPGATimestamp(), new Rotation2d(getCurrentTurretAngleRad()));

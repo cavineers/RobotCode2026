@@ -9,7 +9,7 @@ import org.littletonrobotics.junction.AutoLog;
 public interface TurretIO {
 
 	@AutoLog
-	class TurretIOInputs {
+	class TurretIOInputsAutoLogged {
 		public double positionRad = 0.0;
 		public double velocityRadPerSec = 0.0;
 		public double appliedVolts = 0.0;
@@ -21,7 +21,7 @@ public interface TurretIO {
 		public boolean homeSwitchTriggered = false;
 	}
 
-	default void updateInputs(TurretIOInputs inputs) {}
+	default void updateInputs(TurretIOInputsAutoLogged inputs) {}
 
 	default void setVoltage(double volts) {}
 

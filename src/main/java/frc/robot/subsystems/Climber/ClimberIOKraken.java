@@ -72,7 +72,7 @@ public class ClimberIOKraken implements ClimberIO {
     }
 
     @Override
-    public void updateInputs(ClimberIOInputs inputs) {
+    public void updateInputs(ClimberIOInputsAutoLogged inputs) {
         inputs.climberVelocityRotationsPerSec = climberMotor.getVelocity().getValueAsDouble();
         inputs.climberAppliedVoltage = climberMotor.getMotorVoltage().getValueAsDouble();
         inputs.climberCurrentAmps = climberMotor.getSupplyCurrent().getValueAsDouble();

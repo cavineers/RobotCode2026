@@ -52,7 +52,7 @@ public class ModuleIOSim implements ModuleIO {
     }
 
     @Override
-    public void updateInputs(ModuleIOInputs inputs) {
+    public void updateInputs(ModuleIOInputsAutoLogged inputs) {
         // Update sims first
         driveSim.update(0.02);
         turnSim.update(0.02);

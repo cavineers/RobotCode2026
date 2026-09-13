@@ -3,9 +3,11 @@ package frc.robot.subsystems.OverBumperIntake;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.OverBumperIntake.OverBumperIntakeIO.OverBumperIntakeIOInputsAutoLogged;
 
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.inputs.LoggableInputs;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 import static frc.robot.subsystems.OverBumperIntake.OverBumperIntakeConstants.*;
 
@@ -42,7 +44,7 @@ public class OverBumperIntake extends SubsystemBase {
             kD = tuningD.get();
             io.setPID(kP, kI, kD);
         }
-        Logger.processInputs("OverBumperIntake", inputs);
+        Logger.processInputs("OverBumperIntake", (LoggableInputs) inputs);
         Logger.recordOutput("OverBumperIntake/deployed", deployed);
     }
 

@@ -37,7 +37,7 @@ public class TurretIOSim implements TurretIO {
 	}
 
 	@Override
-	public void updateInputs(TurretIOInputs inputs) {
+	public void updateInputs(TurretIOInputsAutoLogged inputs) {
 		simulateStep();
 
 		inputs.positionRad = positionRad;

@@ -6,7 +6,7 @@ import org.littletonrobotics.junction.AutoLog;
 
 public interface VisionIO {
     @AutoLog
-    public static class VisionIOInputs {
+    public static class VisionIOInputsAutoLogged {
         public boolean connected = false;
         public TargetObservation latestTargetObservation = new TargetObservation(Rotation2d.kZero, Rotation2d.kZero);
         public PoseObservation[] poseObservations = new PoseObservation[0];
@@ -31,6 +31,6 @@ public interface VisionIO {
         PHOTONVISION
     }
 
-    public default void updateInputs(VisionIOInputs inputs) {
+    public default void updateInputs(VisionIOInputsAutoLogged inputs) {
     }
 }

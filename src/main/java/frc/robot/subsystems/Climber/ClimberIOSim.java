@@ -16,12 +16,14 @@ import edu.wpi.first.math.MathUtil;
 public class ClimberIOSim implements ClimberIO {
     @AutoLogOutput(key="Climber/Setpoint")
     private double setpoint = 0;
+    //Logs setpoint in AdvantageScope while robot is running
     
     public enum ClimbState{
         RESTING,
         DEPLOYED,
         ENGAGED
     }
+    //ClimbState enum
     
     @AutoLogOutput(key="Climber/ClimbState")
     private ClimbState climbState = ClimbState.RESTING;
@@ -40,7 +42,7 @@ public class ClimberIOSim implements ClimberIO {
     private PIDController simPID = new PIDController(tuningP.get(), 0.0, tuningD.get());
 
     @Override
-    public void updateInputs(ClimberIOInputs inputs) {
+    public void updateInputs(ClimberIOInputsAutoLogged inputs) {
         climberMotor.setInputVoltage(climberAppliedVoltage);
         climberMotor.update(0.02); // Update simulation with a timestep of 20ms
 

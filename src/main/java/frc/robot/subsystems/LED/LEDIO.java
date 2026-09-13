@@ -9,14 +9,14 @@ import org.littletonrobotics.junction.AutoLog;
 public interface LEDIO {
     
     @AutoLog
-    public static class LEDIOInputs {
+    public static class LEDIOInputsAutoLogged {
     }
 
     /**
      * @brief Update inputs from hardware.
      * @param inputs Input object to populate
      */
-    public default void updateInputs(LEDIOInputs inputs) {}
+    public default void updateInputs(LEDIOInputsAutoLogged inputs) {}
 
     /**
      * @brief Set LED pattern.

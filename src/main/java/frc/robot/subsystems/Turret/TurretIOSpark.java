@@ -83,7 +83,7 @@ public class TurretIOSpark implements TurretIO {
     }
 
     @Override
-    public void updateInputs(TurretIOInputs inputs) {
+    public void updateInputs(TurretIOInputsAutoLogged inputs) {
         ifOk(motor, encoder::getPosition, value -> inputs.positionRad = value);
         ifOk(motor, encoder::getVelocity, value -> inputs.velocityRadPerSec = value);
         ifOk(
