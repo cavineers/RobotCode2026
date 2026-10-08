@@ -110,9 +110,9 @@ public class InBumperIntake extends SubsystemBase {
     public Command runIntakeAgitateSequence() {
     return Commands.sequence(
         runHopperToShooter().withTimeout(2.0),
-        Commands.waitSeconds(0.25),
+        Commands.waitSeconds(0.15),
         runGroundToHopper().withTimeout(0.2),
-        Commands.waitSeconds(0.25)
+        Commands.waitSeconds(0.15)
     ).repeatedly();
     }
 

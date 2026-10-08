@@ -215,7 +215,10 @@ public class RobotContainer {
         
         primaryDriverController.b().onTrue(overBumperIntake.deployCommand());
 
+        primaryDriverController.povDown().onTrue(Commands.runOnce(() -> this.drivetrain.zeroHeading()));
+
         // TODO: PLACEHOLDER: replace with actual button
+        
         var manualOverrideSwitch = secondaryDriverController.button(8);
 
         // Right trigger: Auto shoot OR hopper to shooter (depending on manual override)
@@ -268,13 +271,13 @@ public class RobotContainer {
         );
 
         // Button 4: Quick unjam inner hopper
-        secondaryDriverController.button(2).toggleOnTrue(
+        secondaryDriverController.button(1).toggleOnTrue(
             inBumperIntake.runIntakeAgitateSequence()
         );
 
         // Button 5: Toggle hopper -> shooter
-        secondaryDriverController.button(1).toggleOnTrue(
-            inBumperIntake.runHopperToShooter()
+        secondaryDriverController.button(2).onTrue((
+            new SequentialCommandGroup(inBumperIntake.runGroundToHopper().withDeadline(new WaitCommand(0.15)), inBumperIntake.stopCommand()))
         );
 
         // OverBumper Unjam Sequence

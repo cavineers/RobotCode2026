@@ -27,8 +27,8 @@ public class InBumperIntakeConstants {
     public static final int kHopperCurrentLimit = 40;
 
     public static final double kDefaultVoltage = 12.0;
-    public static final double kBottomVoltage = kDefaultVoltage * 0.6; //TODO: set speed
-    public static final double kOutsideVoltage = kDefaultVoltage * 0.6;
-    public static final double kTopVoltage = kDefaultVoltage * 0.6;
-    public static final double kHopperVoltage = kDefaultVoltage * 0.5; //TODO: tune speed
+    public static final double kBottomVoltage = kDefaultVoltage * 0.7; //TODO: set speed
+    public static final double kOutsideVoltage = kDefaultVoltage * 0.7;
+    public static final double kTopVoltage = kDefaultVoltage * 0.7;
+    public static final double kHopperVoltage = kDefaultVoltage * 0.85; //TODO: tune speed
 }
